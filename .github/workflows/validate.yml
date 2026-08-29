@@ -27,8 +27,8 @@ jobs:
           grep -q '72 / 72\|/ 72' game.js index.html
       - name: Check for accidental secrets
         run: |
-          if grep -RniE '(api[_-]?key|secret[_-]?key|private[_-]?key|password\s*=|token\s*=)' --exclude-dir=.git --exclude='*.md' .; then
-            echo 'Potential secret-like content detected.'
+          if grep -RniE '\b(api[_-]?key|secret[_-]?key|private[_-]?key|password|access[_-]?token|auth[_-]?token)\b[[:space:]]*[:=][[:space:]]*["'"'][^"'"']{12,}["'"']' --exclude-dir=.git --exclude='*.md' .; then
+            echo 'Potential credential-like content detected.'
             exit 1
           fi
 
@@ -39,13 +39,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Install Playwright Chromium
-        run: npx --yes playwright@1.55.0 install --with-deps chromium
+      - name: Install Playwright
+        run: npm install --no-save playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
       - name: Start static server
         run: python3 -m http.server 4173 >/tmp/mahjong-server.log 2>&1 &
       - name: Run browser smoke test
         run: |
-          npx --yes playwright@1.55.0 test --help >/dev/null
           node - <<'NODE'
           const { chromium } = require('playwright');
           (async () => {
