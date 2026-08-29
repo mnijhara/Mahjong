@@ -1,0 +1,33 @@
+name: Validate Mahjong
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate JavaScript syntax
+        run: node --check game.js
+      - name: Validate required web files
+        run: |
+          test -s index.html
+          test -s styles.css
+          test -s game.js
+          grep -q 'id="board"' index.html
+          grep -q 'id="startGame"' index.html
+          grep -q 'id="undo"' index.html
+          grep -q 'id="hint"' index.html
+          grep -q 'id="shuffle"' index.html
+          grep -q 'id="playAgain"' index.html
+          grep -q '72 / 72\|/ 72' game.js index.html
+      - name: Check for accidental secrets
+        run: |
+          if grep -RniE '(api[_-]?key|secret[_-]?key|private[_-]?key|password\s*=|token\s*=)' --exclude-dir=.git --exclude='*.md' .; then
+            echo 'Potential secret-like content detected.'
+            exit 1
+          fi
