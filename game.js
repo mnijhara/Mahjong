@@ -36,21 +36,44 @@
   function makeSolvableDeck(){
     const unique=[];
     types.forEach(t=>{if(t.kind==='special')return;if(!unique.some(u=>same(u,t)))unique.push({...t});});
-    // Four physical copies of every standard identity form two removable pairs.
     const pairTypes=[];
     unique.forEach(t=>{pairTypes.push([{...t},{...t}]);pairTypes.push([{...t},{...t}]);});
-    // Flowers and seasons are family matches: two family pairs each.
     const flowers=special.filter(t=>t[1]==='flower').map(t=>({kind:'special',key:'flower',glyph:t[0],label:t[0]}));
     const seasons=special.filter(t=>t[1]==='season').map(t=>({kind:'special',key:'season',glyph:t[0],label:t[0]}));
     pairTypes.push([flowers[0],flowers[1]],[flowers[2],flowers[3]],[seasons[0],seasons[1]],[seasons[2],seasons[3]]);
     if(pairTypes.length!==72)throw new Error(`Invalid deck pair count: ${pairTypes.length}`);
     shuffle(pairTypes);
     const deck=new Array(144);
-    for(let i=0;i<72;i++){
-      const pair=pairTypes[i].slice();shuffle(pair);
-      deck[solutionOrder[i*2]]=pair[0];deck[solutionOrder[i*2+1]]=pair[1];
-    }
+    for(let i=0;i<72;i++){const pair=pairTypes[i].slice();shuffle(pair);deck[solutionOrder[i*2]]=pair[0];deck[solutionOrder[i*2+1]]=pair[1];}
     return deck;
+  }
+
+  // Re-deal only the remaining tiles along the original valid peel order.
+  // This makes Shuffle safe: it changes the tile identities/appearance without
+  // destroying the board's guaranteed path to completion.
+  function safeShuffleRemaining(){
+    const active=tiles.filter(t=>!t.removed);
+    if(active.length<2)return;
+    const groups=[];
+    const standard=[];
+    const flowers=[];
+    const seasons=[];
+    active.forEach(t=>{
+      if(t.data.kind==='special'){(t.data.key==='flower'?flowers:seasons).push({...t.data});return;}
+      const found=standard.find(g=>same(g[0],t.data));
+      if(found)found.push({...t.data});else standard.push([{...t.data}]);
+    });
+    standard.forEach(group=>{for(let i=0;i<group.length;i+=2)groups.push([group[i],group[i+1]]);});
+    for(let i=0;i<flowers.length;i+=2)groups.push([flowers[i],flowers[i+1]]);
+    for(let i=0;i<seasons.length;i+=2)groups.push([seasons[i],seasons[i+1]]);
+    if(groups.length!==active.length/2)return;
+    shuffle(groups);
+    const activeOrder=solutionOrder.filter(index=>!tiles[index].removed);
+    for(let i=0;i<groups.length;i++){
+      const pair=groups[i].slice();shuffle(pair);
+      tiles[activeOrder[i*2]].data=pair[0];
+      tiles[activeOrder[i*2+1]].data=pair[1];
+    }
   }
 
   function render(){
@@ -80,7 +103,7 @@
   function tick(){timeEl.textContent=formatTime(Math.floor((Date.now()-startTime)/1000));}
   function start(){clearInterval(timer);started=true;startTime=Date.now();timer=setInterval(tick,1000);moves=0;pairs=0;history=[];selected=null;const deck=makeSolvableDeck();tiles=positions.map((p,i)=>({...p,data:deck[i],order:i,removed:false}));modal.classList.add('hidden');messageEl.classList.add('hidden');timeEl.textContent='00:00';render();}
   function finish(){clearInterval(timer);started=false;$('finalTime').textContent=timeEl.textContent;$('finalMoves').textContent=moves;$('modalTitle').textContent='Board cleared!';$('modalCopy').textContent=`You cleared all 144 tiles in ${timeEl.textContent}, with ${moves} moves.`;modal.classList.remove('hidden');update();}
-  function shuffleRemaining(){if(!started){start();return;}const active=tiles.filter(t=>!t.removed),data=shuffle(active.map(t=>t.data));active.forEach((t,i)=>t.data=data[i]);selected=null;render();flash('Remaining tiles shuffled.');}
+  function shuffleRemaining(){if(!started){start();return;}safeShuffleRemaining();selected=null;render();flash('Remaining tiles safely shuffled.');}
   function hint(){if(!started){flash('Start a game first.');return;}const pair=findPair();if(pair){selected=pair[0];render();setTimeout(()=>{if(!started)return;selected=pair[1];render();setTimeout(()=>{selected=null;render();},650);},650);return;}flash('No matching open pair found. Shuffle to continue.');}
   function beep(freq,dur){if(!soundOn)return;try{const c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.frequency.value=freq;o.type='sine';g.gain.value=.025;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+dur);}catch(e){}}
   $('startGame').addEventListener('click',start);$('playAgain').addEventListener('click',start);$('shuffle').addEventListener('click',shuffleRemaining);$('hint').addEventListener('click',hint);if(undoBtn)undoBtn.addEventListener('click',undo);$('soundBtn').addEventListener('click',()=>{soundOn=!soundOn;$('soundBtn').textContent=soundOn?'🔊':'🔇';});
