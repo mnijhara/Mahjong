@@ -1,11 +1,23 @@
-<div align="center">
+# Mahjong Solitaire
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+A polished, responsive browser-based Mahjong Solitaire game built with plain HTML, CSS and JavaScript — no backend or account required.
 
-  <h1>Built with AI Studio</h2>
+## Features
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+- 144-tile layered solitaire board
+- Open-tile detection with classic left/right and above blocking rules
+- Matching for suits, honors, flowers and seasons
+- Timer, move counter and pair progress
+- Hint system (`H` keyboard shortcut)
+- Shuffle remaining tiles
+- Sound toggle with lightweight browser audio
+- Responsive desktop and mobile layout
+- Static-hosting friendly: deploy the repository contents directly to Hostinger
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## Run locally
 
-</div>
+Open `index.html` in a modern browser, or serve the folder with any static web server.
+
+## Deploy
+
+No build step is required. Upload `index.html`, `styles.css`, and `game.js` to the public web root on a static Hostinger site.
