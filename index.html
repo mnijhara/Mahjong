@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d1b16">
-  <meta name="description" content="Mahjong — a polished, relaxing solitaire tile-matching game.">
+  <meta name="description" content="Mahjong Solitaire — a classic tile-matching game for everyone.">
   <title>Mahjong Solitaire</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,30 +20,33 @@
         <div><span>MOVES</span><strong id="moves">0</strong></div>
         <div><span>PAIRS</span><strong id="pairs">0 / 72</strong></div>
       </div>
-      <button class="icon-btn" id="soundBtn" aria-label="Toggle sound">🔊</button>
+      <button class="icon-btn" id="soundBtn" type="button" aria-label="Toggle sound">🔊</button>
     </header>
 
     <main>
       <section class="hero">
         <div>
-          <p class="eyebrow">A quiet moment of focus</p>
+          <p class="eyebrow">Classic tile matching</p>
           <h1>Clear the board.<br><em>Find your rhythm.</em></h1>
         </div>
-        <div class="actions"><button class="btn secondary" id="newGame">New game</button><button class="btn primary" id="hint">Hint <kbd>H</kbd></button></div>
+        <div class="actions"><button class="btn secondary" id="startGame" type="button">Start game</button><button class="btn primary" id="hint" type="button">Hint <kbd>H</kbd></button></div>
       </section>
 
       <section class="game-card">
-        <div class="board-wrap"><div id="board" class="board" role="grid" aria-label="Mahjong game board"></div><div id="message" class="message hidden"></div></div>
+        <div class="board-wrap"><div id="board" class="board" role="grid" aria-label="Mahjong game board"></div><div id="message" class="message hidden" role="status"></div></div>
         <div class="bottom-bar">
-          <div class="tip"><span class="tip-dot"></span><span id="tipText">Match identical open tiles. Flowers and seasons match within their family.</span></div>
-          <button class="text-btn" id="shuffle">Shuffle remaining <span>↻</span></button>
+          <div class="tip"><span class="tip-dot"></span><span id="tipText">Match identical open tiles. Flowers match flowers; seasons match seasons.</span></div>
+          <button class="text-btn" id="shuffle" type="button">Shuffle remaining <span>↻</span></button>
         </div>
       </section>
     </main>
 
-    <footer><span>Mahjong Solitaire</span><span>Built for the web · No account required</span></footer>
+    <footer><span>Mahjong Solitaire</span><span>Classic game · No account required</span></footer>
   </div>
-  <div id="modal" class="modal hidden"><div class="modal-card"><div class="modal-icon">✦</div><p class="eyebrow" id="modalEyebrow">Board cleared</p><h2 id="modalTitle">Beautifully done.</h2><p id="modalCopy"></p><div class="modal-stats"><div><span>TIME</span><strong id="finalTime">00:00</strong></div><div><span>MOVES</span><strong id="finalMoves">0</strong></div></div><button class="btn primary full" id="playAgain">Play again</button></div></div>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-card"><div class="modal-icon">✦</div><p class="eyebrow">Board cleared</p><h2 id="modalTitle">Beautifully done.</h2><p id="modalCopy"></p><div class="modal-stats"><div><span>TIME</span><strong id="finalTime">00:00</strong></div><div><span>MOVES</span><strong id="finalMoves">0</strong></div></div><button class="btn primary full" id="playAgain" type="button">Play again</button></div>
+  </div>
   <script src="game.js"></script>
 </body>
 </html>
