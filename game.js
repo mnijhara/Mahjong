@@ -28,20 +28,26 @@
     return !left||!right;
   }
 
-  // A fixed valid peel order is used to deal the board. Every consecutive pair
-  // is guaranteed to be removable when reached, so every new game is solvable.
+  // The deal is built from a known valid peel order. Standard tiles appear four
+  // times each; all eight flower/season tiles are included and may match within
+  // their family, preserving the traditional 144-tile Mahjong Solitaire set.
   const solutionOrder=[15,32,48,127,79,95,33,119,14,112,31,96,0,103,97,120,34,78,77,94,47,104,1,80,13,93,63,98,2,111,35,92,49,76,91,99,30,64,50,102,65,81,46,82,29,62,66,90,12,45,16,28,27,61,11,60,3,10,83,89,4,51,5,88,17,67,6,87,18,84,19,44,9,20,21,135,22,118,23,100,59,126,131,139,141,143,75,110,8,43,113,132,130,140,52,142,121,136,68,109,42,74,125,138,36,105,37,128,69,106,122,137,101,129,117,134,24,58,73,124,57,116,41,133,86,108,38,107,53,114,72,123,54,115,26,55,25,39,40,70,7,71,56,85];
 
   function makeSolvableDeck(){
     const unique=[];
     types.forEach(t=>{if(t.kind==='special')return;if(!unique.some(u=>same(u,t)))unique.push(t);});
     const pairTypes=[];
-    unique.forEach(t=>{pairTypes.push({...t},{...t});});
-    pairTypes.push({kind:'special',key:'flower',glyph:'梅',label:'梅'},{kind:'special',key:'flower',glyph:'蘭',label:'蘭'});
-    pairTypes.push({kind:'special',key:'season',glyph:'春',label:'春'},{kind:'special',key:'season',glyph:'夏',label:'夏'});
+    unique.forEach(t=>pairTypes.push([{...t},{...t}]));
+    const specialTiles=special.map(([glyph,key])=>({kind:'special',key,glyph,label:glyph}));
+    for(let i=0;i<specialTiles.length;i+=2)pairTypes.push([specialTiles[i],specialTiles[i+1]]);
     shuffle(pairTypes);
     const deck=new Array(144);
-    for(let i=0;i<72;i++){const type=pairTypes[i];deck[solutionOrder[i*2]]={...type};deck[solutionOrder[i*2+1]]={...type};}
+    for(let i=0;i<72;i++){
+      const pair=pairTypes[i].slice();
+      shuffle(pair);
+      deck[solutionOrder[i*2]]=pair[0];
+      deck[solutionOrder[i*2+1]]=pair[1];
+    }
     return deck;
   }
 
@@ -64,10 +70,7 @@
       if(pairs===72)finish();else if(!tiles.some(x=>!x.removed&&isFree(x)))flash('No open pairs remain — shuffle to continue.');
     } else {selected=t;flash('Those tiles do not match.');render();beep(180,.08);}
   }
-  function undo(){
-    if(!started||!history.length)return;
-    const pair=history.pop();pair[0].removed=false;pair[1].removed=false;selected=null;moves=Math.max(0,moves-1);pairs=Math.max(0,pairs-1);update();render();flash('Move undone.');beep(320,.06);
-  }
+  function undo(){if(!started||!history.length)return;const pair=history.pop();pair[0].removed=false;pair[1].removed=false;selected=null;moves=Math.max(0,moves-1);pairs=Math.max(0,pairs-1);update();render();flash('Move undone.');beep(320,.06);}
   function update(){movesEl.textContent=moves;pairsEl.textContent=`${pairs} / 72`;if(undoBtn)undoBtn.disabled=!started||history.length===0;}
   function flash(text){messageEl.textContent=text;messageEl.classList.remove('hidden');clearTimeout(flash.t);flash.t=setTimeout(()=>messageEl.classList.add('hidden'),1300);}
   function formatTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
