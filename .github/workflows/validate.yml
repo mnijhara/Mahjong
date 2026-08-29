@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  validate:
+  static:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,3 +31,47 @@ jobs:
             echo 'Potential secret-like content detected.'
             exit 1
           fi
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright Chromium
+        run: npx --yes playwright@1.55.0 install --with-deps chromium
+      - name: Start static server
+        run: python3 -m http.server 4173 >/tmp/mahjong-server.log 2>&1 &
+      - name: Run browser smoke test
+        run: |
+          npx --yes playwright@1.55.0 test --help >/dev/null
+          node - <<'NODE'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            const page = await browser.newPage({viewport:{width:1440,height:900}});
+            await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
+            await page.getByRole('button', {name:'Start game'}).click();
+            if (await page.locator('#board .tile').count() !== 144) throw new Error('Expected 144 tiles');
+            if (await page.locator('#board .tile.free').count() < 1) throw new Error('No open tile rendered');
+            const openTile = page.locator('#board .tile.free').first();
+            const label = await openTile.getAttribute('aria-label');
+            if (!label || !label.includes('open')) throw new Error('Open tile missing accessible state');
+            await openTile.click();
+            if (await page.locator('#board .tile.selected').count() !== 1) throw new Error('Tile selection failed');
+            await page.getByRole('button', {name:/Undo/}).click();
+            if (await page.locator('#board .tile.selected').count() !== 0) throw new Error('Undo failed');
+            await page.getByRole('button', {name:/Hint/}).click();
+            await page.waitForTimeout(150);
+            if (await page.locator('#board .tile.selected').count() < 1) throw new Error('Hint failed');
+            await page.getByRole('button', {name:/Shuffle remaining/}).click();
+            if (await page.locator('#board .tile').count() !== 144) throw new Error('Shuffle changed tile count');
+            await page.setViewportSize({width:390,height:844});
+            await page.reload({waitUntil:'networkidle'});
+            await page.getByRole('button', {name:'Start game'}).click();
+            if (await page.locator('#board .tile').count() !== 144) throw new Error('Mobile render failed');
+            await browser.close();
+            console.log('Mahjong browser smoke test passed');
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
