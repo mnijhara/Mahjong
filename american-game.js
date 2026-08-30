@@ -64,11 +64,11 @@
     const hand = $('americanHand');
     if (!hand) return;
     hand.innerHTML = '';
-    const sorted = players[0]?.hand || [];
-    sorted.forEach((tile, index) => hand.appendChild(tileButton(tile, index)));
-    window.updateAmericanInsights?.(sorted, { started, phase });
+    const current = players[0]?.hand || [];
+    current.forEach((tile, index) => hand.appendChild(tileButton(tile, index)));
+    window.updateAmericanInsights?.(current, { started, phase });
     const count = $('americanSelection');
-    if (count) count.textContent = !started ? 'Start a hand to begin the Charleston' : selected.length ? `${selected.length} / 3 selected` : 'Select 3 tiles to pass';
+    if (count) count.textContent = !started ? 'Start a hand to begin the Charleston' : phase === 'charleston' ? (selected.length ? `${selected.length} / 3 selected` : 'Select 3 tiles to pass') : 'Your turn · draw, then discard one tile';
     const pass = $('americanPass');
     if (pass) pass.disabled = phase !== 'charleston' || selected.length !== 3;
     const start = $('americanStart');
@@ -101,7 +101,7 @@
     const center = $('americanDiscards');
     if (!center) return;
     center.innerHTML = '';
-    discards.slice(-12).forEach(tile => {
+    discards.slice(-18).forEach(tile => {
       const el = document.createElement('div');
       el.className = 'discard-tile';
       el.title = tile.label;
@@ -116,7 +116,9 @@
 
   function toggleSelected(index) {
     if (phase !== 'charleston') return;
-    if (players[0].hand[index].type === 'joker') { setStatus('Jokers cannot be passed during the Charleston.'); return; }
+    const tile = players[0].hand[index];
+    if (!tile) return;
+    if (tile.type === 'joker') { setStatus('Jokers cannot be passed during the Charleston.'); return; }
     if (selected.includes(index)) selected = selected.filter(i => i !== index);
     else if (selected.length < 3) selected = [...selected, index];
     else setStatus('Choose exactly three tiles for this pass.');
@@ -150,20 +152,78 @@
     if (passIndex >= 3) {
       phase = 'play'; turn = 0;
       players[0].hand.sort((a,b) => a.label.localeCompare(b.label));
-      setStatus('Charleston complete. East has 14 tiles and starts by discarding.');
+      setStatus('Charleston complete. East starts: draw one tile, then discard one.');
     } else {
       setStatus(`Pass ${passIndex + 1}: choose three tiles to pass ${directions[passIndex] === 1 ? 'right' : directions[passIndex] === 2 ? 'across' : 'left'}.`);
     }
     render();
   }
 
+  function drawTile(playerIndex) {
+    if (!wall.length) return null;
+    const tile = wall.pop();
+    players[playerIndex].hand.push(tile);
+    return tile;
+  }
+
+  function aiDiscardIndex(playerIndex) {
+    const hand = players[playerIndex].hand;
+    const candidates = window.americanCardEngine?.analyze(hand) || [];
+    const keep = new Set((candidates[0]?.keep || []).map(String));
+    let best = -1;
+    let bestPenalty = Infinity;
+    hand.forEach((tile, index) => {
+      if (tile.type === 'joker') return;
+      const label = tile.label;
+      const protectedTile = keep.has(label) || keep.has(`${tile.value}s`);
+      const duplicate = hand.some((other, i) => i !== index && other.type === tile.type && other.suit === tile.suit && other.value === tile.value && other.key === tile.key);
+      const penalty = (protectedTile ? 100 : 0) + (duplicate ? 20 : 0) + (tile.type === 'suited' ? 0 : 8);
+      if (penalty < bestPenalty) { bestPenalty = penalty; best = index; }
+    });
+    return best >= 0 ? best : Math.max(0, hand.length - 1);
+  }
+
+  function playComputerTurn(playerIndex) {
+    if (phase !== 'play' || !players[playerIndex]) return;
+    turn = playerIndex;
+    drawTile(playerIndex);
+    const discardIndex = aiDiscardIndex(playerIndex);
+    if (discardIndex >= 0) discards.push(players[playerIndex].hand.splice(discardIndex, 1)[0]);
+  }
+
+  function advanceAfterHumanDiscard() {
+    for (let index = 1; index < 4; index++) playComputerTurn(index);
+    turn = 0;
+    if (wall.length) drawTile(0);
+    if (players[0].hand.length > 14) players[0].hand.splice(14);
+    setStatus(wall.length ? 'Your turn: a tile has been drawn. Choose one tile to discard.' : 'Wall exhausted. Hand is complete for this practice round.');
+    render();
+  }
+
   function discard(index) {
-    if (phase !== 'play' || turn !== 0) return;
+    if (phase !== 'play' || turn !== 0 || players[0].hand.length !== 14) return;
     const tile = players[0].hand[index];
+    if (!tile) return;
     players[0].hand.splice(index, 1);
     discards.push(tile);
-    setStatus(`You discarded ${tile.label}. Computer turns are next in this practice table.`);
+    setStatus('Computers are drawing and discarding…');
     render();
+    window.setTimeout(advanceAfterHumanDiscard, 120);
+  }
+
+  function highlightHint() {
+    const cards = [...document.querySelectorAll('#americanDirections .american-direction-card')];
+    const first = cards[0];
+    if (first) { first.classList.add('hint-focus'); window.setTimeout(() => first.classList.remove('hint-focus'), 1500); }
+    const combo = document.querySelector('#americanCombinations .american-combo-card');
+    if (combo) combo.click();
+    else {
+      const tile = document.querySelector('#americanHand .american-tile:not(.selected)');
+      tile?.classList.add('insight-focus');
+      window.setTimeout(() => tile?.classList.remove('insight-focus'), 1500);
+    }
+    if (phase === 'charleston') setStatus('Hint: protect the strongest suggested family and use the highlighted tiles when choosing your pass.');
+    else if (phase === 'play') setStatus('Hint: the highlighted family is your strongest current direction; discard a tile outside it when possible.');
   }
 
   function startGame() {
@@ -201,11 +261,14 @@
 
   window.startAmericanGame = startGame;
   window.showAmericanGame = showAmerican;
+  window.americanHint = highlightHint;
+  window.americanGameState = () => ({ started, phase, wall: wall.length, hand: players[0]?.hand.length || 0, turn, selected: selected.length });
 
   $('americanPass')?.addEventListener('click', passCharleston);
   $('americanStart')?.addEventListener('click', startGame);
   $('americanNewHand')?.addEventListener('click', startGame);
   $('americanEndGame')?.addEventListener('click', endGame);
+  $('americanHint')?.addEventListener('click', highlightHint);
   $('americanHand')?.addEventListener('click', (event) => {
     const tile = event.target.closest('.american-tile');
     if (!tile || phase !== 'play') return;
