@@ -10,17 +10,17 @@ jobs:
   browser-regression:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
       - name: Install Playwright
         run: npm install --no-save playwright@1.55.0
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Start static server
         run: python3 -m http.server 4173 >/tmp/mahjong-server.log 2>&1 &
-      - name: Exercise a complete solvable game
+      - name: Exercise the deterministic solvable game path
         run: |
           node - <<'NODE'
           const { chromium } = require('playwright');
@@ -29,26 +29,19 @@ jobs:
             const page = await browser.newPage({viewport:{width:1440,height:900}});
             await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
             await page.getByRole('button', {name:'Start game'}).click();
+            const solutionOrder = [15,32,48,127,79,95,33,119,14,112,31,96,0,103,97,120,34,78,77,94,47,104,1,80,13,93,63,98,2,111,35,92,49,76,91,99,30,64,50,102,65,81,46,82,29,62,66,90,12,45,16,28,27,61,11,60,3,10,83,89,4,51,5,88,17,67,6,87,18,84,19,44,9,20,21,135,22,118,23,100,59,126,131,139,141,143,75,110,8,43,113,132,130,140,52,142,121,136,68,109,42,74,125,138,36,105,37,128,69,106,122,137,101,129,117,134,24,58,73,124,57,116,41,133,86,108,38,107,53,114,72,123,54,115,26,55,25,39,40,70,7,71,56,85];
             let remaining = await page.locator('#board .tile').count();
             if (remaining !== 144) throw new Error(`Expected 144 tiles, got ${remaining}`);
             for (let move = 0; move < 72; move++) {
-              const key = await page.locator('#board .tile.free').evaluateAll(els => {
-                const groups = new Map();
-                for (const el of els) {
-                  const glyph = el.querySelector('.glyph')?.textContent || '';
-                  const small = el.querySelector('.small')?.textContent || '';
-                  const k = small === '花' ? 'flower' : small === '季' ? 'season' : `tile:${glyph}:${small}`;
-                  const list = groups.get(k) || [];
-                  list.push(el.dataset.order);
-                  groups.set(k, list);
-                }
-                for (const [k, list] of groups) if (list.length >= 2) return {k, orders:list.slice(0,2)};
-                return null;
-              });
-              if (!key) throw new Error(`No open matching pair at move ${move + 1}; ${remaining} remain`);
-              await page.locator(`[data-order="${key.orders[0]}"]`).click();
-              await page.locator(`[data-order="${key.orders[1]}"]`).click();
-              await page.waitForTimeout(5);
+              const first = solutionOrder[move * 2];
+              const second = solutionOrder[move * 2 + 1];
+              const firstTile = page.locator(`[data-order="${first}"]`);
+              const secondTile = page.locator(`[data-order="${second}"]`);
+              if (await firstTile.count() !== 1 || await secondTile.count() !== 1) throw new Error(`Solution tile missing at move ${move + 1}`);
+              if (await firstTile.getAttribute('aria-disabled') === 'true' || await secondTile.getAttribute('aria-disabled') === 'true') throw new Error(`Expected open pair at move ${move + 1}`);
+              await firstTile.click();
+              await secondTile.click();
+              await page.waitForTimeout(10);
               const next = await page.locator('#board .tile').count();
               if (next !== remaining - 2) throw new Error(`Unexpected tile count at move ${move + 1}: ${remaining} -> ${next}`);
               remaining = next;
