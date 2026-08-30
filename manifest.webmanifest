@@ -1,7 +1,7 @@
 {
-  "name": "Mahjong Solitaire",
+  "name": "Mahjong",
   "short_name": "Mahjong",
-  "description": "A classic Mahjong Solitaire tile-matching game for everyone.",
+  "description": "A polished Mahjong game with American Mah Jongg and Solitaire styles.",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#f5f1e8",
