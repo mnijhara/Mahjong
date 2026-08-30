@@ -4,6 +4,7 @@
   const board=$('board'),timeEl=$('time'),movesEl=$('moves'),pairsEl=$('pairs'),messageEl=$('message'),modal=$('modal'),undoBtn=$('undo');
   if(!board||!timeEl||!movesEl||!pairsEl||!messageEl||!modal)return;
 
+  const SAVE_KEY='mahjong-solitaire-save-v1';
   const honors=[['東','east'],['南','south'],['西','west'],['北','north'],['中','red'],['發','green'],['白','white']];
   const special=[['梅','flower'],['蘭','flower'],['菊','flower'],['竹','flower'],['春','season'],['夏','season'],['秋','season'],['冬','season']];
   const chinese=['一','二','三','四','五','六','七','八','九'];
@@ -45,95 +46,87 @@
     return deck;
   }
 
+  function saveState(){
+    if(!started||!tiles.length||modal.classList.contains('hidden')===false)return;
+    try{
+      localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,savedAt:Date.now(),elapsed:Math.max(0,Date.now()-startTime),moves,pairs,selected:selected?.order??null,tiles:tiles.map(t=>({x:t.x,y:t.y,z:t.z,order:t.order,removed:t.removed,data:t.data})),history:history.map(action=>action.type==='move'?{type:'move',tiles:action.tiles.map(t=>t.order)}:{type:'shuffle',before:[...action.before.entries()]} )}));
+    }catch(e){}
+  }
+
+  function hasSavedGame(){try{return !!localStorage.getItem(SAVE_KEY);}catch(e){return false;}}
+
+  function clearSavedGame(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
+
+  function restoreSavedGame(){
+    if(!hasSavedGame())return false;
+    try{
+      const saved=JSON.parse(localStorage.getItem(SAVE_KEY));
+      if(!saved||saved.version!==1||!Array.isArray(saved.tiles)||saved.tiles.length!==144)return false;
+      tiles=saved.tiles.map(t=>({...t}));
+      const byOrder=new Map(tiles.map(t=>[t.order,t]));
+      history=Array.isArray(saved.history)?saved.history.map(action=>action.type==='move'?{type:'move',tiles:(action.tiles||[]).map(order=>byOrder.get(order)).filter(Boolean)}:{type:'shuffle',before:new Map(action.before||[])}).filter(action=>action.type==='shuffle'||action.tiles.length===2):[];
+      moves=Number.isFinite(saved.moves)?Math.max(0,saved.moves):0;
+      pairs=Number.isFinite(saved.pairs)?Math.max(0,saved.pairs):0;
+      selected=saved.selected===null||saved.selected===undefined?null:byOrder.get(saved.selected)||null;
+      started=true;
+      startTime=Date.now()-Math.max(0,Number(saved.elapsed)||0);
+      clearInterval(timer);timer=setInterval(tick,1000);tick();modal.classList.add('hidden');messageEl.classList.add('hidden');render();flash('Saved game restored.');return true;
+    }catch(e){clearSavedGame();return false;}
+  }
+
   function safeShuffleRemaining(){
-    const active=tiles.filter(t=>!t.removed);
-    if(active.length<2)return false;
+    const active=tiles.filter(t=>!t.removed);if(active.length<2)return false;
     const groups=[],standard=[],flowers=[],seasons=[];
-    active.forEach(t=>{
-      if(t.data.kind==='special'){(t.data.key==='flower'?flowers:seasons).push({...t.data});return;}
-      const found=standard.find(g=>same(g[0],t.data));
-      if(found)found.push({...t.data});else standard.push([{...t.data}]);
-    });
+    active.forEach(t=>{if(t.data.kind==='special'){(t.data.key==='flower'?flowers:seasons).push({...t.data});return;}const found=standard.find(g=>same(g[0],t.data));if(found)found.push({...t.data});else standard.push([{...t.data}]);});
     if(standard.some(group=>group.length%2!==0)||flowers.length%2!==0||seasons.length%2!==0)return false;
     standard.forEach(group=>{for(let i=0;i<group.length;i+=2)groups.push([group[i],group[i+1]]);});
-    for(let i=0;i<flowers.length;i+=2)groups.push([flowers[i],flowers[i+1]]);
-    for(let i=0;i<seasons.length;i+=2)groups.push([seasons[i],seasons[i+1]]);
+    for(let i=0;i<flowers.length;i+=2)groups.push([flowers[i],flowers[i+1]]);for(let i=0;i<seasons.length;i+=2)groups.push([seasons[i],seasons[i+1]]);
     if(groups.length!==active.length/2)return false;
-
-    const before=new Map(active.map(t=>[t.order,{...t.data}]));
-    const orders=shuffle(active.map(t=>t.order));
+    const before=new Map(active.map(t=>[t.order,{...t.data}])),orders=shuffle(active.map(t=>t.order));
     for(let attempt=0;attempt<64;attempt++){
       const candidate=shuffle(groups.map(pair=>pair.slice()));
-      for(let i=0;i<candidate.length;i++){
-        const pair=shuffle(candidate[i].slice());
-        tiles[orders[i*2]].data=pair[0];
-        tiles[orders[i*2+1]].data=pair[1];
-      }
-      if(findPair()){
-        history.push({type:'shuffle',before});
-        return true;
-      }
+      for(let i=0;i<candidate.length;i++){const pair=shuffle(candidate[i].slice());tiles[orders[i*2]].data=pair[0];tiles[orders[i*2+1]].data=pair[1];}
+      if(findPair()){history.push({type:'shuffle',before});saveState();return true;}
     }
-    before.forEach((data,order)=>{const tile=tiles[order];if(tile)tile.data={...data};});
-    return false;
+    before.forEach((data,order)=>{const tile=tiles[order];if(tile)tile.data={...data};});return false;
   }
 
-  function focusAdjacent(current,dx,dy){
-    const active=tiles.filter(t=>!t.removed);
-    if(!active.length)return;
-    const cx=current.x+26,cy=current.y+34;
-    const candidates=active.filter(t=>{const tx=t.x+26,ty=t.y+34;return dx<0?tx<cx-4:dx>0?tx>cx+4:dy<0?ty<cy-4:ty>cy+4;});
-    if(!candidates.length)return;
-    candidates.sort((a,b)=>{const da=(a.x+26-cx)**2+(a.y+34-cy)**2,db=(b.x+26-cx)**2+(b.y+34-cy)**2;return da-db;});
-    const el=board.querySelector(`[data-order="${candidates[0].order}"]`);if(el)el.focus();
-  }
+  function focusAdjacent(current,dx,dy){const active=tiles.filter(t=>!t.removed);if(!active.length)return;const cx=current.x+26,cy=current.y+34,candidates=active.filter(t=>{const tx=t.x+26,ty=t.y+34;return dx<0?tx<cx-4:dx>0?tx>cx+4:dy<0?ty<cy-4:ty>cy+4;});if(!candidates.length)return;candidates.sort((a,b)=>{const da=(a.x+26-cx)**2+(a.y+34-cy)**2,db=(b.x+26-cx)**2+(b.y+34-cy)**2;return da-db;});const el=board.querySelector(`[data-order="${candidates[0].order}"]`);if(el)el.focus();}
 
   function render(){
-    const focusedOrder=document.activeElement?.dataset?.order;
-    board.innerHTML='';
-    tiles.forEach(t=>{if(t.removed)return;const free=isFree(t),el=document.createElement('button');
-      el.type='button';el.className=`tile ${free?'free':'blocked'}${selected===t?' selected':''}`;el.style.cssText=`left:${t.x}px;top:${t.y}px;z-index:${t.z*200+t.order}`;
-      el.dataset.order=String(t.order);
-      el.setAttribute('aria-label',`${t.data.label} tile${free?', open':', blocked'}`);el.setAttribute('aria-disabled',String(!free));
+    const focusedOrder=document.activeElement?.dataset?.order;board.innerHTML='';
+    tiles.forEach(t=>{if(t.removed)return;const free=isFree(t),el=document.createElement('button');el.type='button';el.className=`tile ${free?'free':'blocked'}${selected===t?' selected':''}`;el.style.cssText=`left:${t.x}px;top:${t.y}px;z-index:${t.z*200+t.order}`;el.dataset.order=String(t.order);el.setAttribute('aria-label',`${t.data.label} tile${free?', open':', blocked'}`);el.setAttribute('aria-disabled',String(!free));
       el.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();const dx=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0,dy=e.key==='ArrowUp'?-1:e.key==='ArrowDown'?1:0;focusAdjacent(t,dx,dy);}});
-      const glyph=document.createElement('span');glyph.className='glyph';glyph.textContent=t.data.glyph;el.appendChild(glyph);
-      const small=document.createElement('span');small.className='small';small.textContent=t.data.kind==='suited'?(t.data.suit==='characters'?'萬':t.data.suit==='bamboo'?'索':'筒'):t.data.kind==='honor'?'字':t.data.key==='flower'?'花':'季';el.appendChild(small);el.addEventListener('click',()=>clickTile(t));board.appendChild(el);
+      const glyph=document.createElement('span');glyph.className='glyph';glyph.textContent=t.data.glyph;el.appendChild(glyph);const small=document.createElement('span');small.className='small';small.textContent=t.data.kind==='suited'?(t.data.suit==='characters'?'萬':t.data.suit==='bamboo'?'索':'筒'):t.data.kind==='honor'?'字':t.data.key==='flower'?'花':'季';el.appendChild(small);el.addEventListener('click',()=>clickTile(t));board.appendChild(el);
     });
-    if(focusedOrder!==undefined){const next=board.querySelector(`[data-order="${focusedOrder}"]`);if(next)next.focus();}
-    update();
+    if(focusedOrder!==undefined){const next=board.querySelector(`[data-order="${focusedOrder}"]`);if(next)next.focus();}update();
   }
   function clickTile(t){
-    if(!started)return;
-    cancelHint(false);
-    if(!isFree(t)){flash('That tile is blocked.');return;}
-    if(selected===t){selected=null;render();return;}if(!selected){selected=t;render();return;}
-    if(same(selected.data,t.data)){
-      const a=selected,b=t;selected=null;history.push({type:'move',tiles:[a,b]});a.removed=true;b.removed=true;moves++;pairs++;update();render();beep(620,.07);
-      if(pairs===72)finish();else if(!findPair())flash('No open pair remains — shuffle to continue.');
-    } else {selected=t;flash('Those tiles do not match.');render();beep(180,.08);}
+    if(!started)return;cancelHint(false);if(!isFree(t)){flash('That tile is blocked.');return;}if(selected===t){selected=null;render();saveState();return;}if(!selected){selected=t;render();saveState();return;}
+    if(same(selected.data,t.data)){const a=selected,b=t;selected=null;history.push({type:'move',tiles:[a,b]});a.removed=true;b.removed=true;moves++;pairs++;update();render();beep(620,.07);if(pairs===72)finish();else if(!findPair())flash('No open pair remains — shuffle to continue.');saveState();}
+    else{selected=t;flash('Those tiles do not match.');render();beep(180,.08);saveState();}
   }
   function findPair(){const free=tiles.filter(t=>!t.removed&&isFree(t));for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)if(same(free[i].data,free[j].data))return [free[i],free[j]];return null;}
   function cancelHint(clearSelection=true){hintToken++;if(clearSelection)selected=null;}
   function undo(){
-    if(!started)return;
-    if(!history.length){if(selected!==null){cancelHint();render();flash('Selection cleared.');}return;}
-    cancelHint();
-    const action=history.pop();
-    if(action.type==='shuffle'){action.before.forEach((data,order)=>{const tile=tiles[order];if(tile)tile.data={...data};});render();flash('Shuffle undone.');beep(320,.06);return;}
-    const [a,b]=action.tiles;a.removed=false;b.removed=false;moves=Math.max(0,moves-1);pairs=Math.max(0,pairs-1);update();render();flash('Move undone.');beep(320,.06);
+    if(!started)return;if(!history.length){if(selected!==null){cancelHint();render();flash('Selection cleared.');saveState();}return;}cancelHint();const action=history.pop();
+    if(action.type==='shuffle'){action.before.forEach((data,order)=>{const tile=tiles[order];if(tile)tile.data={...data};});render();flash('Shuffle undone.');beep(320,.06);saveState();return;}
+    const [a,b]=action.tiles;a.removed=false;b.removed=false;moves=Math.max(0,moves-1);pairs=Math.max(0,pairs-1);update();render();flash('Move undone.');beep(320,.06);saveState();
   }
   function update(){movesEl.textContent=moves;pairsEl.textContent=`${pairs} / 72`;if(undoBtn)undoBtn.disabled=!started||(!history.length&&selected===null);}
   function flash(text){messageEl.textContent=text;messageEl.classList.remove('hidden');clearTimeout(flash.t);flash.t=setTimeout(()=>messageEl.classList.add('hidden'),1300);}
   function formatTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
   function tick(){timeEl.textContent=formatTime(Math.floor((Date.now()-startTime)/1000));}
   function start(){
-    if($('gameStyle')?.value==='american' && window.startAmericanGame){window.startAmericanGame();return;}
-    clearInterval(timer);cancelHint();started=true;startTime=Date.now();timer=setInterval(tick,1000);moves=0;pairs=0;history=[];const deck=makeSolvableDeck();tiles=positions.map((p,i)=>({...p,data:deck[i],order:i,removed:false}));modal.classList.add('hidden');messageEl.classList.add('hidden');timeEl.textContent='00:00';render();
+    if($('gameStyle')?.value==='american'&&window.startAmericanGame){window.startAmericanGame();return;}
+    if(!started&&restoreSavedGame())return;
+    clearInterval(timer);cancelHint();started=true;startTime=Date.now();timer=setInterval(tick,1000);moves=0;pairs=0;history=[];const deck=makeSolvableDeck();tiles=positions.map((p,i)=>({...p,data:deck[i],order:i,removed:false}));modal.classList.add('hidden');messageEl.classList.add('hidden');timeEl.textContent='00:00';render();saveState();
   }
-  function finish(){clearInterval(timer);cancelHint();started=false;$('finalTime').textContent=timeEl.textContent;$('finalMoves').textContent=moves;$('modalTitle').textContent='Board cleared!';$('modalCopy').textContent=`You cleared all 144 tiles in ${timeEl.textContent}, with ${moves} moves.`;modal.classList.remove('hidden');update();}
+  function finish(){clearInterval(timer);cancelHint();started=false;clearSavedGame();$('finalTime').textContent=timeEl.textContent;$('finalMoves').textContent=moves;$('modalTitle').textContent='Board cleared!';$('modalCopy').textContent=`You cleared all 144 tiles in ${timeEl.textContent}, with ${moves} moves.`;modal.classList.remove('hidden');update();}
   function shuffleRemaining(){if($('gameStyle')?.value==='american')return;if(!started){start();return;}cancelHint();if(safeShuffleRemaining()){render();flash('Remaining tiles safely shuffled.');}else flash('Shuffle unavailable for this board state.');}
-  function hint(){if($('gameStyle')?.value==='american')return;if(!started){flash('Start a game first.');return;}const pair=findPair();if(!pair){flash('No matching open pair found. Shuffle to continue.');return;}cancelHint();const token=hintToken;selected=pair[0];render();setTimeout(()=>{if(!started||token!==hintToken)return;selected=pair[1];render();setTimeout(()=>{if(!started||token!==hintToken)return;selected=null;render();},650);},650);}
+  function hint(){if($('gameStyle')?.value==='american')return;if(!started){flash('Start a game first.');return;}const pair=findPair();if(!pair){flash('No matching open pair found. Shuffle to continue.');return;}cancelHint();const token=hintToken;selected=pair[0];render();saveState();setTimeout(()=>{if(!started||token!==hintToken)return;selected=pair[1];render();saveState();setTimeout(()=>{if(!started||token!==hintToken)return;selected=null;render();saveState();},650);},650);}
   function beep(freq,dur){if(!soundOn)return;try{audioContext??=new(window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume();const o=audioContext.createOscillator(),g=audioContext.createGain();o.frequency.value=freq;o.type='sine';g.gain.value=.025;o.connect(g);g.connect(audioContext.destination);o.start();o.stop(audioContext.currentTime+dur);}catch(e){audioContext=null;}}
   $('startGame').addEventListener('click',start);$('playAgain').addEventListener('click',start);$('shuffle').addEventListener('click',shuffleRemaining);$('hint').addEventListener('click',hint);if(undoBtn)undoBtn.addEventListener('click',undo);$('soundBtn').addEventListener('click',()=>{soundOn=!soundOn;$('soundBtn').textContent=soundOn?'🔊':'🔇';});
-  document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='h')hint();if(e.key.toLowerCase()==='u')undo();if(e.key==='Escape'){cancelHint();render();}});update();
+  document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='h')hint();if(e.key.toLowerCase()==='u')undo();if(e.key==='Escape'){cancelHint();render();saveState();}});
+  window.hasSolitaireSave=hasSavedGame;window.clearSolitaireSave=clearSavedGame;update();
 })();
