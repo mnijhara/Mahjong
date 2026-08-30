@@ -26,9 +26,10 @@
 
   function setInsightsVisible(visible) {
     if (insights) insights.classList.toggle('hidden', !visible);
+    document.body.classList.toggle('american-suggestions-open', Boolean(visible));
     if (suggestedBtn) {
       suggestedBtn.setAttribute('aria-pressed', String(visible));
-      suggestedBtn.textContent = visible ? 'Suggested hands' : 'Show suggestions';
+      suggestedBtn.textContent = visible ? 'Hide suggestions' : 'Suggested Hands';
     }
     if (showInsights) showInsights.checked = visible;
   }
@@ -66,7 +67,7 @@
   });
 
   if (tileSelect) tileSelect.value = currentTileStyle();
-  setInsightsVisible(true);
+  setInsightsVisible(false);
   setPhaseLabel();
 
   const status = $('americanStatus');
