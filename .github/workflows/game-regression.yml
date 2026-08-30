@@ -34,7 +34,7 @@ jobs:
           done
           cat /tmp/mahjong-server.log
           exit 1
-      - name: Exercise the deterministic solvable game path
+      - name: Exercise American and Solitaire browser paths
         run: |
           node - <<'NODE'
           const { chromium } = require('playwright');
@@ -42,15 +42,22 @@ jobs:
             const browser = await chromium.launch({headless:true});
             const page = await browser.newPage({viewport:{width:1440,height:900}});
             await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
+
+            // American mode is the default and auto-starts a 152-tile table.
+            if (await page.locator('#gameStyle').inputValue() !== 'american') throw new Error('American mode is not the default');
+            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('American hand did not start with 14 tiles');
+            if (!(await page.locator('#americanStatus').textContent()).includes('Charleston')) throw new Error('American Charleston did not start');
+            if (!(await page.locator('#americanPass').isDisabled())) throw new Error('American pass button should require three selected tiles');
+
+            // Switch to Solitaire and run the deterministic complete-game path.
+            await page.locator('#gameStyle').selectOption('solitaire');
             await page.getByRole('button', {name:'Start game'}).click();
             const solutionOrder = [15,32,48,127,79,95,33,119,14,112,31,96,0,103,97,120,34,78,77,94,47,104,1,80,13,93,63,98,2,111,35,92,49,76,91,99,30,64,50,102,65,81,46,82,29,62,66,90,12,45,16,28,27,61,11,60,3,10,83,89,4,51,5,88,17,67,6,87,18,84,19,44,9,20,21,135,22,118,23,100,59,126,131,139,141,143,75,110,8,43,113,132,130,140,52,142,121,136,68,109,42,74,125,138,36,105,37,128,69,106,122,137,101,129,117,134,24,58,73,124,57,116,41,133,86,108,38,107,53,114,72,123,54,115,26,55,25,39,40,70,7,71,56,85];
             let remaining = await page.locator('#board .tile').count();
-            if (remaining !== 144) throw new Error(`Expected 144 tiles, got ${remaining}`);
+            if (remaining !== 144) throw new Error(`Expected 144 Solitaire tiles, got ${remaining}`);
             for (let move = 0; move < 72; move++) {
-              const first = solutionOrder[move * 2];
-              const second = solutionOrder[move * 2 + 1];
-              const firstTile = page.locator(`[data-order="${first}"]`);
-              const secondTile = page.locator(`[data-order="${second}"]`);
+              const firstTile = page.locator(`[data-order="${solutionOrder[move * 2]}"]`);
+              const secondTile = page.locator(`[data-order="${solutionOrder[move * 2 + 1]}"]`);
               if (await firstTile.count() !== 1 || await secondTile.count() !== 1) throw new Error(`Solution tile missing at move ${move + 1}`);
               if (await firstTile.getAttribute('aria-disabled') === 'true' || await secondTile.getAttribute('aria-disabled') === 'true') throw new Error(`Expected open pair at move ${move + 1}`);
               await firstTile.click();
@@ -65,13 +72,16 @@ jobs:
             if (!(await page.locator('#modalTitle').textContent()).includes('Board cleared')) throw new Error('Completion title missing');
             await page.getByRole('button', {name:/Play again/}).click();
             if (await page.locator('#board .tile').count() !== 144) throw new Error('Play Again did not start a fresh board');
+
+            // Mobile accessibility smoke.
             await page.setViewportSize({width:390,height:844});
             await page.reload({waitUntil:'networkidle'});
+            await page.locator('#gameStyle').selectOption('solitaire');
             await page.getByRole('button', {name:'Start game'}).click();
-            if (await page.locator('#board .tile').count() !== 144) throw new Error('Mobile render failed');
+            if (await page.locator('#board .tile').count() !== 144) throw new Error('Mobile Solitaire render failed');
             const open = page.locator('#board .tile.free').first();
             if (await open.getAttribute('aria-label') === null) throw new Error('Mobile tile missing accessible label');
-            console.log('Complete 72-pair + mobile browser regression passed');
+            console.log('American + 72-pair Solitaire + mobile browser regression passed');
             await browser.close();
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
@@ -117,14 +127,12 @@ jobs:
             page.on('pageerror', err => errors.push(`pageerror: ${err.message}`));
             const response = await page.goto(`${target}/index.html`, {waitUntil:'networkidle'});
             if (!response || !response.ok()) throw new Error(`Live page HTTP failure: ${response?.status()}`);
+            if (await page.locator('#gameStyle').inputValue() !== 'american') throw new Error('Deployed default is not American Mah Jongg');
+            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('Deployed American table did not start with 14 tiles');
+            await page.locator('#gameStyle').selectOption('solitaire');
             await page.getByRole('button', {name:'Start game'}).click();
-            if (await page.locator('#board .tile').count() !== 144) throw new Error('Deployed board did not start with 144 tiles');
-            const styleSelect = page.locator('#gameStyle');
-            if (await styleSelect.count() !== 1) throw new Error('Deployed style selector missing');
-            const american = page.locator('#gameStyle option[value="american"]');
-            if (await american.count() !== 1) throw new Error('American Mah Jongg option missing from deployment');
-            await styleSelect.selectOption('american');
-            if (!(await page.locator('body').innerText()).includes('American Mah Jongg')) throw new Error('American mode did not render on deployment');
+            if (await page.locator('#board .tile').count() !== 144) throw new Error('Deployed Solitaire board did not start with 144 tiles');
+            if (await page.locator('#board .tile.free').first().getAttribute('aria-label') === null) throw new Error('Deployed tile missing accessible label');
             if (errors.length) throw new Error(errors.join('\n'));
             console.log('Deployed Chromium smoke passed');
             await browser.close();
