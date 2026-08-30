@@ -28,7 +28,7 @@ for (const style of expectedStyles) {
 }
 
 const american = fs.readFileSync(path.join(root, 'american-game.js'), 'utf8');
-for (const marker of ['152', 'joker', 'charleston', 'Pass 3 tiles', 'East']) {
+for (const marker of ['152', 'joker', 'charleston', 'americanPass', 'East']) {
   if (!american.toLowerCase().includes(marker.toLowerCase())) throw new Error(`American mode marker is missing: ${marker}`);
 }
 
