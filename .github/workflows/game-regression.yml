@@ -1,0 +1,64 @@
+name: Mahjong Game Regression
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  browser-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Playwright
+        run: npm install --no-save playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Start static server
+        run: python3 -m http.server 4173 >/tmp/mahjong-server.log 2>&1 &
+      - name: Exercise a complete solvable game
+        run: |
+          node - <<'NODE'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            const page = await browser.newPage({viewport:{width:1440,height:900}});
+            await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
+            await page.getByRole('button', {name:'Start game'}).click();
+            let remaining = await page.locator('#board .tile').count();
+            if (remaining !== 144) throw new Error(`Expected 144 tiles, got ${remaining}`);
+            for (let move = 0; move < 72; move++) {
+              const key = await page.locator('#board .tile.free').evaluateAll(els => {
+                const groups = new Map();
+                for (const el of els) {
+                  const glyph = el.querySelector('.glyph')?.textContent || '';
+                  const small = el.querySelector('.small')?.textContent || '';
+                  const k = small === '花' ? 'flower' : small === '季' ? 'season' : `tile:${glyph}:${small}`;
+                  const list = groups.get(k) || [];
+                  list.push(el.dataset.order);
+                  groups.set(k, list);
+                }
+                for (const [k, list] of groups) if (list.length >= 2) return {k, orders:list.slice(0,2)};
+                return null;
+              });
+              if (!key) throw new Error(`No open matching pair at move ${move + 1}; ${remaining} remain`);
+              await page.locator(`[data-order="${key.orders[0]}"]`).click();
+              await page.locator(`[data-order="${key.orders[1]}"]`).click();
+              await page.waitForTimeout(5);
+              const next = await page.locator('#board .tile').count();
+              if (next !== remaining - 2) throw new Error(`Unexpected tile count at move ${move + 1}: ${remaining} -> ${next}`);
+              remaining = next;
+            }
+            if (remaining !== 0) throw new Error(`Board not cleared: ${remaining} tiles remain`);
+            if (await page.locator('#modal').evaluate(el => el.classList.contains('hidden'))) throw new Error('Completion modal is hidden');
+            if (!(await page.locator('#modalTitle').textContent()).includes('Board cleared')) throw new Error('Completion title missing');
+            await page.getByRole('button', {name:/Play again/}).click();
+            if (await page.locator('#board .tile').count() !== 144) throw new Error('Play Again did not start a fresh board');
+            console.log('Complete 72-pair browser regression passed');
+            await browser.close();
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
