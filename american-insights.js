@@ -25,18 +25,20 @@
     return [...groups.values()].sort((a, b) => b.indexes.length - a.indexes.length || labelFor(a.tile).localeCompare(labelFor(b.tile)));
   }
 
+  function focusIndexes(indexes) {
+    const rack = $('americanHand');
+    if (!rack) return;
+    rack.querySelectorAll('.insight-focus').forEach(tile => tile.classList.remove('insight-focus'));
+    indexes.forEach(index => rack.querySelectorAll('.american-tile')[index]?.classList.add('insight-focus'));
+    window.setTimeout(() => rack.querySelectorAll('.insight-focus').forEach(tile => tile.classList.remove('insight-focus')), 1600);
+  }
+
   function card(title, meta, detail, indexes = [], tone = '') {
     const el = document.createElement('button');
     el.type = 'button';
     el.className = `american-combo-card${tone ? ` ${tone}` : ''}`;
     el.innerHTML = `<span class="combo-title">${title}</span><span class="combo-meta">${meta}</span><span class="combo-detail">${detail}</span>`;
-    el.addEventListener('click', () => {
-      const rack = $('americanHand');
-      if (!rack) return;
-      rack.querySelectorAll('.insight-focus').forEach(tile => tile.classList.remove('insight-focus'));
-      indexes.forEach(index => rack.querySelectorAll('.american-tile')[index]?.classList.add('insight-focus'));
-      window.setTimeout(() => rack.querySelectorAll('.insight-focus').forEach(tile => tile.classList.remove('insight-focus')), 1400);
-    });
+    el.addEventListener('click', () => focusIndexes(indexes));
     return el;
   }
 
@@ -92,14 +94,35 @@
     candidates.slice(0, 4).forEach((candidate, index) => {
       const el = document.createElement('article');
       el.className = `american-direction-card${index === 0 ? ' recommended' : ''}`;
+      el.tabIndex = 0;
+      el.setAttribute('role', 'button');
+      el.setAttribute('aria-label', `${candidate.title}, ${candidate.score}% fit. ${candidate.advice}`);
       const keep = candidate.keep.length ? `Protect: ${candidate.keep.join(' · ')}` : candidate.advice;
       el.innerHTML = `<div class="direction-top"><strong>${candidate.title}</strong><span>${candidate.score}% fit</span></div><div class="direction-tag">${candidate.tag}</div><small>${candidate.reason}</small><small class="direction-keep">${keep}</small>`;
+      const activate = () => {
+        const rack = $('americanHand');
+        if (!rack) return;
+        const tiles = [...rack.querySelectorAll('.american-tile')];
+        const keep = new Set(candidate.keep.map(String));
+        const matches = [];
+        tiles.forEach((tile, tileIndex) => {
+          const label = tile.getAttribute('aria-label')?.replace(/, Joker$/, '') || '';
+          const value = tile.querySelector('.american-value')?.textContent || '';
+          if (keep.has(label) || (value && [...keep].some(k => k === `${value}s`))) matches.push(tileIndex);
+        });
+        if (!matches.length && tiles.length) matches.push(0);
+        focusIndexes(matches);
+        setTimeout(() => document.querySelectorAll('.american-direction-card.hint-focus').forEach(x => x.classList.remove('hint-focus')), 1600);
+        el.classList.add('hint-focus');
+      };
+      el.addEventListener('click', activate);
+      el.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(); } });
       directionEl.appendChild(el);
     });
 
     const foot = document.createElement('div');
     foot.className = 'american-insight-foot';
-    foot.textContent = 'Scores are live strategy signals, not guaranteed winning lines. Re-evaluate after every pass and draw.';
+    foot.textContent = 'Scores are live strategy signals, not guaranteed winning lines. Tap a family to highlight the tiles supporting it.';
     directionEl.appendChild(foot);
   }
 
