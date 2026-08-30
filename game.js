@@ -67,6 +67,22 @@
     return true;
   }
 
+  function focusAdjacent(current,dx,dy){
+    const active=tiles.filter(t=>!t.removed);
+    if(!active.length)return;
+    const cx=current.x+26,cy=current.y+34;
+    const candidates=active.filter(t=>{
+      const tx=t.x+26,ty=t.y+34;
+      return dx<0?tx<cx-4:dx>0?tx>cx+4:dy<0?ty<cy-4:ty>cy+4;
+    });
+    if(!candidates.length)return;
+    candidates.sort((a,b)=>{
+      const da=(a.x+26-cx)**2+(a.y+34-cy)**2,db=(b.x+26-cx)**2+(b.y+34-cy)**2;
+      return da-db;
+    });
+    const el=board.querySelector(`[data-order="${candidates[0].order}"]`);if(el)el.focus();
+  }
+
   function render(){
     const focusedOrder=document.activeElement?.dataset?.order;
     board.innerHTML='';
@@ -74,6 +90,13 @@
       el.type='button';el.className=`tile ${free?'free':'blocked'}${selected===t?' selected':''}`;el.style.cssText=`left:${t.x}px;top:${t.y}px;z-index:${t.z*200+t.order}`;
       el.dataset.order=String(t.order);
       el.setAttribute('aria-label',`${t.data.label} tile${free?', open':', blocked'}`);el.setAttribute('aria-disabled',String(!free));
+      el.addEventListener('keydown',e=>{
+        if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){
+          e.preventDefault();
+          const dx=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0,dy=e.key==='ArrowUp'?-1:e.key==='ArrowDown'?1:0;
+          focusAdjacent(t,dx,dy);
+        }
+      });
       const glyph=document.createElement('span');glyph.className='glyph';glyph.textContent=t.data.glyph;el.appendChild(glyph);
       const small=document.createElement('span');small.className='small';small.textContent=t.data.kind==='suited'?(t.data.suit==='characters'?'萬':t.data.suit==='bamboo'?'索':'筒'):t.data.kind==='honor'?'字':t.data.key==='flower'?'花':'季';el.appendChild(small);el.addEventListener('click',()=>clickTile(t));board.appendChild(el);
     });
