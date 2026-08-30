@@ -43,8 +43,11 @@ jobs:
             const page = await browser.newPage({viewport:{width:1440,height:900}});
             await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
 
-            // American mode is the default and auto-starts a 152-tile table.
+            // American mode is the default. It must remain idle until the user explicitly starts a hand.
             if (await page.locator('#gameStyle').inputValue() !== 'american') throw new Error('American mode is not the default');
+            if (await page.locator('#americanHand .american-tile').count() !== 0) throw new Error('American hand should not auto-start');
+            if (await page.getByRole('button', {name:'Start game'}).count() < 1) throw new Error('American Start game control is missing');
+            await page.locator('#americanStart').click();
             if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('American hand did not start with 14 tiles');
             if (!(await page.locator('#americanStatus').textContent()).includes('Charleston')) throw new Error('American Charleston did not start');
             if (!(await page.locator('#americanPass').isDisabled())) throw new Error('American pass button should require three selected tiles');
@@ -81,7 +84,7 @@ jobs:
             if (await page.locator('#board .tile').count() !== 144) throw new Error('Mobile Solitaire render failed');
             const open = page.locator('#board .tile.free').first();
             if (await open.getAttribute('aria-label') === null) throw new Error('Mobile tile missing accessible label');
-            console.log('American + 72-pair Solitaire + mobile browser regression passed');
+            console.log('American explicit-start + 72-pair Solitaire + mobile browser regression passed');
             await browser.close();
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
@@ -93,7 +96,6 @@ jobs:
     needs: browser-regression
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -128,7 +130,9 @@ jobs:
             const response = await page.goto(`${target}/index.html`, {waitUntil:'networkidle'});
             if (!response || !response.ok()) throw new Error(`Live page HTTP failure: ${response?.status()}`);
             if (await page.locator('#gameStyle').inputValue() !== 'american') throw new Error('Deployed default is not American Mah Jongg');
-            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('Deployed American table did not start with 14 tiles');
+            if (await page.locator('#americanHand .american-tile').count() !== 0) throw new Error('Deployed American table auto-started unexpectedly');
+            await page.locator('#americanStart').click();
+            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('Deployed American Start game did not deal 14 tiles');
             await page.locator('#gameStyle').selectOption('solitaire');
             await page.getByRole('button', {name:'Start game'}).click();
             if (await page.locator('#board .tile').count() !== 144) throw new Error('Deployed Solitaire board did not start with 144 tiles');
