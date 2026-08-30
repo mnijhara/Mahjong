@@ -6,9 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   browser-regression:
     runs-on: ubuntu-latest
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -18,8 +22,15 @@ jobs:
         run: npm install --no-save playwright@1.55.0
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Start static server
-        run: python3 -m http.server 4173 >/tmp/mahjong-server.log 2>&1 &
+      - name: Start static server and wait for readiness
+        run: |
+          python3 -m http.server 4173 >/tmp/mahjong-server.log 2>&1 &
+          for i in {1..20}; do
+            if curl -fsS http://127.0.0.1:4173/index.html >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/mahjong-server.log
+          exit 1
       - name: Exercise the deterministic solvable game path
         run: |
           node - <<'NODE'
@@ -51,7 +62,16 @@ jobs:
             if (!(await page.locator('#modalTitle').textContent()).includes('Board cleared')) throw new Error('Completion title missing');
             await page.getByRole('button', {name:/Play again/}).click();
             if (await page.locator('#board .tile').count() !== 144) throw new Error('Play Again did not start a fresh board');
-            console.log('Complete 72-pair browser regression passed');
+            await page.setViewportSize({width:390,height:844});
+            await page.reload({waitUntil:'networkidle'});
+            await page.getByRole('button', {name:'Start game'}).click();
+            if (await page.locator('#board .tile').count() !== 144) throw new Error('Mobile render failed');
+            const open = page.locator('#board .tile.free').first();
+            if (await open.getAttribute('aria-label') === null) throw new Error('Mobile tile missing accessible label');
+            console.log('Complete 72-pair + mobile browser regression passed');
             await browser.close();
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
+      - name: Dump server log on failure
+        if: failure()
+        run: cat /tmp/mahjong-server.log || true
