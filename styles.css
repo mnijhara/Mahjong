@@ -2,3 +2,32 @@
 /* Accessibility hardening: blocked tiles are visually and semantically secondary, while open tiles retain a strong keyboard focus target. */
 .tile.blocked{pointer-events:none}.tile.free{min-width:44px;min-height:44px}.tile.free:focus-visible{outline:3px solid var(--gold);outline-offset:4px;z-index:1000;filter:brightness(1.04)}
 @media(max-width:800px){.tile.free{min-width:48px;min-height:48px}.bottom-bar .text-btn{padding:10px 8px}}
+
+/* Solitaire is a focused single-game surface on phones. The selector stays above the game,
+   while the board card occupies the remaining viewport instead of creating a long page. */
+body.solitaire-mode{overflow-x:hidden}
+@media(max-width:800px){
+  body.solitaire-mode .app-shell{height:100svh;min-height:100svh;padding:8px 10px;overflow:hidden}
+  body.solitaire-mode .topbar{height:38px;flex:0 0 38px}
+  body.solitaire-mode .brand{gap:7px}.solitaire-mode .brand-mark{width:32px;height:32px;border-radius:9px;font-size:17px}.solitaire-mode .brand-name{font-size:10px}.solitaire-mode .brand-sub{font-size:9px}
+  body.solitaire-mode .stats{gap:9px;margin-right:5px}.solitaire-mode .stats div{min-width:auto}.solitaire-mode .stats span{font-size:6px}.solitaire-mode .stats strong{font-size:10px;margin-top:1px}.solitaire-mode .icon-btn{width:32px;height:32px;border-radius:9px;font-size:14px}
+  body.solitaire-mode .hero{padding:7px 0 8px;gap:7px;flex-direction:column}
+  body.solitaire-mode .hero .eyebrow,body.solitaire-mode .hero .style-description,body.solitaire-mode .style-note,body.solitaire-mode footer{display:none}
+  body.solitaire-mode .hero h1{font-size:25px;line-height:1}
+  body.solitaire-mode .style-picker{width:100%;display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center}
+  body.solitaire-mode .style-picker>label{font-size:7px;letter-spacing:.12em}.solitaire-mode .style-picker>select{min-height:34px;font-size:11px}
+  body.solitaire-mode .tile-customizer{margin-top:3px;display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center;width:100%}
+  body.solitaire-mode .tile-customizer label{font-size:7px;margin:0}.solitaire-mode .tile-customizer .view-label{margin-top:0}.solitaire-mode .tile-customizer select{min-height:32px;font-size:10px}.solitaire-mode .tile-customizer .view-help{display:none}
+  body.solitaire-mode .actions{width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+  body.solitaire-mode .actions .btn{min-width:0;min-height:34px;padding:6px 4px;font-size:10px;border-radius:9px}
+  body.solitaire-mode .actions kbd{display:none}
+  body.solitaire-mode .game-card{border-radius:15px;box-shadow:0 10px 28px rgba(18,35,28,.1);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  body.solitaire-mode .board-wrap{height:calc(100svh - 165px);min-height:0;flex:1 1 auto;padding:4px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  body.solitaire-mode .board{width:1000px;height:590px;margin:0;transform-origin:center center;transform:scale(.34)}
+  body.solitaire-mode .bottom-bar{min-height:42px;height:42px;padding:4px 9px;gap:6px;flex:0 0 42px}
+  body.solitaire-mode .tip{font-size:8px;gap:5px;line-height:1.15;max-width:72%}.solitaire-mode .tip-dot{width:5px;height:5px}.solitaire-mode .text-btn{min-height:34px;padding:5px;font-size:9px;white-space:nowrap}
+}
+@media(min-width:391px) and (max-width:800px){body.solitaire-mode .board{transform:scale(.38)}}
+@media(min-width:430px) and (max-width:800px){body.solitaire-mode .board{transform:scale(.42)}}
+@media(max-height:680px) and (max-width:800px){body.solitaire-mode .hero{padding-top:3px;padding-bottom:4px}.solitaire-mode .hero h1{font-size:22px}.solitaire-mode .topbar{height:34px;flex-basis:34px}.solitaire-mode .brand-mark{width:29px;height:29px}.solitaire-mode .icon-btn{width:29px;height:29px}.solitaire-mode .style-picker>select,.solitaire-mode .tile-customizer select{min-height:29px}.solitaire-mode .actions .btn{min-height:30px}.solitaire-mode .board-wrap{height:calc(100svh - 145px)}.solitaire-mode .bottom-bar{height:38px;min-height:38px;flex-basis:38px}.solitaire-mode .board{transform:scale(.33)}}
+@media(max-width:380px) and (max-width:800px){body.solitaire-mode .board{transform:scale(.32)}}
