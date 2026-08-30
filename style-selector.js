@@ -110,4 +110,12 @@
   installTileCustomizer();
   select.addEventListener('change', renderStyle);
   renderStyle();
+
+  // Load the viewport fitter only after the DOM and style state exist. It uses
+  // ResizeObserver so portrait/landscape rotations and browser chrome changes
+  // always recalculate the scale from the actual available playing area.
+  const fitScript = document.createElement('script');
+  fitScript.src = 'solitaire-fit.js?v=20260830-1';
+  fitScript.defer = true;
+  document.head.appendChild(fitScript);
 })();
