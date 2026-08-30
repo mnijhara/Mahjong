@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  LIVE_URL: https://letsmahjong.online
+
 jobs:
   browser-regression:
     runs-on: ubuntu-latest
@@ -75,3 +78,55 @@ jobs:
       - name: Dump server log on failure
         if: failure()
         run: cat /tmp/mahjong-server.log || true
+
+  deployed-browser-smoke:
+    needs: browser-regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install Playwright
+        run: npm install --no-save playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Wait for Hostinger deployment
+        run: |
+          for i in {1..30}; do
+            if curl -fsS --max-time 15 "$LIVE_URL/index.html" >/tmp/live-index.html; then
+              echo "Live deployment reachable on attempt $i"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Live deployment did not become reachable within 5 minutes"
+          exit 1
+      - name: Exercise deployed site in Chromium
+        run: |
+          node - <<'NODE'
+          const { chromium } = require('playwright');
+          const target = process.env.LIVE_URL;
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            const page = await browser.newPage({viewport:{width:390,height:844}});
+            const errors = [];
+            page.on('console', msg => { if (msg.type() === 'error') errors.push(`console: ${msg.text()}`); });
+            page.on('pageerror', err => errors.push(`pageerror: ${err.message}`));
+            const response = await page.goto(`${target}/index.html`, {waitUntil:'networkidle'});
+            if (!response || !response.ok()) throw new Error(`Live page HTTP failure: ${response?.status()}`);
+            await page.getByRole('button', {name:'Start game'}).click();
+            if (await page.locator('#board .tile').count() !== 144) throw new Error('Deployed board did not start with 144 tiles');
+            const styleSelect = page.locator('#gameStyle');
+            if (await styleSelect.count() !== 1) throw new Error('Deployed style selector missing');
+            const american = page.locator('#gameStyle option[value="american"]');
+            if (await american.count() !== 1) throw new Error('American Mah Jongg option missing from deployment');
+            await styleSelect.selectOption('american');
+            if (!(await page.locator('body').innerText()).includes('American Mah Jongg')) throw new Error('American mode did not render on deployment');
+            if (errors.length) throw new Error(errors.join('\n'));
+            console.log('Deployed Chromium smoke passed');
+            await browser.close();
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
