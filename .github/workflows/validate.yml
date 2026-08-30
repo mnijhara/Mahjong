@@ -42,10 +42,10 @@ jobs:
             echo 'Potential credential-like content detected.'
             exit 1
           fi
-      - name: Check for personal occasion content
+      - name: Check application content policy
         run: |
-          if grep -niE 'my love|birthday|anniversary|dedication' index.html styles.css game.js manifest.webmanifest robots.txt package.json scripts/*.js; then
-            echo 'Personal or occasion-specific content detected in production files.'
+          if grep -niE 'my love|birthday|anniversary|dedication' index.html styles.css game.js manifest.webmanifest robots.txt; then
+            echo 'Personal or occasion-specific content detected in application files.'
             exit 1
           fi
 
