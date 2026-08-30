@@ -73,8 +73,7 @@
       el.dataset.order=String(t.order);
       el.setAttribute('aria-label',`${t.data.label} tile${free?', open':', blocked'}`);el.setAttribute('aria-disabled',String(!free));
       const glyph=document.createElement('span');glyph.className='glyph';glyph.textContent=t.data.glyph;el.appendChild(glyph);
-      const small=document.createElement('span');small.className='small';small.textContent=t.data.kind==='suited'?(t.data.suit==='characters'?'萬':t.data.suit==='bamboo'?'索':'筒'):t.data.kind==='honor'?'字':t.data.key==='flower'?'花':'季';el.appendChild(small);
-      el.addEventListener('click',()=>clickTile(t));board.appendChild(el);
+      const small=document.createElement('span');small.className='small';small.textContent=t.data.kind==='suited'?(t.data.suit==='characters'?'萬':t.data.suit==='bamboo'?'索':'筒'):t.data.kind==='honor'?'字':t.data.key==='flower'?'花':'季';el.appendChild(small);el.addEventListener('click',()=>clickTile(t));board.appendChild(el);
     });
     if(focusedOrder!==undefined){const next=board.querySelector(`[data-order="${focusedOrder}"]`);if(next)next.focus();}
     update();
@@ -91,8 +90,8 @@
   }
   function findPair(){const free=tiles.filter(t=>!t.removed&&isFree(t));for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)if(same(free[i].data,free[j].data))return [free[i],free[j]];return null;}
   function cancelHint(){hintToken++;selected=null;}
-  function undo(){if(!started||!history.length)return;cancelHint();const pair=history.pop();pair[0].removed=false;pair[1].removed=false;moves=Math.max(0,moves-1);pairs=Math.max(0,pairs-1);update();render();flash('Move undone.');beep(320,.06);}
-  function update(){movesEl.textContent=moves;pairsEl.textContent=`${pairs} / 72`;if(undoBtn)undoBtn.disabled=!started||history.length===0;}
+  function undo(){if(!started)return;if(!history.length){if(selected!==null){cancelHint();render();flash('Selection cleared.');}return;}cancelHint();const pair=history.pop();pair[0].removed=false;pair[1].removed=false;moves=Math.max(0,moves-1);pairs=Math.max(0,pairs-1);update();render();flash('Move undone.');beep(320,.06);}
+  function update(){movesEl.textContent=moves;pairsEl.textContent=`${pairs} / 72`;if(undoBtn)undoBtn.disabled=!started||(!history.length&&selected===null);}
   function flash(text){messageEl.textContent=text;messageEl.classList.remove('hidden');clearTimeout(flash.t);flash.t=setTimeout(()=>messageEl.classList.add('hidden'),1300);}
   function formatTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
   function tick(){timeEl.textContent=formatTime(Math.floor((Date.now()-startTime)/1000));}
