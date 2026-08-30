@@ -33,7 +33,7 @@ for (const marker of ['152', 'joker', 'charleston', 'americanPass', 'East', 'upd
 }
 
 const insights = fs.readFileSync(path.join(root, 'american-insights.js'), 'utf8');
-for (const marker of ['Pung', 'Kong', 'Quint', 'Joker', 'Best directions']) {
+for (const marker of ['Pung', 'Kong', 'Quint', 'Joker', 'americanDirections']) {
   if (!insights.toLowerCase().includes(marker.toLowerCase())) throw new Error(`American insights marker is missing: ${marker}`);
 }
 
