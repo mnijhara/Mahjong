@@ -10,7 +10,6 @@
   const showInsights = $('americanShowInsights');
   const phaseLabel = $('americanPhaseLabel');
   const centerBanner = $('americanCenterBanner');
-  const gate = $('americanOrientationGate');
 
   function syncTileStyle(value) {
     const mainSelect = $('tileStyle');
@@ -66,12 +65,6 @@
     const tile = document.querySelector('#americanHand .american-tile:not(.selected)');
     if (tile) tile.focus();
   });
-
-  $('americanOrientationDismiss')?.addEventListener('click', () => {
-    gate?.classList.add('dismissed');
-    try { sessionStorage.setItem('american-orientation-dismissed', '1'); } catch (e) {}
-  });
-  try { if (sessionStorage.getItem('american-orientation-dismissed') === '1') gate?.classList.add('dismissed'); } catch (e) {}
 
   if (tileSelect) tileSelect.value = currentTileStyle();
   setInsightsVisible(true);
