@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  TEST_VERSION: persisted-solitaire-v1
+
 jobs:
   browser-regression:
     runs-on: ubuntu-latest
@@ -112,7 +115,7 @@ jobs:
             if (await page.locator('#board .tile').count() !== 142) throw new Error('Mobile Solitaire saved-game restore failed');
             if (errors.length) throw new Error(errors.join('\n'));
             await browser.close();
-            console.log('American explicit-start + Charleston + Solitaire save/resume + shuffle recovery + mobile browser regression passed');
+            console.log(`American explicit-start + Charleston + Solitaire save/resume + shuffle recovery + mobile browser regression passed (${process.env.TEST_VERSION})`);
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
       - name: Dump server log on failure
