@@ -3,7 +3,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
-const required = ['index.html', 'styles.css', 'style-picker.css', 'american.css', 'american-insights.js', 'game.js', 'american-game.js', 'style-selector.js', 'manifest.webmanifest', 'robots.txt'];
+const required = ['index.html', 'styles.css', 'style-picker.css', 'american.css', 'american-insights.js', 'game.js', 'american-game.js', 'style-selector.js', 'manifest.webmanifest', 'robots.txt', 'icons/mahjong-192.svg'];
 
 for (const file of required) {
   const full = path.join(root, file);
@@ -40,6 +40,21 @@ for (const marker of ['Pung', 'Kong', 'Quint', 'Joker', 'americanDirections']) {
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
 for (const key of ['name', 'short_name', 'start_url', 'display']) {
   if (!manifest[key]) throw new Error(`Manifest field is missing: ${key}`);
+}
+if (!Array.isArray(manifest.icons) || manifest.icons.length === 0) {
+  throw new Error('Manifest must define at least one application icon.');
+}
+for (const icon of manifest.icons) {
+  if (!icon.src || !icon.sizes || !icon.type) throw new Error('Manifest icon is missing src, sizes, or type.');
+  const iconPath = path.resolve(root, icon.src);
+  if (!iconPath.startsWith(root + path.sep) || !fs.existsSync(iconPath) || fs.statSync(iconPath).size === 0) {
+    throw new Error(`Manifest icon asset is missing or invalid: ${icon.src}`);
+  }
+}
+
+const iconSvg = fs.readFileSync(path.join(root, 'icons/mahjong-192.svg'), 'utf8');
+if (!/<svg\b/i.test(iconSvg) || !/viewBox=/i.test(iconSvg)) {
+  throw new Error('Mahjong app icon must be a valid SVG with a viewBox.');
 }
 
 console.log('Mahjong production build validation passed.');
