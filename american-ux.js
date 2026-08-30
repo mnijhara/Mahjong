@@ -52,9 +52,9 @@
 
   configBtn?.addEventListener('click', () => openSettings(!settings.classList.contains('open')));
   suggestedBtn?.addEventListener('click', () => {
-    const visible = !insights || insights.classList.contains('hidden');
-    setInsightsVisible(visible);
-    if (visible) insights?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const visible = Boolean(insights && !insights.classList.contains('hidden'));
+    setInsightsVisible(!visible);
+    if (!visible) insights?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
   showInsights?.addEventListener('change', () => setInsightsVisible(showInsights.checked));
   tileSelect?.addEventListener('change', () => syncTileStyle(tileSelect.value));
