@@ -89,7 +89,10 @@
     players.forEach((player, index) => {
       const card = document.createElement('section');
       card.className = `player-card${index === 0 ? ' human' : ''}${index === turn && phase === 'play' ? ' active' : ''}`;
-      card.innerHTML = `<div class="player-head"><strong>${names[index]}</strong><span>${index === 0 ? 'You' : 'Computer'}</span></div><div class="rack-count">${player.hand.length} tiles</div><div class="mini-rack" aria-label="${names[index]} hidden rack"></div>`;
+      const hiddenRack = index === 0
+        ? '<span class="rack-placeholder">Your tiles are shown below</span>'
+        : Array.from({ length: player.hand.length }, (_, tileIndex) => `<span class="mini-tile-back" aria-hidden="true"><span>${tileIndex + 1}</span></span>`).join('');
+      card.innerHTML = `<div class="player-head"><strong>${names[index]}</strong><span>${index === 0 ? 'You' : 'Computer'}</span></div><div class="rack-count">${player.hand.length} tiles${index === 0 ? ' · visible below' : ' · concealed'}</div><div class="mini-rack ${index === 0 ? 'your-rack' : 'opponent-rack'}" aria-label="${index === 0 ? 'Your rack is shown below' : `${names[index]} concealed rack, ${player.hand.length} tiles face down`}" role="img">${hiddenRack}</div>`;
       rack.appendChild(card);
     });
   }
