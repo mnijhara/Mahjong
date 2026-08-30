@@ -69,14 +69,30 @@ jobs:
             if (await page.locator('#board .tile.selected').count() !== 1) throw new Error('Solitaire tile selection failed');
             await page.getByRole('button', {name:/Undo/}).click();
             if (await page.locator('#board .tile.selected').count() !== 0) throw new Error('Solitaire undo failed');
-            await page.getByRole('button', {name:/Hint/}).click();
-            await page.waitForTimeout(150);
-            if (await page.locator('#board .tile.selected').count() < 1) throw new Error('Solitaire hint failed');
-            await page.getByRole('button', {name:/Shuffle remaining/}).click();
-            if (await page.locator('#board .tile').count() !== 144) throw new Error('Solitaire shuffle changed tile count');
 
-            // Shuffle is a recovery control: every successful shuffle must leave at least
-            // one legal matching pair that the game's own Hint engine can find.
+            // Make a real match, then prove the in-progress board survives a full reload.
+            await page.getByRole('button', {name:/Hint/}).click();
+            await page.waitForTimeout(100);
+            const firstHintOrder = await page.locator('#board .tile.selected').getAttribute('data-order');
+            if (!firstHintOrder) throw new Error('Hint did not select its first tile');
+            await page.locator(`[data-order="${firstHintOrder}"]`).click();
+            await page.waitForTimeout(700);
+            const secondHint = page.locator('#board .tile.selected');
+            if (await secondHint.count() !== 1) throw new Error('Hint did not reveal its matching tile');
+            await secondHint.click();
+            if (await page.locator('#board .tile').count() !== 142) throw new Error('Matched pair did not remove two tiles');
+            if ((await page.locator('#pairs').textContent()) !== '1 / 72') throw new Error('Pair counter did not increment');
+            const savedBeforeReload = await page.evaluate(() => Boolean(localStorage.getItem('mahjong-solitaire-save-v1')));
+            if (!savedBeforeReload) throw new Error('In-progress Solitaire game was not saved');
+
+            await page.reload({waitUntil:'networkidle'});
+            if (await page.locator('#board .tile').count() !== 142) throw new Error('Saved Solitaire board did not restore after reload');
+            if ((await page.locator('#pairs').textContent()) !== '1 / 72') throw new Error('Saved pair counter did not restore');
+            await page.selectOption('#gameStyle', 'solitaire');
+            if ((await page.locator('#startGame').textContent()).trim() !== 'Resume game') throw new Error('Resume game affordance missing');
+
+            await page.getByRole('button', {name:/Shuffle remaining/}).click();
+            if (await page.locator('#board .tile').count() !== 142) throw new Error('Solitaire shuffle changed tile count');
             for (let run = 0; run < 20; run++) {
               await page.getByRole('button', {name:/Shuffle remaining/}).click();
               await page.getByRole('button', {name:/Hint/}).click();
@@ -91,11 +107,11 @@ jobs:
             await page.locator('#americanStart').click();
             if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('Mobile American Start game did not deal 14 tiles');
             await page.selectOption('#gameStyle', 'solitaire');
-            await page.getByRole('button', {name:'Start game'}).click();
-            if (await page.locator('#board .tile').count() !== 144) throw new Error('Mobile Solitaire render failed');
+            await page.getByRole('button', {name:/Resume game|Start game/}).click();
+            if (await page.locator('#board .tile').count() !== 142) throw new Error('Mobile Solitaire saved-game restore failed');
             if (errors.length) throw new Error(errors.join('\n'));
             await browser.close();
-            console.log('American explicit-start + Charleston + Solitaire shuffle recovery + mobile browser regression passed');
+            console.log('American explicit-start + Charleston + Solitaire save/resume + shuffle recovery + mobile browser regression passed');
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
       - name: Dump server log on failure
