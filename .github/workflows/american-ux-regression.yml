@@ -63,9 +63,10 @@ jobs:
             if (await page.locator('#americanHand .american-tile.insight-focus').count() < 1) throw new Error('American Hint did not highlight a useful tile');
 
             await page.locator('#americanSuggested').click();
-            if (await page.locator('#americanInsights').isVisible()) throw new Error('Suggested Hands control did not hide guidance');
+            if (!await page.locator('#americanInsights').isVisible()) throw new Error('Suggested Hands control did not open guidance');
             await page.locator('#americanSuggested').click();
-            if (!await page.locator('#americanInsights').isVisible()) throw new Error('Suggested Hands control did not restore guidance');
+            if (await page.locator('#americanInsights').isVisible()) throw new Error('Suggested Hands control did not close guidance');
+            await page.locator('#americanSuggested').click();
             await page.locator('#americanDirections .american-direction-card').first().click();
             if (await page.locator('#americanHand .american-tile.insight-focus').count() < 1) throw new Error('Suggested hand card did not highlight supporting tiles');
 
