@@ -45,6 +45,23 @@
     return deck;
   }
 
+  function buildSolvableRemovalOrder(active){
+    const remaining=new Set(active.map(t=>t.order));
+    const order=[];
+    while(remaining.size){
+      const free=[...remaining].map(orderId=>tiles[orderId]).filter(Boolean).filter(t=>isFree(t,[...remaining].map(orderId=>tiles[orderId])));
+      if(free.length<2)return null;
+      shuffle(free);
+      const first=free[0];
+      const afterFirst=[...remaining].filter(orderId=>orderId!==first.order).map(orderId=>tiles[orderId]);
+      const secondCandidates=free.slice(1).filter(t=>isFree(t,afterFirst));
+      const second=secondCandidates[0]||free[1];
+      order.push(first.order,second.order);
+      remaining.delete(first.order);remaining.delete(second.order);
+    }
+    return order;
+  }
+
   function safeShuffleRemaining(){
     const active=tiles.filter(t=>!t.removed);
     if(active.length<2)return false;
@@ -59,10 +76,11 @@
     for(let i=0;i<flowers.length;i+=2)groups.push([flowers[i],flowers[i+1]]);
     for(let i=0;i<seasons.length;i+=2)groups.push([seasons[i],seasons[i+1]]);
     if(groups.length!==active.length/2)return false;
+    const removalOrder=buildSolvableRemovalOrder(active);
+    if(!removalOrder)return false;
     const before=new Map(active.map(t=>[t.order,{...t.data}]));
     shuffle(groups);
-    const activeOrder=solutionOrder.filter(index=>!tiles[index].removed);
-    for(let i=0;i<groups.length;i++){const pair=groups[i].slice();shuffle(pair);tiles[activeOrder[i*2]].data=pair[0];tiles[activeOrder[i*2+1]].data=pair[1];}
+    for(let i=0;i<groups.length;i++){const pair=groups[i].slice();shuffle(pair);tiles[removalOrder[i*2]].data=pair[0];tiles[removalOrder[i*2+1]].data=pair[1];}
     history.push({type:'shuffle',before});
     return true;
   }
