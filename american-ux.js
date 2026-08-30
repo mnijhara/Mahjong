@@ -37,7 +37,7 @@
     const status = $('americanStatus')?.textContent || 'Ready';
     if (phaseLabel) {
       if (/Charleston/i.test(status)) phaseLabel.textContent = 'Charleston';
-      else if (/draw|discard|turn/i.test(status)) phaseLabel.textContent = 'Play';
+      else if (/draw|discard|turn|computer/i.test(status)) phaseLabel.textContent = 'Play';
       else phaseLabel.textContent = 'Ready';
     }
     if (centerBanner) centerBanner.innerHTML = `${status.replace(/\.$/, '')} <span>· Follow the highlighted controls below</span>`;
@@ -50,20 +50,19 @@
   }
 
   configBtn?.addEventListener('click', () => openSettings(!settings.classList.contains('open')));
-  suggestedBtn?.addEventListener('click', () => setInsightsVisible(!insights || insights.classList.contains('hidden')));
+  suggestedBtn?.addEventListener('click', () => {
+    const visible = !insights || insights.classList.contains('hidden');
+    setInsightsVisible(visible);
+    if (visible) insights?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
   showInsights?.addEventListener('change', () => setInsightsVisible(showInsights.checked));
   tileSelect?.addEventListener('change', () => syncTileStyle(tileSelect.value));
 
   $('americanNewHand')?.addEventListener('click', () => window.startAmericanGame?.());
   $('americanHint')?.addEventListener('click', () => {
+    if (window.americanHint) { window.americanHint(); return; }
     const combo = document.querySelector('#americanCombinations .american-combo-card');
-    if (combo) {
-      combo.click();
-      $('americanStatus')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      return;
-    }
-    const tile = document.querySelector('#americanHand .american-tile:not(.selected)');
-    if (tile) tile.focus();
+    if (combo) combo.click();
   });
 
   if (tileSelect) tileSelect.value = currentTileStyle();
