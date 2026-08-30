@@ -66,19 +66,23 @@
   }
 
   function render(){
+    const focusedOrder=document.activeElement?.dataset?.order;
     board.innerHTML='';
     tiles.forEach(t=>{if(t.removed)return;const free=isFree(t),el=document.createElement('button');
       el.type='button';el.className=`tile ${free?'free':'blocked'}${selected===t?' selected':''}`;el.style.cssText=`left:${t.x}px;top:${t.y}px;z-index:${t.z*200+t.order}`;
+      el.dataset.order=String(t.order);
       el.setAttribute('aria-label',`${t.data.label} tile${free?', open':', blocked'}`);el.setAttribute('aria-disabled',String(!free));
       const glyph=document.createElement('span');glyph.className='glyph';glyph.textContent=t.data.glyph;el.appendChild(glyph);
       const small=document.createElement('span');small.className='small';small.textContent=t.data.kind==='suited'?(t.data.suit==='characters'?'萬':t.data.suit==='bamboo'?'索':'筒'):t.data.kind==='honor'?'字':t.data.key==='flower'?'花':'季';el.appendChild(small);
       el.addEventListener('click',()=>clickTile(t));board.appendChild(el);
     });
+    if(focusedOrder!==undefined){const next=board.querySelector(`[data-order="${focusedOrder}"]`);if(next)next.focus();}
     update();
   }
   function clickTile(t){
-    if(!started)return;if(!isFree(t)){flash('That tile is blocked.');return;}
+    if(!started)return;
     cancelHint();
+    if(!isFree(t)){flash('That tile is blocked.');return;}
     if(selected===t){selected=null;render();return;}if(!selected){selected=t;render();return;}
     if(same(selected.data,t.data)){
       const a=selected,b=t;selected=null;history.push([a,b]);a.removed=true;b.removed=true;moves++;pairs++;update();render();beep(620,.07);
