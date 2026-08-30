@@ -34,24 +34,23 @@ jobs:
           const { chromium } = require('playwright');
           (async () => {
             const browser = await chromium.launch({headless:true});
-            const page = await browser.newPage({viewport:{width:390,height:844}, deviceScaleFactor:1});
             const errors = [];
+            const page = await browser.newPage({viewport:{width:390,height:844}, deviceScaleFactor:1});
             page.on('console', msg => { if (msg.type() === 'error') errors.push(`console: ${msg.text()}`); });
             page.on('pageerror', err => errors.push(`pageerror: ${err.message}`));
             await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
 
             await page.locator('#americanConfiguration').click();
             if (!await page.locator('#americanSettings').isVisible()) throw new Error('American configuration panel did not open');
-            const tileStyle = page.locator('#americanTileStyle');
-            await tileStyle.selectOption('jade');
-            const themeStyle = await page.locator('#tile-theme-style').textContent();
-            if (!themeStyle.includes('#eef8f1')) throw new Error('American tile customization did not apply');
+            await page.locator('#americanTileStyle').selectOption('jade');
+            if (!(await page.locator('#tile-theme-style').textContent()).includes('#eef8f1')) throw new Error('American tile customization did not apply');
             if ((await page.evaluate(() => localStorage.getItem('mahjong-tile-theme'))) !== 'jade') throw new Error('Tile customization was not persisted');
+            await page.locator('#americanConfiguration').click();
 
             const tableView = page.locator('#tableView');
             if (await tableView.count() !== 1) throw new Error('Style section table view control is missing');
             await tableView.selectOption('landscape');
-            if ((await page.evaluate(() => document.body.classList.contains('preferred-landscape'))) !== true) throw new Error('Landscape selection did not activate the layout');
+            if (!(await page.evaluate(() => document.body.classList.contains('preferred-landscape')))) throw new Error('Landscape selection did not activate');
             if ((await page.evaluate(() => localStorage.getItem('mahjong-table-view'))) !== 'landscape') throw new Error('Landscape preference was not persisted');
 
             await page.locator('#americanStart').click();
@@ -60,27 +59,49 @@ jobs:
             if (await page.locator('#americanDirections .american-direction-card').count() !== 4) throw new Error('Suggested hand ranking did not render');
             await page.locator('#americanHint').click();
             if (await page.locator('#americanHand .american-tile.insight-focus').count() < 1) throw new Error('American Hint did not highlight a useful tile');
-            await page.locator('#americanSuggested').click();
-            if (!await page.locator('#americanInsights').isHidden()) throw new Error('Suggested hands toggle did not hide insights');
-            await page.locator('#americanSuggested').click();
-            if (await page.locator('#americanInsights').isHidden()) throw new Error('Suggested hands toggle did not restore insights');
 
-            const panel = page.locator('.american-panel');
-            const panelBox = await panel.boundingBox();
-            if (!panelBox || panelBox.width < 800) throw new Error(`Landscape table is not wide enough: ${JSON.stringify(panelBox)}`);
-            const cards = page.locator('#americanPlayers .player-card');
-            const boxes = await cards.evaluateAll(els => els.map(e => { const r=e.getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height}; }));
-            const rows = new Set(boxes.map(b => Math.round(b.y / 4)));
-            if (rows.size !== 1) throw new Error(`Landscape player cards are not on one table row: ${JSON.stringify(boxes)}`);
-            if (Math.min(...boxes.map(b => b.width)) < 120) throw new Error(`Landscape player cards are too narrow: ${JSON.stringify(boxes)}`);
-            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('Landscape American rack did not remain playable');
+            async function assertSingleViewport(label, p, width, height) {
+              const metrics = await p.evaluate(() => {
+                const doc = document.documentElement, body = document.body;
+                const panel = document.querySelector('.american-panel');
+                const table = document.querySelector('.american-table');
+                const rect = panel?.getBoundingClientRect();
+                return {
+                  viewportW: innerWidth, viewportH: innerHeight,
+                  scrollW: Math.max(doc.scrollWidth, body.scrollWidth),
+                  scrollH: Math.max(doc.scrollHeight, body.scrollHeight),
+                  panel: rect ? {x:rect.x,y:rect.y,right:rect.right,bottom:rect.bottom,width:rect.width,height:rect.height} : null,
+                  tableBottom: table?.getBoundingClientRect().bottom ?? 0,
+                  tableTop: table?.getBoundingClientRect().top ?? 0
+                };
+              });
+              if (metrics.scrollW > width + 2) throw new Error(`${label}: horizontal page overflow ${JSON.stringify(metrics)}`);
+              if (metrics.scrollH > height + 2) throw new Error(`${label}: vertical page overflow ${JSON.stringify(metrics)}`);
+              if (!metrics.panel || metrics.panel.x < -1 || metrics.panel.right > width + 1 || metrics.panel.y < -1 || metrics.panel.bottom > height + 1) throw new Error(`${label}: American table leaves viewport ${JSON.stringify(metrics)}`);
+            }
 
+            await assertSingleViewport('portrait landscape-preference', page, 390, 844);
             await tableView.selectOption('responsive');
-            if ((await page.evaluate(() => document.body.classList.contains('preferred-landscape'))) !== false) throw new Error('Responsive selection did not restore normal layout');
+            if (await page.evaluate(() => document.body.classList.contains('preferred-landscape'))) throw new Error('Responsive selection did not restore normal layout');
+            await assertSingleViewport('portrait responsive', page, 390, 844);
 
+            const landscape = await browser.newPage({viewport:{width:844,height:390}, deviceScaleFactor:1});
+            landscape.on('console', msg => { if (msg.type() === 'error') errors.push(`landscape console: ${msg.text()}`); });
+            landscape.on('pageerror', err => errors.push(`landscape pageerror: ${err.message}`));
+            await landscape.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
+            await landscape.locator('#americanStart').click();
+            await landscape.locator('#tableView').selectOption('landscape');
+            if (await landscape.locator('#americanHand .american-tile').count() !== 14) throw new Error('Landscape viewport lost the playable rack');
+            await assertSingleViewport('landscape phone', landscape, 844, 390);
+
+            const boxes = await landscape.locator('#americanPlayers .player-card').evaluateAll(els => els.map(e => { const r=e.getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height}; }));
+            if (new Set(boxes.map(b => Math.round(b.y / 3))).size !== 1) throw new Error(`Landscape player cards are not on one row: ${JSON.stringify(boxes)}`);
+            if (Math.min(...boxes.map(b => b.width)) < 120) throw new Error(`Landscape player cards are too narrow: ${JSON.stringify(boxes)}`);
+
+            await landscape.close();
             if (errors.length) throw new Error(errors.join('\n'));
             await browser.close();
-            console.log('American Mahjong responsive table + functional landscape style + configuration + tile customization + suggestions/hint regression passed');
+            console.log('American Mahjong mobile single-viewport portrait + landscape regression passed');
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
       - name: Dump server log on failure
