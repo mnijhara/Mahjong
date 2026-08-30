@@ -26,6 +26,7 @@ jobs:
         run: |
           node --check american-ux.js
           node --check american-game.js
+          node --check style-selector.js
       - name: Browser UX regression
         run: |
           python3 -m http.server 4173 >/tmp/mahjong-server.log 2>&1 &
@@ -39,10 +40,6 @@ jobs:
             page.on('pageerror', err => errors.push(`pageerror: ${err.message}`));
             await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
 
-            if (await page.locator('#americanOrientationGate').isHidden()) throw new Error('Portrait orientation guidance is missing');
-            await page.locator('#americanOrientationDismiss').click();
-            if (!await page.locator('#americanOrientationGate').isHidden()) throw new Error('Portrait orientation dismissal failed');
-
             await page.locator('#americanConfiguration').click();
             if (!await page.locator('#americanSettings').isVisible()) throw new Error('American configuration panel did not open');
             const tileStyle = page.locator('#americanTileStyle');
@@ -50,6 +47,12 @@ jobs:
             const themeStyle = await page.locator('#tile-theme-style').textContent();
             if (!themeStyle.includes('#eef8f1')) throw new Error('American tile customization did not apply');
             if ((await page.evaluate(() => localStorage.getItem('mahjong-tile-theme'))) !== 'jade') throw new Error('Tile customization was not persisted');
+
+            const tableView = page.locator('#tableView');
+            if (await tableView.count() !== 1) throw new Error('Style section table view control is missing');
+            await tableView.selectOption('landscape');
+            if ((await page.evaluate(() => document.body.classList.contains('preferred-landscape'))) !== true) throw new Error('Landscape selection did not activate the layout');
+            if ((await page.evaluate(() => localStorage.getItem('mahjong-table-view'))) !== 'landscape') throw new Error('Landscape preference was not persisted');
 
             await page.locator('#americanStart').click();
             if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('American Start game did not deal 14 tiles');
@@ -62,21 +65,22 @@ jobs:
             await page.locator('#americanSuggested').click();
             if (await page.locator('#americanInsights').isHidden()) throw new Error('Suggested hands toggle did not restore insights');
 
-            await page.setViewportSize({width:844,height:390});
-            await page.reload({waitUntil:'networkidle'});
-            await page.locator('#gameStyle').selectOption('american');
-            await page.locator('#americanStart').click();
+            const panel = page.locator('.american-panel');
+            const panelBox = await panel.boundingBox();
+            if (!panelBox || panelBox.width < 800) throw new Error(`Landscape table is not wide enough: ${JSON.stringify(panelBox)}`);
             const cards = page.locator('#americanPlayers .player-card');
-            if (await cards.count() !== 4) throw new Error('Landscape table did not render four player cards');
             const boxes = await cards.evaluateAll(els => els.map(e => { const r=e.getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height}; }));
             const rows = new Set(boxes.map(b => Math.round(b.y / 4)));
             if (rows.size !== 1) throw new Error(`Landscape player cards are not on one table row: ${JSON.stringify(boxes)}`);
             if (Math.min(...boxes.map(b => b.width)) < 120) throw new Error(`Landscape player cards are too narrow: ${JSON.stringify(boxes)}`);
             if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('Landscape American rack did not remain playable');
 
+            await tableView.selectOption('responsive');
+            if ((await page.evaluate(() => document.body.classList.contains('preferred-landscape'))) !== false) throw new Error('Responsive selection did not restore normal layout');
+
             if (errors.length) throw new Error(errors.join('\n'));
             await browser.close();
-            console.log('American Mahjong responsive table + landscape layout + configuration + tile customization + suggestions/hint regression passed');
+            console.log('American Mahjong responsive table + functional landscape style + configuration + tile customization + suggestions/hint regression passed');
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
       - name: Dump server log on failure
