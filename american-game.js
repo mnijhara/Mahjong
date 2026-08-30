@@ -88,7 +88,7 @@
     }
     players.forEach((player, index) => {
       const card = document.createElement('section');
-      card.className = `player-card${index === 0 ? ' human' : ''}${index === turn && phase === 'play' ? ' active' : ''}`;
+      card.className = `player-card seat-${names[index].toLowerCase()}${index === 0 ? ' human' : ''}${index === turn && phase === 'play' ? ' active' : ''}`;
       const hiddenRack = index === 0
         ? '<span class="rack-placeholder">Your tiles are shown below</span>'
         : Array.from({ length: player.hand.length }, (_, tileIndex) => `<span class="mini-tile-back" aria-hidden="true"><span>${tileIndex + 1}</span></span>`).join('');
@@ -173,11 +173,19 @@
     players[0].hand.push(wall.pop());
     players.forEach(player => player.hand.sort((a,b) => a.label.localeCompare(b.label)));
     discards = []; selected = []; passIndex = 0; turn = 0; phase = 'charleston'; started = true;
-    setStatus('First Charleston: choose three unwanted tiles. Jokers cannot be passed.');
+    document.body.classList.add('american-live-game');
+    setStatus('Charleston: First round: right. Select 3 tiles to pass.');
     const title = $('styleNoteTitle');
     const copy = $('styleNoteCopy');
     if (title) title.textContent = 'American Mah Jongg';
     if (copy) copy.textContent = '152-tile table · 4 players · Charleston first · 13-tile hands, East starts with 14.';
+    render();
+  }
+
+  function endGame() {
+    started = false; phase = 'idle'; players = []; wall = []; discards = []; selected = []; passIndex = 0; turn = 0;
+    document.body.classList.remove('american-live-game');
+    setStatus('Ready to deal a new hand.');
     render();
   }
 
@@ -187,13 +195,8 @@
     if (solitaire) solitaire.classList.toggle('hidden', show);
     const actions = document.querySelector('.actions');
     if (actions) actions.classList.toggle('hidden', show);
-    if (show) {
-      if (!started) {
-        phase = 'idle';
-        setStatus('Ready to deal a new hand.');
-        render();
-      }
-    }
+    if (!show) document.body.classList.remove('american-live-game');
+    if (show && !started) { phase = 'idle'; setStatus('Ready to deal a new hand.'); render(); }
   }
 
   window.startAmericanGame = startGame;
@@ -201,6 +204,8 @@
 
   $('americanPass')?.addEventListener('click', passCharleston);
   $('americanStart')?.addEventListener('click', startGame);
+  $('americanNewHand')?.addEventListener('click', startGame);
+  $('americanEndGame')?.addEventListener('click', endGame);
   $('americanHand')?.addEventListener('click', (event) => {
     const tile = event.target.closest('.american-tile');
     if (!tile || phase !== 'play') return;
