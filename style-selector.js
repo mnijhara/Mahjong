@@ -56,16 +56,32 @@
     });
   }
 
+  function ensureLandscapeNotice() {
+    let notice = document.getElementById('landscapeRotateNotice');
+    const table = document.getElementById('americanTable');
+    if (!notice && table) {
+      notice = document.createElement('div');
+      notice.id = 'landscapeRotateNotice';
+      notice.className = 'landscape-rotate-notice';
+      notice.setAttribute('role', 'status');
+      notice.textContent = 'Rotate your phone to landscape for the full four-seat table.';
+      table.parentNode.insertBefore(notice, table);
+    }
+    return notice;
+  }
+
   function applyTableView(value) {
     const landscape = value === 'landscape';
     document.body.classList.toggle('preferred-landscape', landscape);
+    const notice = ensureLandscapeNotice();
+    if (notice) notice.setAttribute('aria-hidden', String(!landscape));
     const help = document.getElementById('tableViewHelp');
     if (help) help.textContent = landscape
-      ? 'Landscape uses a wide four-seat table and keeps the rack horizontally playable.'
+      ? 'Landscape uses a wide four-seat table. Rotate the phone to see the full table.'
       : 'Responsive adapts the table to the current screen size.';
 
-    // Use the native orientation API when the browser allows it. The CSS layout remains
-    // the reliable fallback because normal browser tabs cannot always lock device rotation.
+    // A normal browser tab cannot reliably rotate the physical device. Try the native
+    // orientation API where supported, while keeping the responsive layout as fallback.
     try {
       if (screen.orientation?.unlock && !landscape) screen.orientation.unlock();
       if (screen.orientation?.lock && landscape) screen.orientation.lock('landscape').catch(() => {});
