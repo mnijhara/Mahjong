@@ -12,7 +12,7 @@ permissions:
 jobs:
   browser-regression:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -75,6 +75,45 @@ jobs:
             await page.getByRole('button', {name:/Shuffle remaining/}).click();
             if (await page.locator('#board .tile').count() !== 144) throw new Error('Solitaire shuffle changed tile count');
 
+            const freePair = async () => {
+              const items = await page.locator('#board .tile.free').evaluateAll(els => els.map(el => ({
+                order: el.dataset.order,
+                label: el.getAttribute('aria-label') || '',
+                category: el.querySelector('.small')?.textContent || ''
+              })));
+              const groups = new Map();
+              for (const item of items) {
+                const base = item.label.replace(/ tile,? (open|blocked)$/, '');
+                const key = item.category === '花' || item.category === '季' ? item.category : base;
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(item);
+              }
+              for (const group of groups.values()) if (group.length >= 2) return group.slice(0, 2);
+              return null;
+            };
+
+            const solveCurrentBoard = async () => {
+              for (let move = 0; move < 72; move++) {
+                const pair = await freePair();
+                if (!pair) throw new Error(`No matching open pair after ${move} moves`);
+                await page.locator(`[data-order="${pair[0].order}"]`).click();
+                await page.locator(`[data-order="${pair[1].order}"]`).click();
+                const remaining = await page.locator('#board .tile').count();
+                if (remaining !== 144 - ((move + 1) * 2)) throw new Error(`Unexpected tile count after move ${move + 1}: ${remaining}`);
+              }
+              if (await page.locator('#board .tile').count() !== 0) throw new Error('Shuffled Solitaire board did not clear');
+              if (await page.locator('#modal').evaluate(el => el.classList.contains('hidden'))) throw new Error('Completion modal did not open');
+              await page.getByRole('button', {name:/Play again/}).click();
+            };
+
+            // The shuffle implementation must produce a board that is not merely pair-preserving,
+            // but actually solvable from the current geometry. Repeat with fresh random boards.
+            for (let run = 0; run < 5; run++) {
+              if (await page.locator('#board .tile').count() !== 144) throw new Error(`Run ${run + 1} did not start with 144 tiles`);
+              await page.getByRole('button', {name:/Shuffle remaining/}).click();
+              await solveCurrentBoard();
+            }
+
             await page.setViewportSize({width:390,height:844});
             await page.reload({waitUntil:'networkidle'});
             await page.locator('#americanStart').click();
@@ -84,7 +123,7 @@ jobs:
             if (await page.locator('#board .tile').count() !== 144) throw new Error('Mobile Solitaire render failed');
             if (errors.length) throw new Error(errors.join('\n'));
             await browser.close();
-            console.log('American explicit-start + Charleston + Solitaire + mobile browser regression passed');
+            console.log('American explicit-start + Charleston + Solitaire shuffle-solvability + mobile browser regression passed');
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
       - name: Dump server log on failure
