@@ -48,10 +48,7 @@
   function safeShuffleRemaining(){
     const active=tiles.filter(t=>!t.removed);
     if(active.length<2)return false;
-    const groups=[];
-    const standard=[];
-    const flowers=[];
-    const seasons=[];
+    const groups=[],standard=[],flowers=[],seasons=[];
     active.forEach(t=>{
       if(t.data.kind==='special'){(t.data.key==='flower'?flowers:seasons).push({...t.data});return;}
       const found=standard.find(g=>same(g[0],t.data));
