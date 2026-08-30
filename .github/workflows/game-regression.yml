@@ -75,11 +75,11 @@ jobs:
             await page.waitForTimeout(100);
             const firstHintOrder = await page.locator('#board .tile.selected').getAttribute('data-order');
             if (!firstHintOrder) throw new Error('Hint did not select its first tile');
-            await page.locator(`[data-order="${firstHintOrder}"]`).click();
             await page.waitForTimeout(700);
-            const secondHint = page.locator('#board .tile.selected');
-            if (await secondHint.count() !== 1) throw new Error('Hint did not reveal its matching tile');
-            await secondHint.click();
+            const secondHintOrder = await page.locator('#board .tile.selected').getAttribute('data-order');
+            if (!secondHintOrder || secondHintOrder === firstHintOrder) throw new Error('Hint did not reveal its matching tile');
+            await page.locator(`[data-order="${firstHintOrder}"]`).click();
+            await page.locator(`[data-order="${secondHintOrder}"]`).click();
             if (await page.locator('#board .tile').count() !== 142) throw new Error('Matched pair did not remove two tiles');
             if ((await page.locator('#pairs').textContent()) !== '1 / 72') throw new Error('Pair counter did not increment');
             const savedBeforeReload = await page.evaluate(() => Boolean(localStorage.getItem('mahjong-solitaire-save-v1')));
