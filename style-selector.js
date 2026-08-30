@@ -36,9 +36,7 @@
     if (!picker) return;
     picker.appendChild(wrap);
     const tileSelect = wrap.querySelector('#tileStyle');
-    Object.entries(tileThemes).forEach(([value, theme]) => {
-      const option = document.createElement('option'); option.value = value; option.textContent = theme.label; tileSelect.appendChild(option);
-    });
+    Object.entries(tileThemes).forEach(([value, theme]) => { const option = document.createElement('option'); option.value = value; option.textContent = theme.label; tileSelect.appendChild(option); });
     let saved = 'ivory';
     try { saved = localStorage.getItem('mahjong-tile-theme') || 'ivory'; } catch (e) {}
     tileSelect.value = tileThemes[saved] ? saved : 'ivory';
@@ -50,20 +48,14 @@
     try { savedView = localStorage.getItem('mahjong-table-view') || 'responsive'; } catch (e) {}
     viewSelect.value = savedView === 'landscape' ? 'landscape' : 'responsive';
     applyTableView(viewSelect.value);
-    viewSelect.addEventListener('change', () => {
-      applyTableView(viewSelect.value);
-      try { localStorage.setItem('mahjong-table-view', viewSelect.value); } catch (e) {}
-    });
+    viewSelect.addEventListener('change', () => { applyTableView(viewSelect.value); try { localStorage.setItem('mahjong-table-view', viewSelect.value); } catch (e) {} });
   }
 
   function ensureLandscapeNotice() {
     let notice = document.getElementById('landscapeRotateNotice');
     const table = document.getElementById('americanTable');
     if (!notice && table) {
-      notice = document.createElement('div');
-      notice.id = 'landscapeRotateNotice';
-      notice.className = 'landscape-rotate-notice';
-      notice.setAttribute('role', 'status');
+      notice = document.createElement('div'); notice.id = 'landscapeRotateNotice'; notice.className = 'landscape-rotate-notice'; notice.setAttribute('role', 'status');
       notice.textContent = 'Rotate your phone to landscape for the full four-seat table.';
       table.parentNode.insertBefore(notice, table);
     }
@@ -76,12 +68,7 @@
     const notice = ensureLandscapeNotice();
     if (notice) notice.setAttribute('aria-hidden', String(!landscape));
     const help = document.getElementById('tableViewHelp');
-    if (help) help.textContent = landscape
-      ? 'Landscape uses a wide four-seat table. Rotate the phone to see the full table.'
-      : 'Responsive adapts the table to the current screen size.';
-
-    // A normal browser tab cannot reliably rotate the physical device. Try the native
-    // orientation API where supported, while keeping the responsive layout as fallback.
+    if (help) help.textContent = landscape ? 'Landscape uses a wide four-seat table. Rotate the phone to see the full table.' : 'Responsive adapts the table to the current screen size.';
     try {
       if (screen.orientation?.unlock && !landscape) screen.orientation.unlock();
       if (screen.orientation?.lock && landscape) screen.orientation.lock('landscape').catch(() => {});
@@ -95,24 +82,21 @@
     style.textContent = `
       .tile-customizer{margin-top:14px;width:min(560px,100%)}
       .tile-customizer label{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8b7158;margin-bottom:8px}
-      .tile-customizer .view-label{margin-top:12px}
-      .tile-customizer .view-help{margin:7px 0 0;font-size:10px;line-height:1.45;color:var(--muted)}
+      .tile-customizer .view-label{margin-top:12px}.tile-customizer .view-help{margin:7px 0 0;font-size:10px;line-height:1.45;color:var(--muted)}
       .tile-customizer select{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:#fffaf2;color:var(--ink);padding:0 42px 0 14px;font:600 13px 'DM Sans',sans-serif;box-shadow:0 5px 16px #243b2b0d;cursor:pointer}
       .tile-customizer select:focus-visible{outline:3px solid ${theme.accent};outline-offset:3px}
       .tile,.american-tile{background:${theme.face};border-color:${theme.edge};box-shadow:4px 5px 0 ${theme.shadow},5px 8px 12px #2a382d1d}
-      .tile::after{border-color:${theme.edge}88}
-      .tile .glyph,.american-glyph{color:${theme.glyph}}
-      .tile.selected,.american-tile.selected{outline-color:${theme.accent}88}
-      .tile.free:hover,.american-tile:hover{box-shadow:4px 8px 0 ${theme.shadow},7px 14px 18px #2a382d2a}
-      .discard-tile{background:${theme.face};border:1px solid ${theme.edge};color:${theme.glyph}}
-      .mini-tile-back{background:${theme.back};border-color:${theme.edge}}
-      .mini-tile-back::before{border-color:${theme.edge};color:${theme.backInk}}
+      .tile::after{border-color:${theme.edge}88}.tile .glyph,.american-glyph{color:${theme.glyph}}.tile.selected,.american-tile.selected{outline-color:${theme.accent}88}
+      .tile.free:hover,.american-tile:hover{box-shadow:4px 8px 0 ${theme.shadow},7px 14px 18px #2a382d2a}.discard-tile{background:${theme.face};border:1px solid ${theme.edge};color:${theme.glyph}}
+      .mini-tile-back{background:${theme.back};border-color:${theme.edge}}.mini-tile-back::before{border-color:${theme.edge};color:${theme.backInk}}
       @media(max-width:800px){.tile-customizer{margin-top:12px}}
     `;
   }
 
   function renderStyle() {
     const style = styles[select.value] || styles.american;
+    document.body.classList.toggle('solitaire-mode', select.value === 'solitaire');
+    document.body.classList.toggle('american-mode', select.value === 'american');
     description.textContent = style.description;
     noteTitle.textContent = select.options[select.selectedIndex].textContent.split(' — ')[0];
     noteCopy.textContent = style.note;
