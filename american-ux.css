@@ -16,38 +16,33 @@
 .american-setting-help{font-size:10px;color:var(--muted);line-height:1.4;margin-top:7px}
 .american-toggle{display:flex!important;align-items:center;gap:9px;letter-spacing:0!important;text-transform:none!important;font-size:12px!important;color:var(--ink)!important;min-height:42px;margin:0!important}
 .american-toggle input{width:18px;height:18px;min-height:18px;accent-color:var(--jade)}
-.american-orientation-gate{display:none}
+.american-orientation-gate{display:none!important}
 .american-center-banner{margin:0 auto 12px;max-width:620px;background:#0b2d25e8;color:#fff;border:1px solid #ffffff18;border-radius:999px;padding:9px 18px;text-align:center;font-size:12px;font-weight:800;box-shadow:0 8px 20px #061c1626}
 .american-center-banner span{opacity:.72;font-weight:600;margin-left:6px}
 @media(max-width:800px){
  .american-toolbar{padding:10px 14px;gap:7px}.american-tool{flex:1;min-width:110px}.american-phase{order:-1;width:100%;margin-left:0;justify-content:flex-start}
  .american-settings{padding:14px}.american-settings-grid{grid-template-columns:1fr}
 }
-@media(max-width:900px) and (orientation:landscape){
- body.american-mode{overflow-x:hidden}
- body.american-mode .app-shell{max-width:none;padding:7px 12px 10px}
- body.american-mode .topbar{height:40px}
- body.american-mode .brand-mark{width:34px;height:34px;border-radius:9px;font-size:18px}.american-mode .brand-name{font-size:11px}.american-mode .brand-sub{font-size:9px}
- body.american-mode .stats{gap:16px;margin-right:8px}.american-mode .stats span{font-size:7px}.american-mode .stats strong{font-size:12px}
- body.american-mode .hero{padding:8px 2px 10px;align-items:center;gap:12px;flex-direction:row}
- body.american-mode .hero h1{font-size:28px}.american-mode .hero .eyebrow{display:none}
- body.american-mode .style-picker{display:grid;grid-template-columns:auto minmax(220px,360px);gap:5px 10px;align-items:center}.american-mode .style-picker label{font-size:8px;grid-row:1}.american-mode .style-picker select{min-height:34px;font-size:10px}.american-mode .style-description,.american-mode .tile-customizer{display:none}
- body.american-mode .hero>.actions{display:none}
- body.american-mode .american-table{margin-top:0}
- body.american-mode .american-panel{border-radius:16px}
- body.american-mode .american-header{padding:12px 16px;gap:14px;align-items:center}.american-mode .american-header h2{font-size:22px}.american-mode .american-header p{font-size:9px;margin-top:3px}.american-mode .american-kicker{font-size:7px;margin-bottom:3px}
- body.american-mode .american-header-actions{min-width:0;flex-direction:row;align-items:center}.american-mode .american-status{padding:7px 10px;font-size:9px}.american-mode .american-start{min-height:38px;padding:8px 13px;font-size:11px}
- body.american-mode .american-toolbar{padding:7px 12px}.american-mode .american-tool{min-height:34px;padding:6px 10px;font-size:9px;flex:0 1 auto}.american-mode .american-phase{width:auto;margin-left:auto;order:0;font-size:8px}
- body.american-mode .american-tabletop{padding:10px;min-height:220px}.american-mode .american-center-banner{margin-bottom:7px;padding:6px 12px;font-size:9px}
- body.american-mode .american-players{grid-template-columns:repeat(4,1fr);gap:7px}.american-mode .player-card{min-height:78px;padding:8px;border-radius:11px}.american-mode .player-card.human{grid-column:auto;order:initial}.american-mode .player-head strong{font-size:13px}.american-mode .player-head span,.american-mode .rack-count{font-size:7px}.american-mode .mini-rack{height:31px;margin-top:7px;padding:3px}.american-mode .mini-tile-back{height:24px;max-width:18px}.american-mode .mini-tile-back::before{font-size:7px}.american-mode .rack-placeholder{font-size:7px}
- body.american-mode .american-discard-area{min-height:48px;margin-top:7px;padding:5px}.american-mode .discard-tile{width:20px;height:27px;font-size:12px}
- body.american-mode .american-controls{padding:8px 12px;min-height:46px}.american-mode .american-selection{font-size:9px}.american-mode .american-pass{min-height:34px;padding:7px 12px;font-size:9px}
- body.american-mode .american-insights{padding:10px 12px;gap:8px;grid-template-columns:1.25fr 1fr}.american-mode .american-insight-heading{margin-bottom:6px}.american-mode .american-insight-heading strong{font-size:13px}.american-mode .american-insight-heading span{font-size:7px}.american-mode .american-combination-grid,.american-mode .american-direction-list{gap:5px}.american-mode .american-combo-card,.american-mode .american-direction-card{min-height:48px;padding:7px}.american-mode .combo-title,.american-mode .american-direction-card strong{font-size:8px}.american-mode .combo-meta,.american-mode .combo-detail,.american-mode .american-direction-card small{font-size:7px;line-height:1.25}.american-mode .direction-tag{font-size:6px;padding:2px 4px}.american-mode .american-card-note,.american-mode .american-rules{display:none}
- body.american-mode .american-hand-wrap{padding:8px 12px 10px}.american-mode .american-hand-title{margin-bottom:4px}.american-mode .american-hand-title strong{font-size:8px}.american-mode .american-hand{gap:4px;padding:4px 2px 8px;overflow-x:visible;justify-content:center}.american-mode .american-tile{flex:1 1 0;max-width:58px;min-width:35px;height:52px}.american-mode .american-glyph{font-size:21px}.american-mode .american-value{font-size:6px;right:3px;bottom:2px}
- body.american-mode footer{display:none}
-}
-@media(max-width:800px) and (orientation:portrait){
- .american-orientation-gate{display:flex;position:sticky;top:0;z-index:20;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;background:#0d2d24;color:#fff;border-radius:14px;margin:10px 0 0;box-shadow:0 10px 24px #061c1633}
- .american-orientation-gate strong{display:block;font-size:12px}.american-orientation-gate span{display:block;font-size:10px;opacity:.76;margin-top:3px;line-height:1.3}.american-orientation-gate button{flex:0 0 auto;border:1px solid #ffffff35;background:#ffffff14;color:#fff;border-radius:9px;padding:8px 10px;font-size:10px;font-weight:800}
- .american-orientation-gate.dismissed{display:none}
+@media(max-width:900px) and (orientation:landscape), (max-width:900px) and (orientation:portrait) and (min-width:1px){
+ body.preferred-landscape.american-mode{overflow-x:hidden}
+ body.preferred-landscape.american-mode .app-shell{max-width:none;padding:7px 12px 10px}
+ body.preferred-landscape.american-mode .topbar{height:40px}
+ body.preferred-landscape.american-mode .brand-mark{width:34px;height:34px;border-radius:9px;font-size:18px}.preferred-landscape .brand-name{font-size:11px}.preferred-landscape .brand-sub{font-size:9px}
+ body.preferred-landscape.american-mode .stats{gap:16px;margin-right:8px}.preferred-landscape .stats span{font-size:7px}.preferred-landscape .stats strong{font-size:12px}
+ body.preferred-landscape.american-mode .hero{padding:8px 2px 10px;align-items:center;gap:12px;flex-direction:row}
+ body.preferred-landscape.american-mode .hero h1{font-size:28px}.preferred-landscape .hero .eyebrow{display:none}
+ body.preferred-landscape.american-mode .style-picker{display:grid;grid-template-columns:auto minmax(220px,360px);gap:5px 10px;align-items:center}.preferred-landscape .style-picker label{font-size:8px;grid-row:1}.preferred-landscape .style-picker select{min-height:34px;font-size:10px}.preferred-landscape .style-description,.preferred-landscape .tile-customizer{display:none}
+ body.preferred-landscape.american-mode .hero>.actions{display:none}
+ body.preferred-landscape.american-mode .american-table{margin-top:0}
+ body.preferred-landscape.american-mode .american-panel{border-radius:16px}
+ body.preferred-landscape.american-mode .american-header{padding:12px 16px;gap:14px;align-items:center}.preferred-landscape .american-header h2{font-size:22px}.preferred-landscape .american-header p{font-size:9px;margin-top:3px}.preferred-landscape .american-kicker{font-size:7px;margin-bottom:3px}
+ body.preferred-landscape.american-mode .american-header-actions{min-width:0;flex-direction:row;align-items:center}.preferred-landscape .american-status{padding:7px 10px;font-size:9px}.preferred-landscape .american-start{min-height:38px;padding:8px 13px;font-size:11px}
+ body.preferred-landscape.american-mode .american-toolbar{padding:7px 12px}.preferred-landscape .american-tool{min-height:34px;padding:6px 10px;font-size:9px;flex:0 1 auto}.preferred-landscape .american-phase{width:auto;margin-left:auto;order:0;font-size:8px}
+ body.preferred-landscape.american-mode .american-tabletop{padding:10px;min-height:220px}.preferred-landscape .american-center-banner{margin-bottom:7px;padding:6px 12px;font-size:9px}
+ body.preferred-landscape.american-mode .american-players{grid-template-columns:repeat(4,1fr);gap:7px}.preferred-landscape .player-card{min-height:78px;padding:8px;border-radius:11px}.preferred-landscape .player-card.human{grid-column:auto;order:initial}.preferred-landscape .player-head strong{font-size:13px}.preferred-landscape .player-head span,.preferred-landscape .rack-count{font-size:7px}.preferred-landscape .mini-rack{height:31px;margin-top:7px;padding:3px}.preferred-landscape .mini-tile-back{height:24px;max-width:18px}.preferred-landscape .mini-tile-back::before{font-size:7px}.preferred-landscape .rack-placeholder{font-size:7px}
+ body.preferred-landscape.american-mode .american-discard-area{min-height:48px;margin-top:7px;padding:5px}.preferred-landscape .discard-tile{width:20px;height:27px;font-size:12px}
+ body.preferred-landscape.american-mode .american-controls{padding:8px 12px;min-height:46px}.preferred-landscape .american-selection{font-size:9px}.preferred-landscape .american-pass{min-height:34px;padding:7px 12px;font-size:9px}
+ body.preferred-landscape.american-mode .american-insights{padding:10px 12px;gap:8px;grid-template-columns:1.25fr 1fr}.preferred-landscape .american-insight-heading{margin-bottom:6px}.preferred-landscape .american-insight-heading strong{font-size:13px}.preferred-landscape .american-insight-heading span{font-size:7px}.preferred-landscape .american-combination-grid,.preferred-landscape .american-direction-list{gap:5px}.preferred-landscape .american-combo-card,.preferred-landscape .american-direction-card{min-height:48px;padding:7px}.preferred-landscape .combo-title,.preferred-landscape .american-direction-card strong{font-size:8px}.preferred-landscape .combo-meta,.preferred-landscape .combo-detail,.preferred-landscape .american-direction-card small{font-size:7px;line-height:1.25}.preferred-landscape .direction-tag{font-size:6px;padding:2px 4px}.preferred-landscape .american-card-note,.preferred-landscape .american-rules{display:none}
+ body.preferred-landscape.american-mode .american-hand-wrap{padding:8px 12px 10px}.preferred-landscape .american-hand-title{margin-bottom:4px}.preferred-landscape .american-hand-title strong{font-size:8px}.preferred-landscape .american-hand{gap:4px;padding:4px 2px 8px;overflow-x:visible;justify-content:center}.preferred-landscape .american-tile{flex:1 1 0;max-width:58px;min-width:35px;height:52px}.preferred-landscape .american-glyph{font-size:21px}.preferred-landscape .american-value{font-size:6px;right:3px;bottom:2px}
+ body.preferred-landscape.american-mode footer{display:none}
 }
