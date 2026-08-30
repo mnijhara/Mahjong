@@ -66,6 +66,7 @@
     hand.innerHTML = '';
     const sorted = players[0]?.hand || [];
     sorted.forEach((tile, index) => hand.appendChild(tileButton(tile, index)));
+    window.updateAmericanInsights?.(sorted, { started, phase });
     const count = $('americanSelection');
     if (count) count.textContent = !started ? 'Start a hand to begin the Charleston' : selected.length ? `${selected.length} / 3 selected` : 'Select 3 tiles to pass';
     const pass = $('americanPass');

@@ -55,6 +55,17 @@
             <div id="americanDiscards" class="american-discard-area" aria-label="Discard area"></div>
           </div>
           <div class="american-controls"><div id="americanSelection" class="american-selection">Start a hand to begin the Charleston</div><button id="americanPass" class="american-pass" type="button" disabled>Pass 3 tiles</button></div>
+          <section class="american-insights" aria-label="American Mah Jongg hand insights">
+            <div class="american-insight-panel">
+              <div class="american-insight-heading"><strong>Combinations in your hand</strong><span>Live analysis</span></div>
+              <div id="americanCombinations" class="american-combination-grid" aria-live="polite"></div>
+            </div>
+            <div class="american-insight-panel">
+              <div class="american-insight-heading"><strong>Best directions</strong><span>Strategy guide</span></div>
+              <div id="americanDirections" class="american-direction-list" aria-live="polite"></div>
+            </div>
+          </section>
+          <div class="american-card-note"><strong>How to read the card:</strong> American Mah Jongg is built around an annual card of exact 14-tile hands. Use the live combinations above to spot pairs and groups first, then choose a card direction such as evens, odds, quints, consecutive runs, winds or dragons. This guide shows strategy signals, not an official card-line validator.</div>
           <div class="american-hand-wrap">
             <div class="american-hand-title"><strong>Your rack · East</strong></div>
             <div id="americanHand" class="american-hand" role="list" aria-label="Your American Mah Jongg hand"></div>
@@ -71,6 +82,7 @@
   <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-card"><div class="modal-icon">✦</div><p class="eyebrow">Board cleared</p><h2 id="modalTitle">Beautifully done.</h2><p id="modalCopy"></p><div class="modal-stats"><div><span>TIME</span><strong id="finalTime">00:00</strong></div><div><span>MOVES</span><strong id="finalMoves">0</strong></div></div><button class="btn primary full" id="playAgain" type="button">Play again</button></div></div>
   <noscript><main><p>Mahjong needs JavaScript enabled to play.</p></main></noscript>
   <script src="american-game.js"></script>
+  <script src="american-insights.js"></script>
   <script src="game.js"></script>
   <script src="style-selector.js"></script>
 </body>
