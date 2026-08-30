@@ -1,103 +1,35 @@
-/* American Mahjong table UX layer: inspired by full-table web clients, without copying their branding/assets. */
-.american-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid var(--line);background:#faf7ef}
-.american-tool{border:1px solid #ddd4c5;background:#fffdf8;color:var(--ink);border-radius:10px;min-height:42px;padding:9px 14px;font-weight:800;font-size:11px;cursor:pointer;transition:transform .12s,border-color .12s,background .12s}
-.american-tool:hover{transform:translateY(-1px);border-color:#c99a45;background:#fffaf0}
-.american-tool.primary{background:var(--jade);color:#fff;border-color:var(--jade);box-shadow:0 3px 0 #0b2e25}
-.american-tool.primary:hover{background:var(--jade-2)}
-.american-tool[aria-pressed="true"]{background:#eef5ef;border-color:#9bb9a9;color:var(--jade)}
-.american-phase{display:flex;align-items:center;gap:10px;margin-left:auto;font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.05em;text-transform:uppercase}
-.american-phase-dot{width:8px;height:8px;border-radius:50%;background:#c99a45;box-shadow:0 0 0 4px #c99a4518}
-.american-settings{display:none;padding:18px 24px;background:#f4efe5;border-bottom:1px solid var(--line)}
-.american-settings.open{display:block}
-.american-settings-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.american-setting{background:#fffdf8;border:1px solid #ded6c7;border-radius:13px;padding:13px}
-.american-setting label{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:#806f5b;margin-bottom:7px}
-.american-setting select,.american-setting input{width:100%;min-height:42px;border:1px solid #d8d0c1;border-radius:9px;background:#fff;color:var(--ink);padding:0 10px;font:600 12px 'DM Sans',sans-serif}
-.american-setting-help{font-size:10px;color:var(--muted);line-height:1.4;margin-top:7px}
-.american-toggle{display:flex!important;align-items:center;gap:9px;letter-spacing:0!important;text-transform:none!important;font-size:12px!important;color:var(--ink)!important;min-height:42px;margin:0!important}
-.american-toggle input{width:18px;height:18px;min-height:18px;accent-color:var(--jade)}
-.american-orientation-gate{display:none!important}
-.american-center-banner{margin:0 auto 12px;max-width:620px;background:#0b2d25e8;color:#fff;border:1px solid #ffffff18;border-radius:999px;padding:9px 18px;text-align:center;font-size:12px;font-weight:800;box-shadow:0 8px 20px #061c1626}
-.american-center-banner span{opacity:.72;font-weight:600;margin-left:6px}
+/* American Mahjong table UX layer. */
+.american-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid var(--line);background:#faf7ef}.american-tool{border:1px solid #ddd4c5;background:#fffdf8;color:var(--ink);border-radius:10px;min-height:42px;padding:9px 14px;font-weight:800;font-size:11px;cursor:pointer;transition:transform .12s,border-color .12s,background .12s}.american-tool:hover{transform:translateY(-1px);border-color:#c99a45;background:#fffaf0}.american-tool.primary{background:var(--jade);color:#fff;border-color:var(--jade);box-shadow:0 3px 0 #0b2e25}.american-tool.primary:hover{background:var(--jade-2)}.american-tool[aria-pressed="true"]{background:#eef5ef;border-color:#9bb9a9;color:var(--jade)}.american-phase{display:flex;align-items:center;gap:10px;margin-left:auto;font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.05em;text-transform:uppercase}.american-phase-dot{width:8px;height:8px;border-radius:50%;background:#c99a45;box-shadow:0 0 0 4px #c99a4518}.american-settings{display:none;padding:18px 24px;background:#f4efe5;border-bottom:1px solid var(--line)}.american-settings.open{display:block}.american-settings-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.american-setting{background:#fffdf8;border:1px solid #ded6c7;border-radius:13px;padding:13px}.american-setting label{display:block;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;color:#806f5b;margin-bottom:7px}.american-setting select,.american-setting input{width:100%;min-height:42px;border:1px solid #d8d0c1;border-radius:9px;background:#fff;color:var(--ink);padding:0 10px;font:600 12px 'DM Sans',sans-serif}.american-setting-help{font-size:10px;color:var(--muted);line-height:1.4;margin-top:7px}.american-toggle{display:flex!important;align-items:center;gap:9px;letter-spacing:0!important;text-transform:none!important;font-size:12px!important;color:var(--ink)!important;min-height:42px;margin:0!important}.american-toggle input{width:18px;height:18px;min-height:18px;accent-color:var(--jade)}.american-center-banner{margin:0 auto 12px;max-width:620px;background:#0b2d25e8;color:#fff;border:1px solid #ffffff18;border-radius:999px;padding:9px 18px;text-align:center;font-size:12px;font-weight:800;box-shadow:0 8px 20px #061c1626}.american-center-banner span{opacity:.72;font-weight:600;margin-left:6px}
+
+/* Mobile single-viewport mode. Both portrait and landscape are supported. We do not fake
+   device rotation: the complete playable table is compacted to the current viewport. */
 @media(max-width:800px){
- .american-toolbar{padding:10px 14px;gap:7px}.american-tool{flex:1;min-width:110px}.american-phase{order:-1;width:100%;margin-left:0;justify-content:flex-start}
- .american-settings{padding:14px}.american-settings-grid{grid-template-columns:1fr}
+  html,body{height:100%;overflow:hidden}
+  body.american-mode{height:100dvh;min-height:0;overflow:hidden}
+  body.american-mode .app-shell{height:100dvh;min-height:0;padding:8px 10px;overflow:hidden;display:flex;flex-direction:column}
+  body.american-mode .topbar{height:40px;min-height:40px;flex:0 0 40px}
+  body.american-mode .brand{gap:7px}.brand-mark{width:34px;height:34px;border-radius:9px;font-size:18px}.brand-name{font-size:11px}.brand-sub{font-size:9px}.stats{gap:10px;margin-right:5px}.stats div{min-width:auto}.stats span{font-size:7px}.stats strong{font-size:11px}.icon-btn{width:34px;height:34px;border-radius:9px;font-size:15px}
+  body.american-mode main{min-height:0;flex:1;overflow:hidden;display:flex;flex-direction:column}
+  body.american-mode .hero{flex:0 0 auto;padding:7px 2px 8px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px}
+  body.american-mode .hero .eyebrow{display:none}.american-mode .hero h1{font-size:25px;line-height:.95;margin:0}.american-mode .style-picker{margin-top:5px}.american-mode .style-picker label{font-size:7px;margin-bottom:3px}.american-mode .style-picker select{min-height:32px;height:32px;font-size:10px;padding:0 30px 0 9px}.american-mode .style-description{font-size:8px;line-height:1.2;margin:3px 0 0;max-width:460px}.american-mode .tile-customizer{display:none}.american-mode .hero>.actions{display:none}
+  body.american-mode .american-table{min-height:0;flex:1;overflow:hidden;margin-top:0}
+  body.american-mode .american-panel{height:100%;min-height:0;overflow:hidden;border-radius:14px;display:flex;flex-direction:column}
+  body.american-mode .american-header{flex:0 0 auto;padding:7px 10px;gap:8px;align-items:center}.american-mode .american-kicker{font-size:6px;margin-bottom:2px}.american-mode .american-header h2{font-size:17px}.american-mode .american-header p{font-size:7px;line-height:1.2;margin:2px 0 0;max-width:520px}.american-mode .american-header-actions{min-width:0;display:flex;flex-direction:row;gap:5px;align-items:center}.american-mode .american-status{display:none}.american-mode .american-start{min-height:31px;padding:6px 10px;font-size:9px;border-radius:8px;white-space:nowrap}
+  body.american-mode .american-toolbar{flex:0 0 38px;padding:4px 8px;gap:5px;flex-wrap:nowrap}.american-mode .american-tool{min-height:30px;height:30px;padding:4px 7px;font-size:8px;border-radius:7px;white-space:nowrap}.american-mode .american-phase{font-size:7px;gap:5px;white-space:nowrap}.american-mode .american-phase-dot{width:6px;height:6px}
+  body.american-mode .american-settings{position:absolute;z-index:50;left:10px;right:10px;top:55px;max-height:calc(100dvh - 70px);overflow:auto;padding:10px;border-radius:12px;box-shadow:0 18px 40px #102b2240}.american-mode .american-settings-grid{grid-template-columns:1fr;gap:7px}.american-mode .american-setting{padding:9px}.american-mode .american-setting label{font-size:8px;margin-bottom:4px}.american-mode .american-setting select{min-height:34px;height:34px;font-size:10px}.american-mode .american-setting-help{font-size:8px;margin-top:4px}
+  body.american-mode .american-tabletop{flex:1 1 auto;min-height:0;padding:6px 7px;display:flex;flex-direction:column;justify-content:center;overflow:hidden}.american-mode .american-center-banner{flex:0 0 auto;margin:0 auto 5px;padding:4px 9px;font-size:7px;max-width:95%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.american-mode .american-players{flex:0 0 auto;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}.american-mode .player-card{min-height:52px;height:52px;padding:6px;border-radius:8px}.american-mode .player-card.human{grid-column:1/-1;order:4;min-height:58px;height:58px}.american-mode .player-head strong{font-size:10px}.american-mode .player-head span,.american-mode .rack-count{font-size:6px}.american-mode .mini-rack{height:20px;margin-top:3px;padding:2px 3px;gap:2px}.american-mode .mini-tile-back{height:16px;max-width:15px}.american-mode .mini-tile-back::before{font-size:5px}.american-mode .rack-placeholder{font-size:6px}.american-mode .american-discard-area{min-height:28px;height:28px;margin:5px auto 0;padding:2px;gap:2px}.american-mode .discard-tile{width:15px;height:21px;font-size:9px;border-radius:3px}
+  body.american-mode .american-controls{flex:0 0 36px;min-height:36px;padding:4px 8px;gap:6px}.american-mode .american-selection{font-size:7px;line-height:1.2}.american-mode .american-pass{min-height:29px;padding:5px 9px;font-size:8px;border-radius:7px;white-space:nowrap}
+  body.american-mode .american-insights{flex:0 0 72px;min-height:72px;padding:6px 8px;gap:6px;grid-template-columns:1.25fr 1fr;overflow:hidden}.american-mode .american-insight-heading{margin-bottom:3px}.american-mode .american-insight-heading strong{font-size:9px}.american-mode .american-insight-heading span{font-size:6px}.american-mode .american-combination-grid,.american-mode .american-direction-list{gap:3px}.american-mode .american-combo-card,.american-mode .american-direction-card{min-height:28px;height:28px;padding:4px;border-radius:6px}.american-mode .combo-title,.american-mode .american-direction-card strong{font-size:6px}.american-mode .combo-meta,.american-mode .combo-detail,.american-mode .american-direction-card small,.american-mode .direction-tag{font-size:5px;line-height:1.05}.american-mode .american-card-note,.american-mode .american-rules{display:none}
+  body.american-mode .american-hand-wrap{flex:0 0 65px;min-height:65px;padding:5px 8px 4px;overflow:hidden}.american-mode .american-hand-title{margin-bottom:2px}.american-mode .american-hand-title strong{font-size:7px}.american-mode .american-hand{gap:2px;padding:2px 0 4px;overflow:hidden;justify-content:center}.american-mode .american-tile{flex:1 1 0;max-width:45px;min-width:19px;height:48px;border-radius:5px;box-shadow:2px 3px 0 #d4cec1,3px 5px 7px #2a382d1a}.american-mode .american-glyph{font-size:18px}.american-mode .american-value{font-size:5px;right:2px;bottom:2px}
+  body.american-mode .game-card,body.american-mode .style-note,body.american-mode footer{display:none!important}
 }
 
-/* The Landscape choice is a real table presentation, not a forced CSS rotation. A normal
-   browser tab cannot reliably rotate a phone; when the phone is portrait, keep the page
-   readable and show a small rotate prompt. The four-seat wide table is applied only after
-   the device is actually in landscape. */
-.landscape-rotate-notice{display:none}
-@media(max-width:900px) and (orientation:portrait){
- body.preferred-landscape.american-mode .landscape-rotate-notice{display:flex;align-items:center;justify-content:center;gap:9px;margin:8px 0 10px;padding:10px 14px;border:1px solid #d7c7a5;border-radius:12px;background:#fff8e8;color:#5f503d;font-size:11px;font-weight:800;text-align:center}
- body.preferred-landscape.american-mode .landscape-rotate-notice::before{content:'↻';font-size:18px;line-height:1}
- body.preferred-landscape.american-mode .american-table{margin-top:0}
+/* Very short phones: reduce decoration before sacrificing the playable rack. */
+@media(max-width:800px) and (max-height:720px){
+  body.american-mode .app-shell{padding:5px 8px}.american-mode .topbar{height:34px;min-height:34px;flex-basis:34px}.american-mode .brand-mark{width:30px;height:30px}.american-mode .icon-btn{width:30px;height:30px}.american-mode .hero{padding:4px 2px 5px}.american-mode .hero h1{font-size:21px}.american-mode .style-picker{margin-top:3px}.american-mode .style-picker select{height:28px;min-height:28px}.american-mode .style-description{display:none}.american-mode .american-header{padding:5px 8px}.american-mode .american-header h2{font-size:15px}.american-mode .american-header p{display:none}.american-mode .american-toolbar{flex-basis:34px;height:34px}.american-mode .american-tool{height:27px;min-height:27px;font-size:7px}.american-mode .american-tabletop{padding:4px 6px}.american-mode .american-center-banner{display:none}.american-mode .player-card{height:46px;min-height:46px}.american-mode .player-card.human{height:50px;min-height:50px}.american-mode .american-insights{flex-basis:60px;min-height:60px}.american-mode .american-hand-wrap{flex-basis:58px;min-height:58px}.american-mode .american-tile{height:42px}
 }
 
+/* Landscape phones get a denser side-by-side composition while retaining the same one-screen rule. */
 @media(max-width:900px) and (orientation:landscape){
- body.preferred-landscape.american-mode{overflow-x:hidden}
- body.preferred-landscape.american-mode .app-shell{max-width:none;padding:7px 12px 10px}
- body.preferred-landscape.american-mode .topbar{height:40px}
- body.preferred-landscape.american-mode .brand-mark{width:34px;height:34px;border-radius:9px;font-size:18px}
- body.preferred-landscape.american-mode .brand-name{font-size:11px}
- body.preferred-landscape.american-mode .brand-sub{font-size:9px}
- body.preferred-landscape.american-mode .stats{gap:16px;margin-right:8px}
- body.preferred-landscape.american-mode .stats span{font-size:7px}
- body.preferred-landscape.american-mode .stats strong{font-size:12px}
- body.preferred-landscape.american-mode .hero{padding:8px 2px 10px;align-items:center;gap:12px;flex-direction:row}
- body.preferred-landscape.american-mode .hero h1{font-size:28px}
- body.preferred-landscape.american-mode .hero .eyebrow{display:none}
- body.preferred-landscape.american-mode .style-picker{display:grid;grid-template-columns:auto minmax(220px,360px);gap:5px 10px;align-items:center}
- body.preferred-landscape.american-mode .style-picker label{font-size:8px;grid-row:1}
- body.preferred-landscape.american-mode .style-picker select{min-height:34px;font-size:10px}
- body.preferred-landscape.american-mode .style-description{font-size:9px}
- body.preferred-landscape.american-mode .tile-customizer{display:block}
- body.preferred-landscape.american-mode .hero>.actions{display:none}
- body.preferred-landscape.american-mode .american-table{margin-top:0}
- body.preferred-landscape.american-mode .american-panel{border-radius:16px}
- body.preferred-landscape.american-mode .american-header{padding:12px 16px;gap:14px;align-items:center}
- body.preferred-landscape.american-mode .american-header h2{font-size:22px}
- body.preferred-landscape.american-mode .american-header p{font-size:9px;margin-top:3px}
- body.preferred-landscape.american-mode .american-kicker{font-size:7px;margin-bottom:3px}
- body.preferred-landscape.american-mode .american-header-actions{min-width:0;flex-direction:row;align-items:center}
- body.preferred-landscape.american-mode .american-status{padding:7px 10px;font-size:9px}
- body.preferred-landscape.american-mode .american-start{min-height:38px;padding:8px 13px;font-size:11px}
- body.preferred-landscape.american-mode .american-toolbar{padding:7px 12px}
- body.preferred-landscape.american-mode .american-tool{min-height:34px;padding:6px 10px;font-size:9px;flex:0 1 auto}
- body.preferred-landscape.american-mode .american-phase{width:auto;margin-left:auto;order:0;font-size:8px}
- body.preferred-landscape.american-mode .american-tabletop{padding:10px;min-height:220px}
- body.preferred-landscape.american-mode .american-center-banner{margin-bottom:7px;padding:6px 12px;font-size:9px}
- body.preferred-landscape.american-mode .american-players{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
- body.preferred-landscape.american-mode .player-card{min-height:78px;padding:8px;border-radius:11px}
- body.preferred-landscape.american-mode .player-card.human{grid-column:auto;order:initial}
- body.preferred-landscape.american-mode .player-head strong{font-size:13px}
- body.preferred-landscape.american-mode .player-head span,body.preferred-landscape.american-mode .rack-count{font-size:7px}
- body.preferred-landscape.american-mode .mini-rack{height:31px;margin-top:7px;padding:3px}
- body.preferred-landscape.american-mode .mini-tile-back{height:24px;max-width:18px}
- body.preferred-landscape.american-mode .mini-tile-back::before{font-size:7px}
- body.preferred-landscape.american-mode .rack-placeholder{font-size:7px}
- body.preferred-landscape.american-mode .american-discard-area{min-height:48px;margin-top:7px;padding:5px}
- body.preferred-landscape.american-mode .discard-tile{width:20px;height:27px;font-size:12px}
- body.preferred-landscape.american-mode .american-controls{padding:8px 12px;min-height:46px}
- body.preferred-landscape.american-mode .american-selection{font-size:9px}
- body.preferred-landscape.american-mode .american-pass{min-height:34px;padding:7px 12px;font-size:9px}
- body.preferred-landscape.american-mode .american-insights{padding:10px 12px;gap:8px;grid-template-columns:1.25fr 1fr}
- body.preferred-landscape.american-mode .american-insight-heading{margin-bottom:6px}
- body.preferred-landscape.american-mode .american-insight-heading strong{font-size:13px}
- body.preferred-landscape.american-mode .american-insight-heading span{font-size:7px}
- body.preferred-landscape.american-mode .american-combination-grid,body.preferred-landscape.american-mode .american-direction-list{gap:5px}
- body.preferred-landscape.american-mode .american-combo-card,body.preferred-landscape.american-mode .american-direction-card{min-height:48px;padding:7px}
- body.preferred-landscape.american-mode .combo-title,body.preferred-landscape.american-mode .american-direction-card strong{font-size:8px}
- body.preferred-landscape.american-mode .combo-meta,body.preferred-landscape.american-mode .combo-detail,body.preferred-landscape.american-mode .american-direction-card small{font-size:7px;line-height:1.25}
- body.preferred-landscape.american-mode .direction-tag{font-size:6px;padding:2px 4px}
- body.preferred-landscape.american-mode .american-card-note,body.preferred-landscape.american-mode .american-rules{display:none}
- body.preferred-landscape.american-mode .american-hand-wrap{padding:8px 12px 10px}
- body.preferred-landscape.american-mode .american-hand-title{margin-bottom:4px}
- body.preferred-landscape.american-mode .american-hand-title strong{font-size:8px}
- body.preferred-landscape.american-mode .american-hand{gap:4px;padding:4px 2px 8px;overflow-x:visible;justify-content:center}
- body.preferred-landscape.american-mode .american-tile{flex:1 1 0;max-width:58px;min-width:35px;height:52px}
- body.preferred-landscape.american-mode .american-glyph{font-size:21px}
- body.preferred-landscape.american-mode .american-value{font-size:6px;right:3px;bottom:2px}
- body.preferred-landscape.american-mode footer{display:none}
+  body.american-mode .app-shell{padding:4px 9px}.american-mode .topbar{height:32px;min-height:32px;flex-basis:32px}.american-mode .brand-mark{width:28px;height:28px;font-size:15px}.american-mode .brand-name{font-size:9px}.american-mode .brand-sub{font-size:7px}.american-mode .icon-btn{width:28px;height:28px}.american-mode .hero{padding:3px 2px 4px;grid-template-columns:1fr auto}.american-mode .hero h1{font-size:20px}.american-mode .style-picker{display:grid;grid-template-columns:auto minmax(180px,360px);gap:2px 6px;align-items:center}.american-mode .style-picker label{grid-row:1;font-size:6px}.american-mode .style-picker select{height:27px;min-height:27px;font-size:8px}.american-mode .style-description{display:none}.american-mode .american-header{padding:5px 8px}.american-mode .american-header h2{font-size:15px}.american-mode .american-header p{display:none}.american-mode .american-tabletop{padding:4px 6px}.american-mode .american-players{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}.american-mode .player-card,.american-mode .player-card.human{height:45px;min-height:45px}.american-mode .american-discard-area{height:24px;min-height:24px;margin-top:3px}.american-mode .american-insights{flex-basis:57px;min-height:57px}.american-mode .american-hand-wrap{flex-basis:56px;min-height:56px}.american-mode .american-tile{height:41px}.american-mode .american-card-note,.american-mode .american-rules{display:none}
 }
