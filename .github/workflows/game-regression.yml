@@ -84,7 +84,7 @@ jobs:
               const groups = new Map();
               for (const item of items) {
                 const base = item.label.replace(/ tile,? (open|blocked)$/, '');
-                const key = item.category === '花' || item.category === '季' ? item.category : base;
+                const key = item.category === '花' || item.category === '季' ? item.category : `${item.category}|${base}`;
                 if (!groups.has(key)) groups.set(key, []);
                 groups.get(key).push(item);
               }
@@ -106,8 +106,6 @@ jobs:
               await page.getByRole('button', {name:/Play again/}).click();
             };
 
-            // The shuffle implementation must produce a board that is not merely pair-preserving,
-            // but actually solvable from the current geometry. Repeat with fresh random boards.
             for (let run = 0; run < 5; run++) {
               if (await page.locator('#board .tile').count() !== 144) throw new Error(`Run ${run + 1} did not start with 144 tiles`);
               await page.getByRole('button', {name:/Shuffle remaining/}).click();
