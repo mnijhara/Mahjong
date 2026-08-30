@@ -26,6 +26,7 @@ jobs:
         run: |
           node --check american-ux.js
           node --check american-game.js
+          node --check american-insights.js
           node --check style-selector.js
       - name: Browser UX regression
         run: |
@@ -59,6 +60,40 @@ jobs:
             if (await page.locator('#americanDirections .american-direction-card').count() !== 4) throw new Error('Suggested hand ranking did not render');
             await page.locator('#americanHint').click();
             if (await page.locator('#americanHand .american-tile.insight-focus').count() < 1) throw new Error('American Hint did not highlight a useful tile');
+
+            await page.locator('#americanSuggested').click();
+            if (await page.locator('#americanInsights').isVisible()) throw new Error('Suggested Hands control did not hide guidance');
+            await page.locator('#americanSuggested').click();
+            if (!await page.locator('#americanInsights').isVisible()) throw new Error('Suggested Hands control did not restore guidance');
+            await page.locator('#americanDirections .american-direction-card').first().click();
+            if (await page.locator('#americanHand .american-tile.insight-focus').count() < 1) throw new Error('Suggested hand card did not highlight supporting tiles');
+
+            async function chooseThree() {
+              const tiles = page.locator('#americanHand .american-tile');
+              for (let i = 0; i < await tiles.count() && (await page.locator('#americanHand .american-tile.selected').count()) < 3; i++) {
+                const label = await tiles.nth(i).getAttribute('aria-label');
+                if (!label?.includes('Joker')) await tiles.nth(i).click();
+              }
+              if (await page.locator('#americanHand .american-tile.selected').count() !== 3) throw new Error('Could not select three Charleston tiles');
+            }
+
+            for (let pass = 0; pass < 3; pass++) {
+              await chooseThree();
+              await page.locator('#americanPass').click();
+              if (pass < 2) await page.waitForTimeout(20);
+            }
+            if (await page.evaluate(() => window.americanGameState().phase) !== 'play') throw new Error('Charleston did not transition to play');
+            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('Charleston did not preserve a 14-tile East hand');
+
+            const wallBefore = await page.evaluate(() => window.americanGameState().wall);
+            await page.locator('#americanHand .american-tile').first().click();
+            await page.waitForTimeout(180);
+            const stateAfter = await page.evaluate(() => window.americanGameState());
+            if (stateAfter.phase !== 'play') throw new Error('Draw-discard play left play phase');
+            if (stateAfter.hand !== 14) throw new Error(`Draw-discard cycle did not return East to 14 tiles: ${JSON.stringify(stateAfter)}`);
+            if (stateAfter.wall !== wallBefore - 4) throw new Error(`Computer/human draw cycle consumed unexpected wall count: before ${wallBefore}, after ${stateAfter.wall}`);
+            if (await page.locator('#americanDiscards .discard-tile').count() < 4) throw new Error('Discard area did not record the draw-discard cycle');
+            if (await page.locator('#americanDirections .american-direction-card').count() !== 4) throw new Error('Suggested hands disappeared after gameplay');
 
             async function assertSingleViewport(label, p, width, height) {
               const metrics = await p.evaluate(() => {
@@ -101,7 +136,7 @@ jobs:
             await landscape.close();
             if (errors.length) throw new Error(errors.join('\n'));
             await browser.close();
-            console.log('American Mahjong mobile single-viewport portrait + landscape regression passed');
+            console.log('American Mahjong mobile single-viewport + actionable guidance + Charleston + draw-discard regression passed');
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
       - name: Dump server log on failure
