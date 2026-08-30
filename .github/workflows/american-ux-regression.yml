@@ -41,11 +41,13 @@ jobs:
             page.on('pageerror', err => errors.push(`pageerror: ${err.message}`));
             await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
 
-            await page.locator('#americanSettings').evaluate(el => el.classList.add('open'));
+            await page.locator('#americanConfiguration').click();
             if (!await page.locator('#americanSettings').isVisible()) throw new Error('American settings panel did not open');
             await page.locator('#americanTileStyle').selectOption('jade');
             if (!(await page.locator('#tile-theme-style').textContent()).includes('#eef8f1')) throw new Error('American tile customization did not apply');
             if ((await page.evaluate(() => localStorage.getItem('mahjong-tile-theme'))) !== 'jade') throw new Error('Tile customization was not persisted');
+            await page.locator('#americanConfiguration').click();
+            if (await page.locator('#americanSettings').isVisible()) throw new Error('American style panel did not close');
 
             const tableView = page.locator('#tableView');
             if (await tableView.count() !== 1) throw new Error('Style section table view control is missing');
