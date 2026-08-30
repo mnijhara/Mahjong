@@ -26,7 +26,7 @@
     },
     'hong-kong': {
       playable: false,
-      description: 'Hong Kong Mahjong is a four-player traditional ruleset with regional scoring and hand-building conventions.',
+      description: 'Hong Kong Mahjong is a four-player traditional rules family with regional scoring and hand-building conventions.',
       note: 'Planned: Hong Kong rules, table flow and configurable scoring.'
     },
     'chinese-classical': {
@@ -52,7 +52,8 @@
     noteTitle.textContent = select.options[select.selectedIndex].textContent.split(' — ')[0];
     noteCopy.textContent = style.note;
     start.disabled = !style.playable;
-    start.textContent = style.playable ? 'Start game' : 'Coming soon';
+    const resumable = select.value === 'solitaire' && window.hasSolitaireSave && window.hasSolitaireSave();
+    start.textContent = style.playable ? (resumable ? 'Resume game' : 'Start game') : 'Coming soon';
     start.setAttribute('aria-disabled', String(!style.playable));
     if (window.showAmericanGame) window.showAmericanGame(select.value === 'american');
   }
