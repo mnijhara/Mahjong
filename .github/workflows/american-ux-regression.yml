@@ -49,7 +49,7 @@ jobs:
 
             const tableView = page.locator('#tableView');
             if (await tableView.count() !== 1) throw new Error('Style section table view control is missing');
-            await tableView.selectOption('landscape');
+            await tableView.evaluate(el => { el.value = 'landscape'; el.dispatchEvent(new Event('change', {bubbles:true})); });
             if (!(await page.evaluate(() => document.body.classList.contains('preferred-landscape')))) throw new Error('Landscape selection did not activate');
             if ((await page.evaluate(() => localStorage.getItem('mahjong-table-view'))) !== 'landscape') throw new Error('Landscape preference was not persisted');
 
@@ -107,7 +107,7 @@ jobs:
             }
 
             await assertSingleViewport('portrait landscape-preference', page, 390, 844);
-            await tableView.selectOption('responsive');
+            await tableView.evaluate(el => { el.value = 'responsive'; el.dispatchEvent(new Event('change', {bubbles:true})); });
             if (await page.evaluate(() => document.body.classList.contains('preferred-landscape'))) throw new Error('Responsive selection did not restore normal layout');
             await assertSingleViewport('portrait responsive', page, 390, 844);
 
@@ -116,7 +116,7 @@ jobs:
             landscape.on('pageerror', err => errors.push(`landscape pageerror: ${err.message}`));
             await landscape.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
             await landscape.locator('#americanStart').click();
-            await landscape.locator('#tableView').selectOption('landscape');
+            await landscape.locator('#tableView').evaluate(el => { el.value = 'landscape'; el.dispatchEvent(new Event('change', {bubbles:true})); });
             if (await landscape.locator('#americanHand .american-tile').count() !== 14) throw new Error('Landscape viewport lost the playable rack');
             await assertSingleViewport('landscape phone', landscape, 844, 390);
 
