@@ -6,9 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   static:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Validate JavaScript syntax
@@ -34,17 +38,24 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
       - name: Install Playwright
         run: npm install --no-save playwright@1.55.0
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
       - name: Start static server
-        run: python3 -m http.server 4173 >/tmp/mahjong-server.log 2>&1 &
+        run: |
+          python3 -m http.server 4173 >/tmp/mahjong-server.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://127.0.0.1:4173/index.html >/dev/null && exit 0; sleep 1; done
+          cat /tmp/mahjong-server.log
+          exit 1
       - name: Run browser smoke test
         run: |
           node - <<'NODE'
@@ -76,3 +87,6 @@ jobs:
             console.log('Mahjong browser smoke test passed');
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
+      - name: Dump server log on failure
+        if: failure()
+        run: cat /tmp/mahjong-server.log || true
