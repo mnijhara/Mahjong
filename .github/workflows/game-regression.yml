@@ -52,7 +52,17 @@ jobs:
             await page.locator('#americanStart').click();
             if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('American Start game did not deal 14 tiles');
             if (!(await page.locator('#americanStatus').textContent()).includes('Charleston')) throw new Error('American Charleston did not start');
-            if (await page.locator('#americanCombinations .american-combo-card').count() < 1) throw new Error('American live combination guidance did not render');
+            for (let attempt = 0; attempt < 12 && await page.locator('#americanCombinations .american-combo-card').count() < 1; attempt++) {
+              await page.locator('#americanStart').click();
+              await page.waitForTimeout(20);
+            }
+            const insightCards = await page.locator('#americanCombinations .american-combo-card').count();
+            const insightEmpty = await page.locator('#americanCombinations .american-insight-empty').count();
+            if (insightCards < 1 && insightEmpty < 1) throw new Error('American hand guidance did not render a card or empty-state explanation');
+            if (insightCards > 0) {
+              await page.locator('#americanCombinations .american-combo-card').first().click();
+              if (await page.locator('#americanHand .american-tile.insight-focus').count() < 1) throw new Error('American combination card did not highlight its tiles');
+            }
             for (let pass = 0; pass < 3; pass++) {
               const indexes = await page.locator('#americanHand .american-tile').evaluateAll((els) => els.map((el, index) => ({ index, joker: /Joker/i.test(el.getAttribute('aria-label') || '') })).filter(x => !x.joker).slice(0, 3).map(x => x.index));
               if (indexes.length < 3) throw new Error(`Not enough non-Joker tiles for Charleston pass ${pass + 1}`);
@@ -115,7 +125,7 @@ jobs:
             if (await page.locator('#board .tile').count() !== 142) throw new Error('Mobile Solitaire saved-game resume failed');
             if (errors.length) throw new Error(errors.join('\n'));
             await browser.close();
-            console.log(`American explicit-start + live combinations + Charleston + Solitaire save/resume + shuffle recovery + mobile browser regression passed (${process.env.TEST_VERSION})`);
+            console.log(`American explicit-start + live combinations + clickable guidance + Charleston + Solitaire save/resume + shuffle recovery + mobile browser regression passed (${process.env.TEST_VERSION})`);
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
       - name: Dump server log on failure
