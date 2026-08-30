@@ -47,7 +47,7 @@
       <section id="americanTable" class="american-table" aria-label="American Mah Jongg table">
         <div class="american-panel">
           <header class="american-header">
-            <div><p class="american-kicker">American Mah Jongg</p><h2>Charleston table</h2><p>Build your hand before the draw-and-discard round. The annual NMJL card defines the winning hands; this table does not reproduce that card.</p></div>
+            <div><p class="american-kicker">American Mah Jongg</p><h2>Charleston table</h2><p>Build your hand before the draw-and-discard round. Use the live strategy engine to see which card families your current tiles support.</p></div>
             <div class="american-header-actions"><div id="americanStatus" class="american-status" role="status" aria-live="polite">Ready to deal a new hand.</div><button id="americanStart" class="american-start" type="button">Start game</button></div>
           </header>
           <div class="american-tabletop">
@@ -61,16 +61,16 @@
               <div id="americanCombinations" class="american-combination-grid" aria-live="polite"></div>
             </div>
             <div class="american-insight-panel">
-              <div class="american-insight-heading"><strong>Best directions</strong><span>Strategy guide</span></div>
+              <div class="american-insight-heading"><strong>Best candidate hands</strong><span>Card-family strategy</span></div>
               <div id="americanDirections" class="american-direction-list" aria-live="polite"></div>
             </div>
           </section>
-          <div class="american-card-note"><strong>How to read the card:</strong> American Mah Jongg is built around an annual card of exact 14-tile hands. Use the live combinations above to spot pairs and groups first, then choose a card direction such as evens, odds, quints, consecutive runs, winds or dragons. This guide shows strategy signals, not an official card-line validator.</div>
+          <div class="american-card-note"><strong>How to use the guide:</strong> choose the highest-scoring candidate as a starting direction, then watch the score change after each Charleston pass and draw. It identifies useful card families and the tiles to protect; it does not reproduce or claim to be the official annual card.</div>
           <div class="american-hand-wrap">
             <div class="american-hand-title"><strong>Your rack · East</strong></div>
             <div id="americanHand" class="american-hand" role="list" aria-label="Your American Mah Jongg hand"></div>
           </div>
-          <div class="american-rules"><strong>Core rules in this build:</strong> 152 tiles including 8 Jokers and 8 Flowers; East starts with 14 tiles; the first Charleston is Right → Across → Left; Jokers cannot be passed. After the Charleston, the table moves into draw-and-discard play. Full card-line validation, calling, scoring and computer play are separate milestones.</div>
+          <div class="american-rules"><strong>Core rules in this build:</strong> 152 tiles including 8 Jokers and 8 Flowers; East starts with 14 tiles; the first Charleston is Right → Across → Left; Jokers cannot be passed. After the Charleston, the table moves into draw-and-discard play. Full official card-line validation, calling, scoring and computer play remain separate milestones.</div>
         </div>
       </section>
 
@@ -82,6 +82,7 @@
   <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-card"><div class="modal-icon">✦</div><p class="eyebrow">Board cleared</p><h2 id="modalTitle">Beautifully done.</h2><p id="modalCopy"></p><div class="modal-stats"><div><span>TIME</span><strong id="finalTime">00:00</strong></div><div><span>MOVES</span><strong id="finalMoves">0</strong></div></div><button class="btn primary full" id="playAgain" type="button">Play again</button></div></div>
   <noscript><main><p>Mahjong needs JavaScript enabled to play.</p></main></noscript>
   <script src="american-game.js"></script>
+  <script src="american-card-engine.js"></script>
   <script src="american-insights.js"></script>
   <script src="game.js"></script>
   <script src="style-selector.js"></script>
