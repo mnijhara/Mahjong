@@ -12,9 +12,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="style-picker.css">
-  <link rel="stylesheet" href="american.css?v=20260830-5">
-  <link rel="stylesheet" href="american-ux.css?v=20260830-5">
-  <link rel="stylesheet" href="american-live.css?v=20260830-3">
+  <link rel="stylesheet" href="american.css?v=20260830-6">
+  <link rel="stylesheet" href="american-ux.css?v=20260830-6">
+  <link rel="stylesheet" href="american-live.css?v=20260830-4">
 </head>
 <body>
   <div class="app-shell">
@@ -56,6 +56,7 @@
             <button class="american-tool" id="americanEndGame" type="button">End Game</button>
             <button class="american-tool" id="americanHint" type="button">Hint</button>
             <button class="american-tool" id="americanSuggested" type="button" aria-pressed="false">Suggested Hands</button>
+            <button class="american-tool" id="americanConfiguration" type="button" aria-expanded="false" aria-controls="americanSettings">Style</button>
             <div class="american-phase"><span class="american-phase-dot" aria-hidden="true"></span><span id="americanPhaseLabel">Ready</span></div>
           </div>
           <section id="americanSettings" class="american-settings" aria-label="American Mahjong configuration">
@@ -88,12 +89,12 @@
   </div>
   <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-card"><div class="modal-icon">✦</div><p class="eyebrow">Board cleared</p><h2 id="modalTitle">Beautifully done.</h2><p id="modalCopy"></p><div class="modal-stats"><div><span>TIME</span><strong id="finalTime">00:00</strong></div><div><span>MOVES</span><strong id="finalMoves">0</strong></div></div><button class="btn primary full" id="playAgain" type="button">Play again</button></div></div>
   <noscript><main><p>Mahjong needs JavaScript enabled to play.</p></main></noscript>
-  <script src="american-game.js?v=20260830-5"></script>
-  <script src="american-card-engine.js?v=20260830-5"></script>
-  <script src="american-insights.js?v=20260830-5"></script>
-  <script src="game.js?v=20260830-5"></script>
-  <script src="style-selector.js?v=20260830-5"></script>
-  <script src="new-game.js?v=20260830-5"></script>
-  <script src="american-ux.js?v=20260830-5"></script>
+  <script src="american-game.js?v=20260830-6"></script>
+  <script src="american-card-engine.js?v=20260830-6"></script>
+  <script src="american-insights.js?v=20260830-6"></script>
+  <script src="game.js?v=20260830-6"></script>
+  <script src="style-selector.js?v=20260830-6"></script>
+  <script src="new-game.js?v=20260830-6"></script>
+  <script src="american-ux.js?v=20260830-6"></script>
 </body>
 </html>
