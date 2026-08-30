@@ -4,7 +4,7 @@
   "private": true,
   "description": "A generic, responsive Mahjong Solitaire game.",
   "scripts": {
-    "build": "node -e \"console.log('Static Mahjong site: no build step required.')\"",
+    "build": "node scripts/build-check.js",
     "start": "node -e \"require('http').createServer((req,res)=>{require('fs').createReadStream(req.url==='/'?'index.html':'.'+req.url).on('error',()=>{res.statusCode=404;res.end('Not found')}).pipe(res)}).listen(process.env.PORT||4173)\""
   },
   "engines": {
