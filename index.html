@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="style-picker.css">
   <link rel="stylesheet" href="american.css?v=20260830-2">
+  <link rel="stylesheet" href="american-ux.css?v=20260830-1">
 </head>
 <body>
   <div class="app-shell">
@@ -45,17 +46,36 @@
       </section>
 
       <section id="americanTable" class="american-table" aria-label="American Mah Jongg table">
+        <div class="american-orientation-gate" id="americanOrientationGate" role="status">
+          <div><strong>American Mahjong is best in landscape</strong><span>Rotate your phone for a full four-player table and larger tiles.</span></div>
+          <button id="americanOrientationDismiss" type="button">Continue here</button>
+        </div>
         <div class="american-panel">
           <header class="american-header">
-            <div><p class="american-kicker">American Mah Jongg</p><h2>Charleston table</h2><p>Build your hand before the draw-and-discard round. Use the live strategy engine to see which card families your current tiles support.</p></div>
+            <div><p class="american-kicker">American Mah Jongg · 4 players</p><h2>Charleston table</h2><p>Build your hand, pass three tiles, then play the draw-and-discard round. The guide shows useful combinations without pretending to reproduce the annual card.</p></div>
             <div class="american-header-actions"><div id="americanStatus" class="american-status" role="status" aria-live="polite">Ready to deal a new hand.</div><button id="americanStart" class="american-start" type="button">Start game</button></div>
           </header>
+          <div class="american-toolbar" aria-label="American Mahjong controls">
+            <button class="american-tool primary" id="americanNewHand" type="button">New hand</button>
+            <button class="american-tool" id="americanHint" type="button">Hint</button>
+            <button class="american-tool" id="americanSuggested" type="button" aria-pressed="true">Suggested hands</button>
+            <button class="american-tool" id="americanConfiguration" type="button" aria-expanded="false" aria-controls="americanSettings">Configuration</button>
+            <div class="american-phase"><span class="american-phase-dot" aria-hidden="true"></span><span id="americanPhaseLabel">Ready</span></div>
+          </div>
+          <section id="americanSettings" class="american-settings" aria-label="American Mahjong configuration">
+            <div class="american-settings-grid">
+              <div class="american-setting"><label for="americanTileStyle">Tile design</label><select id="americanTileStyle"><option value="ivory">Classic Ivory</option><option value="jade">Jade Green</option><option value="ocean">Porcelain Blue</option><option value="rose">Rosewood</option><option value="contrast">High Contrast</option></select><div class="american-setting-help">Choose the face, edge, shadow and concealed-rack tile-back treatment.</div></div>
+              <div class="american-setting"><label for="americanDifficulty">Computer strength</label><select id="americanDifficulty"><option>Casual</option><option selected>Balanced</option><option>Strong</option><option>Expert</option></select><div class="american-setting-help">Sets the intended bot strength for the full computer-play milestone.</div></div>
+              <div class="american-setting"><label class="american-toggle"><input id="americanShowInsights" type="checkbox" checked> Show live combinations & suggested hands</label><div class="american-setting-help">Keep guidance visible while you learn the card families.</div></div>
+            </div>
+          </section>
           <div class="american-tabletop">
+            <div id="americanCenterBanner" class="american-center-banner">Ready to play <span>· Start a new hand to deal</span></div>
             <div id="americanPlayers" class="american-players"></div>
             <div id="americanDiscards" class="american-discard-area" aria-label="Discard area"></div>
           </div>
           <div class="american-controls"><div id="americanSelection" class="american-selection">Start a hand to begin the Charleston</div><button id="americanPass" class="american-pass" type="button" disabled>Pass 3 tiles</button></div>
-          <section class="american-insights" aria-label="American Mah Jongg hand insights">
+          <section id="americanInsights" class="american-insights" aria-label="American Mah Jongg hand insights">
             <div class="american-insight-panel">
               <div class="american-insight-heading"><strong>Combinations in your hand</strong><span>Live analysis</span></div>
               <div id="americanCombinations" class="american-combination-grid" aria-live="polite"></div>
@@ -87,5 +107,6 @@
   <script src="game.js?v=20260830-1"></script>
   <script src="style-selector.js?v=20260830-1"></script>
   <script src="new-game.js?v=20260830-2"></script>
+  <script src="american-ux.js?v=20260830-1"></script>
 </body>
 </html>
