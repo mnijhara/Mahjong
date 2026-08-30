@@ -45,25 +45,6 @@
     return deck;
   }
 
-  function buildSolvableRemovalOrder(active){
-    for(let attempt=0;attempt<48;attempt++){
-      const remaining=new Set(active.map(t=>t.order));
-      const order=[];
-      let failed=false;
-      while(remaining.size){
-        const activeTiles=[...remaining].map(orderId=>tiles[orderId]).filter(Boolean);
-        const free=shuffle(activeTiles.filter(t=>isFree(t,activeTiles)));
-        if(free.length<2){failed=true;break;}
-        const first=free[0];
-        const second=free[1];
-        order.push(first.order,second.order);
-        remaining.delete(first.order);remaining.delete(second.order);
-      }
-      if(!failed&&order.length===active.length)return order;
-    }
-    return null;
-  }
-
   function safeShuffleRemaining(){
     const active=tiles.filter(t=>!t.removed);
     if(active.length<2)return false;
@@ -78,13 +59,23 @@
     for(let i=0;i<flowers.length;i+=2)groups.push([flowers[i],flowers[i+1]]);
     for(let i=0;i<seasons.length;i+=2)groups.push([seasons[i],seasons[i+1]]);
     if(groups.length!==active.length/2)return false;
-    const removalOrder=buildSolvableRemovalOrder(active);
-    if(!removalOrder)return false;
+
     const before=new Map(active.map(t=>[t.order,{...t.data}]));
-    shuffle(groups);
-    for(let i=0;i<groups.length;i++){const pair=groups[i].slice();shuffle(pair);tiles[removalOrder[i*2]].data=pair[0];tiles[removalOrder[i*2+1]].data=pair[1];}
-    history.push({type:'shuffle',before});
-    return true;
+    const orders=shuffle(active.map(t=>t.order));
+    for(let attempt=0;attempt<64;attempt++){
+      const candidate=shuffle(groups.map(pair=>pair.slice()));
+      for(let i=0;i<candidate.length;i++){
+        const pair=shuffle(candidate[i].slice());
+        tiles[orders[i*2]].data=pair[0];
+        tiles[orders[i*2+1]].data=pair[1];
+      }
+      if(findPair()){
+        history.push({type:'shuffle',before});
+        return true;
+      }
+    }
+    before.forEach((data,order)=>{const tile=tiles[order];if(tile)tile.data={...data};});
+    return false;
   }
 
   function focusAdjacent(current,dx,dy){
