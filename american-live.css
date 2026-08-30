@@ -10,10 +10,10 @@ body.american-live-game .icon-btn{background:#fff1;color:#fff;border-color:#ffff
 body.american-live-game .hero,body.american-live-game footer,body.american-live-game .style-note{display:none!important}
 body.american-live-game .american-table{position:fixed;inset:62px 0 0;margin:0;z-index:20;overflow:hidden;padding:0}
 body.american-live-game .american-panel{position:relative;width:100%;height:100%;border:0;border-radius:0;box-shadow:none;background:#173e31;overflow:hidden}
-body.american-live-game .american-header,body.american-live-game .american-settings,body.american-live-game .american-insights,body.american-live-game .american-card-note,body.american-live-game .american-rules{display:none!important}
+body.american-live-game .american-header,body.american-live-game .american-settings,body.american-live-game .american-card-note,body.american-live-game .american-rules{display:none!important}
 body.american-live-game .american-tabletop{position:absolute;inset:0 0 88px;padding:0;min-height:0;background:radial-gradient(circle at 50% 46%,#79b75f 0,#5d9b4f 38%,#3c773d 76%,#285c34 100%);overflow:hidden}
 body.american-live-game .american-tabletop:before{content:'';position:absolute;inset:12px 10%;border:1px solid #ffffff24;border-radius:2px;box-shadow:inset 0 0 80px #143c211f;pointer-events:none}
-body.american-live-game .american-tabletop:after{content:'GAME OF THE DAY  ·  AMERICAN MAH JONGG';position:absolute;top:16px;left:50%;transform:translateX(-50%);padding:7px 18px;border-radius:999px;background:#f2d890;color:#5c4720;font:800 12px/1 'DM Sans',sans-serif;letter-spacing:.12em;white-space:nowrap;box-shadow:0 2px 6px #18311a33}
+body.american-live-game .american-tabletop:after{content:'AMERICAN MAH JONGG';position:absolute;top:16px;left:50%;transform:translateX(-50%);padding:7px 18px;border-radius:999px;background:#f2d890;color:#5c4720;font:800 12px/1 'DM Sans',sans-serif;letter-spacing:.12em;white-space:nowrap;box-shadow:0 2px 6px #18311a33}
 body.american-live-game .american-center-banner{position:absolute;z-index:6;left:50%;top:50%;transform:translate(-50%,-50%);width:min(62%,680px);padding:10px 18px;border-radius:999px;background:#173f2ed9;color:#fff;text-align:center;font:500 20px/1.2 'DM Sans',sans-serif;box-shadow:0 5px 18px #163d2438}
 body.american-live-game .american-center-banner span{font-weight:400;color:#d8e3dc}
 body.american-live-game .american-players{display:block;position:absolute;inset:0;z-index:4}
@@ -31,8 +31,12 @@ body.american-live-game .american-tile{flex:1 1 0;width:auto;max-width:62px;min-
 body.american-live-game .american-tool{border:0;border-radius:999px;background:#f8f4e9;color:#3e392f;min-height:38px;padding:8px 18px;font:700 11px 'DM Sans',sans-serif;box-shadow:0 3px 0 #c9c0ad;cursor:pointer}
 body.american-live-game .american-toolbar{position:absolute;z-index:12;left:50%;top:79%;transform:translate(-50%,-50%);display:flex;gap:7px;justify-content:center;background:transparent;padding:0;border:0}
 body.american-live-game .american-toolbar .american-phase{display:none}
-body.american-live-game .american-toolbar #americanNewHand,body.american-live-game .american-toolbar #americanEndGame,body.american-live-game .american-toolbar #americanHint,body.american-live-game .american-toolbar #americanSuggested{display:block}
+body.american-live-game .american-toolbar .american-tool{display:block}
 body.american-live-game .american-toolbar .american-tool.primary{background:#f8f4e9;color:#3e392f}
+/* Suggested hands is an in-table overlay in live mode, matching the reference interaction. */
+body.american-live-game .american-insights{position:absolute;z-index:40;left:50%;top:8%;transform:translateX(-50%);width:min(86%,980px);max-height:62%;padding:12px;display:grid;grid-template-columns:1.05fr 1fr;gap:10px;overflow:auto;background:#f8f4e9ee;border:1px solid #fff;border-radius:14px;box-shadow:0 18px 45px #09251b66;backdrop-filter:blur(8px)}
+body.american-live-game .american-insights.hidden{display:none!important}
+body.american-live-game .american-insight-panel{min-width:0}.american-live-game .american-insight-heading{color:#173e31}.american-live-game .american-combination-grid,.american-live-game .american-direction-list{display:grid;gap:6px}.american-live-game .american-combo-card,.american-live-game .american-direction-card{min-height:52px;padding:8px;border-radius:9px}.american-live-game .american-direction-card{cursor:pointer}.american-live-game .american-direction-card.hint-focus,.american-live-game .american-combo-card.hint-focus{outline:3px solid #c99a45}.american-live-game .american-insight-foot{font-size:8px}
 @media(max-width:800px){
   body.american-live-game .topbar{height:50px;min-height:50px;padding:5px 9px}
   body.american-live-game main{height:calc(100dvh - 50px)}body.american-live-game .american-table{inset:50px 0 0}
@@ -46,6 +50,7 @@ body.american-live-game .american-toolbar .american-tool.primary{background:#f8f
   body.american-live-game .american-discard-area{top:60%;width:32%;min-height:36px;padding:3px;gap:2px}.american-live-game .discard-tile{width:15px;height:20px;font-size:10px}
   body.american-live-game .american-controls{top:70%;width:94%;gap:4px}.american-live-game .american-selection{min-width:0;flex:1;padding:6px 8px;font-size:8px}.american-live-game .american-pass{min-height:30px;padding:6px 10px;font-size:8px}
   body.american-live-game .american-toolbar{top:auto;bottom:74px;width:100%;gap:3px}.american-live-game .american-tool{min-height:27px;padding:5px 8px;font-size:7px;box-shadow:0 2px 0 #c9c0ad}
+  body.american-live-game .american-insights{top:7%;width:92%;max-height:62%;padding:7px;grid-template-columns:1fr;gap:6px;border-radius:10px}.american-live-game .american-combination-grid,.american-live-game .american-direction-list{grid-template-columns:1fr 1fr;gap:4px}.american-live-game .american-combo-card,.american-live-game .american-direction-card{min-height:38px;padding:5px}.american-live-game .combo-title,.american-live-game .american-direction-card strong{font-size:7px}.american-live-game .combo-meta,.american-live-game .combo-detail,.american-live-game .american-direction-card small,.american-live-game .direction-tag{font-size:5px;line-height:1.1}
   body.american-live-game .american-hand-wrap{height:70px;padding:4px 4%;border-top-width:5px}.american-live-game .american-hand{gap:2px}.american-live-game .american-tile{height:58px;max-width:none;min-width:18px;border-radius:3px;box-shadow:1px 2px 0 #d0c8b8,2px 3px 5px #0003}.american-live-game .american-glyph{font-size:22px}.american-live-game .american-value{font-size:6px;right:2px;bottom:2px}
 }
 @media(max-width:390px){
@@ -58,5 +63,6 @@ body.american-live-game .american-toolbar .american-tool.primary{background:#f8f
   body.american-live-game .american-tabletop{bottom:74px}.american-live-game .american-center-banner{top:47%;width:55%;font-size:12px}
   body.american-live-game .seat-west{top:4%;width:32%}.american-live-game .seat-south{left:2%;top:28%;width:18%}.american-live-game .seat-north{right:2%;top:28%;width:18%}.american-live-game .seat-east{bottom:1%;width:38%}
   body.american-live-game .american-controls{top:65%;width:65%}.american-live-game .american-toolbar{bottom:78px}.american-live-game .american-tool{min-height:29px;font-size:8px;padding:5px 11px}
+  body.american-live-game .american-insights{top:6%;width:70%;max-height:72%;grid-template-columns:1fr 1fr}.american-live-game .american-combination-grid,.american-live-game .american-direction-list{grid-template-columns:1fr 1fr}
   body.american-live-game .american-hand-wrap{height:74px;padding-left:16%;padding-right:16%}.american-live-game .american-tile{height:62px}.american-live-game .american-glyph{font-size:23px}
 }
