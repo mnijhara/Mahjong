@@ -14,8 +14,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
       - name: Install dependencies
@@ -53,8 +53,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
       - name: Install Playwright
@@ -75,22 +75,20 @@ jobs:
             const browser = await chromium.launch({headless:true});
             const page = await browser.newPage({viewport:{width:1440,height:900}});
             await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
-
-            // American Mah Jongg primary mode: verify 152-tile set, East's 14 tiles and the required first Charleston.
-            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('American mode did not deal East 14 tiles');
-            if (await page.locator('#americanPlayers .player-card').count() !== 4) throw new Error('American mode did not render four players');
+            if (await page.locator('#gameStyle').inputValue() !== 'american') throw new Error('American mode is not the default');
+            if (await page.locator('#americanHand .american-tile').count() !== 0) throw new Error('American hand should not auto-start');
+            if (await page.locator('#americanStart').count() !== 1) throw new Error('American Start game control is missing');
+            await page.locator('#americanStart').click();
+            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('American Start game did not deal 14 tiles');
+            if (!(await page.locator('#americanStatus').textContent()).includes('Charleston')) throw new Error('American Charleston did not start');
             for (let pass = 0; pass < 3; pass++) {
               const tiles = page.locator('#americanHand .american-tile');
-              await tiles.nth(0).click();
-              await tiles.nth(1).click();
-              await tiles.nth(2).click();
+              await tiles.nth(0).click(); await tiles.nth(1).click(); await tiles.nth(2).click();
               if (await page.locator('#americanPass').isDisabled()) throw new Error(`Charleston pass ${pass + 1} did not enable`);
               await page.locator('#americanPass').click();
             }
             if (!(await page.locator('#americanStatus').textContent()).includes('Charleston complete')) throw new Error('Charleston did not complete');
             if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('East hand count changed after Charleston');
-
-            // Switch to Solitaire and verify its core gameplay controls still work.
             await page.selectOption('#gameStyle', 'solitaire');
             await page.getByRole('button', {name:'Start game'}).click();
             if (await page.locator('#board .tile').count() !== 144) throw new Error('Expected 144 Solitaire tiles');
@@ -113,7 +111,7 @@ jobs:
             await page.getByRole('button', {name:'Start game'}).click();
             if (await page.locator('#board .tile').count() !== 144) throw new Error('Mobile Solitaire render failed');
             await browser.close();
-            console.log('Mahjong American + Solitaire browser smoke test passed');
+            console.log('Mahjong American explicit-start + Charleston + Solitaire browser smoke test passed');
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
       - name: Dump server log on failure
