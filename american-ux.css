@@ -31,7 +31,7 @@
  body.preferred-landscape.american-mode .stats{gap:16px;margin-right:8px}.preferred-landscape .stats span{font-size:7px}.preferred-landscape .stats strong{font-size:12px}
  body.preferred-landscape.american-mode .hero{padding:8px 2px 10px;align-items:center;gap:12px;flex-direction:row}
  body.preferred-landscape.american-mode .hero h1{font-size:28px}.preferred-landscape .hero .eyebrow{display:none}
- body.preferred-landscape.american-mode .style-picker{display:grid;grid-template-columns:auto minmax(220px,360px);gap:5px 10px;align-items:center}.preferred-landscape .style-picker label{font-size:8px;grid-row:1}.preferred-landscape .style-picker select{min-height:34px;font-size:10px}.preferred-landscape .style-description,.preferred-landscape .tile-customizer{display:none}
+ body.preferred-landscape.american-mode .style-picker{display:grid;grid-template-columns:auto minmax(220px,360px);gap:5px 10px;align-items:center}.preferred-landscape .style-picker label{font-size:8px;grid-row:1}.preferred-landscape .style-picker select{min-height:34px;font-size:10px}.preferred-landscape .style-description{font-size:9px}.preferred-landscape .tile-customizer{display:block}
  body.preferred-landscape.american-mode .hero>.actions{display:none}
  body.preferred-landscape.american-mode .american-table{margin-top:0}
  body.preferred-landscape.american-mode .american-panel{border-radius:16px}
