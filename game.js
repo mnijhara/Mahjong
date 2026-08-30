@@ -46,20 +46,22 @@
   }
 
   function buildSolvableRemovalOrder(active){
-    const remaining=new Set(active.map(t=>t.order));
-    const order=[];
-    while(remaining.size){
-      const free=[...remaining].map(orderId=>tiles[orderId]).filter(Boolean).filter(t=>isFree(t,[...remaining].map(orderId=>tiles[orderId])));
-      if(free.length<2)return null;
-      shuffle(free);
-      const first=free[0];
-      const afterFirst=[...remaining].filter(orderId=>orderId!==first.order).map(orderId=>tiles[orderId]);
-      const secondCandidates=free.slice(1).filter(t=>isFree(t,afterFirst));
-      const second=secondCandidates[0]||free[1];
-      order.push(first.order,second.order);
-      remaining.delete(first.order);remaining.delete(second.order);
+    for(let attempt=0;attempt<48;attempt++){
+      const remaining=new Set(active.map(t=>t.order));
+      const order=[];
+      let failed=false;
+      while(remaining.size){
+        const activeTiles=[...remaining].map(orderId=>tiles[orderId]).filter(Boolean);
+        const free=shuffle(activeTiles.filter(t=>isFree(t,activeTiles)));
+        if(free.length<2){failed=true;break;}
+        const first=free[0];
+        const second=free[1];
+        order.push(first.order,second.order);
+        remaining.delete(first.order);remaining.delete(second.order);
+      }
+      if(!failed&&order.length===active.length)return order;
     }
-    return order;
+    return null;
   }
 
   function safeShuffleRemaining(){
