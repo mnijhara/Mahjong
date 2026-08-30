@@ -59,9 +59,11 @@
     for(let i=0;i<flowers.length;i+=2)groups.push([flowers[i],flowers[i+1]]);
     for(let i=0;i<seasons.length;i+=2)groups.push([seasons[i],seasons[i+1]]);
     if(groups.length!==active.length/2)return false;
+    const before=new Map(active.map(t=>[t.order,{...t.data}]));
     shuffle(groups);
     const activeOrder=solutionOrder.filter(index=>!tiles[index].removed);
     for(let i=0;i<groups.length;i++){const pair=groups[i].slice();shuffle(pair);tiles[activeOrder[i*2]].data=pair[0];tiles[activeOrder[i*2+1]].data=pair[1];}
+    history.push({type:'shuffle',before});
     return true;
   }
 
@@ -84,13 +86,23 @@
     if(!isFree(t)){flash('That tile is blocked.');return;}
     if(selected===t){selected=null;render();return;}if(!selected){selected=t;render();return;}
     if(same(selected.data,t.data)){
-      const a=selected,b=t;selected=null;history.push([a,b]);a.removed=true;b.removed=true;moves++;pairs++;update();render();beep(620,.07);
+      const a=selected,b=t;selected=null;history.push({type:'move',tiles:[a,b]});a.removed=true;b.removed=true;moves++;pairs++;update();render();beep(620,.07);
       if(pairs===72)finish();else if(!findPair())flash('No open pair remains — shuffle to continue.');
     } else {selected=t;flash('Those tiles do not match.');render();beep(180,.08);}
   }
   function findPair(){const free=tiles.filter(t=>!t.removed&&isFree(t));for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)if(same(free[i].data,free[j].data))return [free[i],free[j]];return null;}
   function cancelHint(){hintToken++;selected=null;}
-  function undo(){if(!started)return;if(!history.length){if(selected!==null){cancelHint();render();flash('Selection cleared.');}return;}cancelHint();const pair=history.pop();pair[0].removed=false;pair[1].removed=false;moves=Math.max(0,moves-1);pairs=Math.max(0,pairs-1);update();render();flash('Move undone.');beep(320,.06);}
+  function undo(){
+    if(!started)return;
+    if(!history.length){if(selected!==null){cancelHint();render();flash('Selection cleared.');}return;}
+    cancelHint();
+    const action=history.pop();
+    if(action.type==='shuffle'){
+      action.before.forEach((data,order)=>{const tile=tiles[order];if(tile)tile.data={...data};});
+      render();flash('Shuffle undone.');beep(320,.06);return;
+    }
+    const [a,b]=action.tiles;a.removed=false;b.removed=false;moves=Math.max(0,moves-1);pairs=Math.max(0,pairs-1);update();render();flash('Move undone.');beep(320,.06);
+  }
   function update(){movesEl.textContent=moves;pairsEl.textContent=`${pairs} / 72`;if(undoBtn)undoBtn.disabled=!started||(!history.length&&selected===null);}
   function flash(text){messageEl.textContent=text;messageEl.classList.remove('hidden');clearTimeout(flash.t);flash.t=setTimeout(()=>messageEl.classList.add('hidden'),1300);}
   function formatTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
