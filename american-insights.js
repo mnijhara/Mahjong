@@ -6,7 +6,6 @@
   const directionEl = $('americanDirections');
   if (!comboEl || !directionEl) return;
 
-  const suitNames = { dots: 'Dots', bams: 'Bams', craks: 'Craks' };
   const labelFor = (tile) => tile.type === 'flower' ? 'Flowers' : tile.label;
   const keyFor = (tile) => {
     if (tile.type === 'flower') return 'flower';
@@ -26,11 +25,18 @@
     return [...groups.values()].sort((a, b) => b.indexes.length - a.indexes.length || labelFor(a.tile).localeCompare(labelFor(b.tile)));
   }
 
-  function card(title, meta, detail, tone = '') {
+  function card(title, meta, detail, indexes = [], tone = '') {
     const el = document.createElement('button');
     el.type = 'button';
     el.className = `american-combo-card${tone ? ` ${tone}` : ''}`;
     el.innerHTML = `<span class="combo-title">${title}</span><span class="combo-meta">${meta}</span><span class="combo-detail">${detail}</span>`;
+    el.addEventListener('click', () => {
+      const rack = $('americanHand');
+      if (!rack) return;
+      rack.querySelectorAll('.insight-focus').forEach(tile => tile.classList.remove('insight-focus'));
+      indexes.forEach(index => rack.querySelectorAll('.american-tile')[index]?.classList.add('insight-focus'));
+      window.setTimeout(() => rack.querySelectorAll('.insight-focus').forEach(tile => tile.classList.remove('insight-focus')), 1400);
+    });
     return el;
   }
 
@@ -48,17 +54,17 @@
     groups.filter(g => g.indexes.length >= 2).slice(0, 6).forEach((g) => {
       const count = g.indexes.length;
       const label = labelFor(g.tile);
-      if (count >= 3) cards.push(card(`${count >= 5 ? 'Quint' : count === 4 ? 'Kong' : 'Pung'} · ${label}`, `${count} natural`, 'Already grouped in your rack', 'strong'));
-      else cards.push(card(`Pair · ${label}`, '2 natural', jokers ? 'Pairs cannot use Jokers' : 'Protect this pair', 'pair'));
+      if (count >= 3) cards.push(card(`${count >= 5 ? 'Quint' : count === 4 ? 'Kong' : 'Pung'} · ${label}`, `${count} natural`, 'Already grouped in your rack', g.indexes, 'strong'));
+      else cards.push(card(`Pair · ${label}`, '2 natural', 'Protect this pair · Jokers cannot replace it', g.indexes, 'pair'));
     });
 
     if (jokers && cards.length < 6) {
       groups.filter(g => g.indexes.length >= 2).slice(0, 3).forEach((g) => {
         const count = g.indexes.length;
-        if (count < 5) {
-          const needed = Math.max(0, 3 - count);
-          const maxGroup = Math.min(5, count + jokers);
-          if (maxGroup >= 3) cards.push(card(`Joker-assisted ${maxGroup === 5 ? 'Quint' : maxGroup === 4 ? 'Kong' : 'Pung'} · ${labelFor(g.tile)}`, `${count} natural + ${Math.min(jokers, needed || maxGroup - count)} Joker`, 'Jokers may fill eligible groups of 3+', 'joker'));
+        const maxGroup = Math.min(6, count + jokers);
+        if (maxGroup >= 3 && count < 6) {
+          const jokerUsed = Math.min(jokers, maxGroup - count);
+          cards.push(card(`Joker-assisted ${maxGroup === 5 ? 'Quint' : maxGroup === 4 ? 'Kong' : maxGroup === 3 ? 'Pung' : 'Sextet'} · ${labelFor(g.tile)}`, `${count} natural + ${jokerUsed} Joker`, 'Jokers can fill groups of 3+; not pairs or singles', g.indexes, 'joker'));
         }
       });
     }
@@ -70,33 +76,45 @@
     cards.slice(0, 6).forEach(c => comboEl.appendChild(c));
     const footer = document.createElement('div');
     footer.className = 'american-insight-foot';
-    footer.textContent = `${hand.length} tiles · ${groups.filter(g => g.indexes.length >= 2).length} natural group${groups.filter(g => g.indexes.length >= 2).length === 1 ? '' : 's'} · ${jokers} Joker${jokers === 1 ? '' : 's'}`;
+    const naturalGroups = groups.filter(g => g.indexes.length >= 2).length;
+    footer.textContent = `${hand.length} tiles · ${naturalGroups} natural group${naturalGroups === 1 ? '' : 's'} · ${jokers} Joker${jokers === 1 ? '' : 's'} · tap a combination to highlight it`;
     comboEl.appendChild(footer);
   }
 
   function renderDirections(hand, started) {
     directionEl.innerHTML = '';
     if (!started) return;
+
     const suited = hand.filter(t => t.type === 'suited');
     const even = suited.filter(t => t.value % 2 === 0).length;
     const odd = suited.filter(t => t.value % 2 === 1).length;
+    const threeSixNine = suited.filter(t => [3, 6, 9].includes(t.value)).length;
+    const year = suited.filter(t => [2, 6].includes(t.value)).length;
     const honors = hand.filter(t => t.type === 'wind' || t.type === 'dragon').length;
-    const flowers = hand.filter(t => t.type === 'flower').length;
+    const jokers = hand.filter(t => t.type === 'joker').length;
     const groups = groupTiles(hand);
+    const pairs = groups.filter(g => g.indexes.length === 2).length;
     const triples = groups.filter(g => g.indexes.length >= 3).length;
-    const pairs = groups.filter(g => g.indexes.length >= 2).length;
+    const rankCounts = new Map();
+    suited.forEach(t => rankCounts.set(t.value, (rankCounts.get(t.value) || 0) + 1));
+    const anyLike = Math.max(0, ...rankCounts.values());
+    const runs = suited.reduce((score, tile) => score + ([1,2,3,4,5,6,7,8,9].includes(tile.value) ? 1 : 0), 0);
 
     const directions = [
-      ['Quints / Kongs', triples ? `${triples} strong group${triples === 1 ? '' : 's'}` : 'No triplet yet', triples ? 'Your best group-building signal right now.' : 'Look for a third copy of an existing pair.'],
-      ['Pairs & Singles', `${pairs} pair${pairs === 1 ? '' : 's'}`, 'Pairs are valuable anchors; Jokers cannot replace pairs or singles.'],
-      ['Even-number family', `${even} suited tiles`, 'A useful direction when your hand is rich in 2, 4, 6 and 8 tiles.'],
-      ['Odd-number family', `${odd} suited tiles`, 'A useful direction when your hand is rich in 1, 3, 5, 7 and 9 tiles.'],
-      ['Winds & Dragons', `${honors} honor tiles`, 'Worth watching when matching honors start to cluster.'],
-      ['Flowers', `${flowers} flower${flowers === 1 ? '' : 's'}`, 'Flowers are interchangeable in American Mah Jongg and are never passed as Jokers.']
+      ['2026', `${year} matching ranks`, 'Look for 2s and 6s early; special 2026/NEWS tiles must remain natural.'],
+      ['2468', `${even} even tiles`, 'Strong when your rack is already concentrated on 2, 4, 6 and 8.'],
+      ['Any Like Numbers', `${anyLike} same-rank cluster`, 'Promising when one number is appearing repeatedly across suits.'],
+      ['Quints', `${triples} triplet${triples === 1 ? '' : 's'} · ${jokers} Joker${jokers === 1 ? '' : 's'}`, 'A natural triplet plus Jokers is the clearest signal for a Quint/Kong route.'],
+      ['Consecutive Run', `${runs} suited tiles`, 'Keep adjacent ranks in the same suit when a run starts to form.'],
+      ['13579', `${odd} odd tiles`, 'Strong when 1, 3, 5, 7 and 9 dominate the suited rack.'],
+      ['Winds & Dragons', `${honors} honor tiles`, 'Watch clustered Winds or Dragons; protect matching honors.'],
+      ['369', `${threeSixNine} tiles`, 'A useful direction when 3, 6 and 9 are recurring.'],
+      ['Singles & Pairs', `${pairs} pair${pairs === 1 ? '' : 's'}`, 'Pair-rich hands can point here; Jokers never substitute for pairs or singles.']
     ];
+
     directions.sort((a, b) => {
-      const score = (x) => Number.parseInt(x[1], 10) || 0;
-      return score(b) - score(a);
+      const numeric = (text) => Number.parseInt(text, 10) || 0;
+      return numeric(b[1]) - numeric(a[1]);
     });
     directions.slice(0, 4).forEach(([title, meta, detail]) => {
       const el = document.createElement('div');
