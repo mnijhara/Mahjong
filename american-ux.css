@@ -23,26 +23,81 @@
  .american-toolbar{padding:10px 14px;gap:7px}.american-tool{flex:1;min-width:110px}.american-phase{order:-1;width:100%;margin-left:0;justify-content:flex-start}
  .american-settings{padding:14px}.american-settings-grid{grid-template-columns:1fr}
 }
-@media(max-width:900px) and (orientation:landscape), (max-width:900px) and (orientation:portrait) and (min-width:1px){
+
+/* The Landscape choice is a real table presentation, not a forced CSS rotation. A normal
+   browser tab cannot reliably rotate a phone; when the phone is portrait, keep the page
+   readable and show a small rotate prompt. The four-seat wide table is applied only after
+   the device is actually in landscape. */
+.landscape-rotate-notice{display:none}
+@media(max-width:900px) and (orientation:portrait){
+ body.preferred-landscape.american-mode .landscape-rotate-notice{display:flex;align-items:center;justify-content:center;gap:9px;margin:8px 0 10px;padding:10px 14px;border:1px solid #d7c7a5;border-radius:12px;background:#fff8e8;color:#5f503d;font-size:11px;font-weight:800;text-align:center}
+ body.preferred-landscape.american-mode .landscape-rotate-notice::before{content:'↻';font-size:18px;line-height:1}
+ body.preferred-landscape.american-mode .american-table{margin-top:0}
+}
+
+@media(max-width:900px) and (orientation:landscape){
  body.preferred-landscape.american-mode{overflow-x:hidden}
  body.preferred-landscape.american-mode .app-shell{max-width:none;padding:7px 12px 10px}
  body.preferred-landscape.american-mode .topbar{height:40px}
- body.preferred-landscape.american-mode .brand-mark{width:34px;height:34px;border-radius:9px;font-size:18px}.preferred-landscape .brand-name{font-size:11px}.preferred-landscape .brand-sub{font-size:9px}
- body.preferred-landscape.american-mode .stats{gap:16px;margin-right:8px}.preferred-landscape .stats span{font-size:7px}.preferred-landscape .stats strong{font-size:12px}
+ body.preferred-landscape.american-mode .brand-mark{width:34px;height:34px;border-radius:9px;font-size:18px}
+ body.preferred-landscape.american-mode .brand-name{font-size:11px}
+ body.preferred-landscape.american-mode .brand-sub{font-size:9px}
+ body.preferred-landscape.american-mode .stats{gap:16px;margin-right:8px}
+ body.preferred-landscape.american-mode .stats span{font-size:7px}
+ body.preferred-landscape.american-mode .stats strong{font-size:12px}
  body.preferred-landscape.american-mode .hero{padding:8px 2px 10px;align-items:center;gap:12px;flex-direction:row}
- body.preferred-landscape.american-mode .hero h1{font-size:28px}.preferred-landscape .hero .eyebrow{display:none}
- body.preferred-landscape.american-mode .style-picker{display:grid;grid-template-columns:auto minmax(220px,360px);gap:5px 10px;align-items:center}.preferred-landscape .style-picker label{font-size:8px;grid-row:1}.preferred-landscape .style-picker select{min-height:34px;font-size:10px}.preferred-landscape .style-description{font-size:9px}.preferred-landscape .tile-customizer{display:block}
+ body.preferred-landscape.american-mode .hero h1{font-size:28px}
+ body.preferred-landscape.american-mode .hero .eyebrow{display:none}
+ body.preferred-landscape.american-mode .style-picker{display:grid;grid-template-columns:auto minmax(220px,360px);gap:5px 10px;align-items:center}
+ body.preferred-landscape.american-mode .style-picker label{font-size:8px;grid-row:1}
+ body.preferred-landscape.american-mode .style-picker select{min-height:34px;font-size:10px}
+ body.preferred-landscape.american-mode .style-description{font-size:9px}
+ body.preferred-landscape.american-mode .tile-customizer{display:block}
  body.preferred-landscape.american-mode .hero>.actions{display:none}
  body.preferred-landscape.american-mode .american-table{margin-top:0}
  body.preferred-landscape.american-mode .american-panel{border-radius:16px}
- body.preferred-landscape.american-mode .american-header{padding:12px 16px;gap:14px;align-items:center}.preferred-landscape .american-header h2{font-size:22px}.preferred-landscape .american-header p{font-size:9px;margin-top:3px}.preferred-landscape .american-kicker{font-size:7px;margin-bottom:3px}
- body.preferred-landscape.american-mode .american-header-actions{min-width:0;flex-direction:row;align-items:center}.preferred-landscape .american-status{padding:7px 10px;font-size:9px}.preferred-landscape .american-start{min-height:38px;padding:8px 13px;font-size:11px}
- body.preferred-landscape.american-mode .american-toolbar{padding:7px 12px}.preferred-landscape .american-tool{min-height:34px;padding:6px 10px;font-size:9px;flex:0 1 auto}.preferred-landscape .american-phase{width:auto;margin-left:auto;order:0;font-size:8px}
- body.preferred-landscape.american-mode .american-tabletop{padding:10px;min-height:220px}.preferred-landscape .american-center-banner{margin-bottom:7px;padding:6px 12px;font-size:9px}
- body.preferred-landscape.american-mode .american-players{grid-template-columns:repeat(4,1fr);gap:7px}.preferred-landscape .player-card{min-height:78px;padding:8px;border-radius:11px}.preferred-landscape .player-card.human{grid-column:auto;order:initial}.preferred-landscape .player-head strong{font-size:13px}.preferred-landscape .player-head span,.preferred-landscape .rack-count{font-size:7px}.preferred-landscape .mini-rack{height:31px;margin-top:7px;padding:3px}.preferred-landscape .mini-tile-back{height:24px;max-width:18px}.preferred-landscape .mini-tile-back::before{font-size:7px}.preferred-landscape .rack-placeholder{font-size:7px}
- body.preferred-landscape.american-mode .american-discard-area{min-height:48px;margin-top:7px;padding:5px}.preferred-landscape .discard-tile{width:20px;height:27px;font-size:12px}
- body.preferred-landscape.american-mode .american-controls{padding:8px 12px;min-height:46px}.preferred-landscape .american-selection{font-size:9px}.preferred-landscape .american-pass{min-height:34px;padding:7px 12px;font-size:9px}
- body.preferred-landscape.american-mode .american-insights{padding:10px 12px;gap:8px;grid-template-columns:1.25fr 1fr}.preferred-landscape .american-insight-heading{margin-bottom:6px}.preferred-landscape .american-insight-heading strong{font-size:13px}.preferred-landscape .american-insight-heading span{font-size:7px}.preferred-landscape .american-combination-grid,.preferred-landscape .american-direction-list{gap:5px}.preferred-landscape .american-combo-card,.preferred-landscape .american-direction-card{min-height:48px;padding:7px}.preferred-landscape .combo-title,.preferred-landscape .american-direction-card strong{font-size:8px}.preferred-landscape .combo-meta,.preferred-landscape .combo-detail,.preferred-landscape .american-direction-card small{font-size:7px;line-height:1.25}.preferred-landscape .direction-tag{font-size:6px;padding:2px 4px}.preferred-landscape .american-card-note,.preferred-landscape .american-rules{display:none}
- body.preferred-landscape.american-mode .american-hand-wrap{padding:8px 12px 10px}.preferred-landscape .american-hand-title{margin-bottom:4px}.preferred-landscape .american-hand-title strong{font-size:8px}.preferred-landscape .american-hand{gap:4px;padding:4px 2px 8px;overflow-x:visible;justify-content:center}.preferred-landscape .american-tile{flex:1 1 0;max-width:58px;min-width:35px;height:52px}.preferred-landscape .american-glyph{font-size:21px}.preferred-landscape .american-value{font-size:6px;right:3px;bottom:2px}
+ body.preferred-landscape.american-mode .american-header{padding:12px 16px;gap:14px;align-items:center}
+ body.preferred-landscape.american-mode .american-header h2{font-size:22px}
+ body.preferred-landscape.american-mode .american-header p{font-size:9px;margin-top:3px}
+ body.preferred-landscape.american-mode .american-kicker{font-size:7px;margin-bottom:3px}
+ body.preferred-landscape.american-mode .american-header-actions{min-width:0;flex-direction:row;align-items:center}
+ body.preferred-landscape.american-mode .american-status{padding:7px 10px;font-size:9px}
+ body.preferred-landscape.american-mode .american-start{min-height:38px;padding:8px 13px;font-size:11px}
+ body.preferred-landscape.american-mode .american-toolbar{padding:7px 12px}
+ body.preferred-landscape.american-mode .american-tool{min-height:34px;padding:6px 10px;font-size:9px;flex:0 1 auto}
+ body.preferred-landscape.american-mode .american-phase{width:auto;margin-left:auto;order:0;font-size:8px}
+ body.preferred-landscape.american-mode .american-tabletop{padding:10px;min-height:220px}
+ body.preferred-landscape.american-mode .american-center-banner{margin-bottom:7px;padding:6px 12px;font-size:9px}
+ body.preferred-landscape.american-mode .american-players{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+ body.preferred-landscape.american-mode .player-card{min-height:78px;padding:8px;border-radius:11px}
+ body.preferred-landscape.american-mode .player-card.human{grid-column:auto;order:initial}
+ body.preferred-landscape.american-mode .player-head strong{font-size:13px}
+ body.preferred-landscape.american-mode .player-head span,body.preferred-landscape.american-mode .rack-count{font-size:7px}
+ body.preferred-landscape.american-mode .mini-rack{height:31px;margin-top:7px;padding:3px}
+ body.preferred-landscape.american-mode .mini-tile-back{height:24px;max-width:18px}
+ body.preferred-landscape.american-mode .mini-tile-back::before{font-size:7px}
+ body.preferred-landscape.american-mode .rack-placeholder{font-size:7px}
+ body.preferred-landscape.american-mode .american-discard-area{min-height:48px;margin-top:7px;padding:5px}
+ body.preferred-landscape.american-mode .discard-tile{width:20px;height:27px;font-size:12px}
+ body.preferred-landscape.american-mode .american-controls{padding:8px 12px;min-height:46px}
+ body.preferred-landscape.american-mode .american-selection{font-size:9px}
+ body.preferred-landscape.american-mode .american-pass{min-height:34px;padding:7px 12px;font-size:9px}
+ body.preferred-landscape.american-mode .american-insights{padding:10px 12px;gap:8px;grid-template-columns:1.25fr 1fr}
+ body.preferred-landscape.american-mode .american-insight-heading{margin-bottom:6px}
+ body.preferred-landscape.american-mode .american-insight-heading strong{font-size:13px}
+ body.preferred-landscape.american-mode .american-insight-heading span{font-size:7px}
+ body.preferred-landscape.american-mode .american-combination-grid,body.preferred-landscape.american-mode .american-direction-list{gap:5px}
+ body.preferred-landscape.american-mode .american-combo-card,body.preferred-landscape.american-mode .american-direction-card{min-height:48px;padding:7px}
+ body.preferred-landscape.american-mode .combo-title,body.preferred-landscape.american-mode .american-direction-card strong{font-size:8px}
+ body.preferred-landscape.american-mode .combo-meta,body.preferred-landscape.american-mode .combo-detail,body.preferred-landscape.american-mode .american-direction-card small{font-size:7px;line-height:1.25}
+ body.preferred-landscape.american-mode .direction-tag{font-size:6px;padding:2px 4px}
+ body.preferred-landscape.american-mode .american-card-note,body.preferred-landscape.american-mode .american-rules{display:none}
+ body.preferred-landscape.american-mode .american-hand-wrap{padding:8px 12px 10px}
+ body.preferred-landscape.american-mode .american-hand-title{margin-bottom:4px}
+ body.preferred-landscape.american-mode .american-hand-title strong{font-size:8px}
+ body.preferred-landscape.american-mode .american-hand{gap:4px;padding:4px 2px 8px;overflow-x:visible;justify-content:center}
+ body.preferred-landscape.american-mode .american-tile{flex:1 1 0;max-width:58px;min-width:35px;height:52px}
+ body.preferred-landscape.american-mode .american-glyph{font-size:21px}
+ body.preferred-landscape.american-mode .american-value{font-size:6px;right:3px;bottom:2px}
  body.preferred-landscape.american-mode footer{display:none}
 }
