@@ -28,6 +28,7 @@ jobs:
           test -s styles.css
           test -s american.css
           test -s american-game.js
+          test -s american-insights.js
           test -s game.js
           test -s manifest.webmanifest
           test -s robots.txt
@@ -35,6 +36,7 @@ jobs:
           grep -q 'id="americanTable"' index.html
           grep -q 'id="americanHand"' index.html
           grep -q 'id="americanPass"' index.html
+          grep -q 'id="americanCombinations"' index.html
           grep -q '72 / 72\|/ 72' game.js index.html
       - name: Check for accidental secrets
         run: |
@@ -44,7 +46,7 @@ jobs:
           fi
       - name: Check application content policy
         run: |
-          if grep -niE 'my love|birthday|anniversary|dedication' index.html styles.css american.css american-game.js game.js style-selector.js manifest.webmanifest robots.txt; then
+          if grep -niE 'my love|birthday|anniversary|dedication' index.html styles.css american.css american-game.js american-insights.js game.js style-selector.js manifest.webmanifest robots.txt; then
             echo 'Personal or occasion-specific content detected in application files.'
             exit 1
           fi
@@ -81,9 +83,11 @@ jobs:
             await page.locator('#americanStart').click();
             if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('American Start game did not deal 14 tiles');
             if (!(await page.locator('#americanStatus').textContent()).includes('Charleston')) throw new Error('American Charleston did not start');
+            if (await page.locator('#americanCombinations .american-combo-card').count() < 1) throw new Error('American combination guidance did not render');
             for (let pass = 0; pass < 3; pass++) {
-              const tiles = page.locator('#americanHand .american-tile');
-              await tiles.nth(0).click(); await tiles.nth(1).click(); await tiles.nth(2).click();
+              const indexes = await page.locator('#americanHand .american-tile').evaluateAll((els) => els.map((el, index) => ({ index, joker: /Joker/i.test(el.getAttribute('aria-label') || '') })).filter(x => !x.joker).slice(0, 3).map(x => x.index));
+              if (indexes.length < 3) throw new Error(`Not enough non-Joker tiles for Charleston pass ${pass + 1}`);
+              for (const index of indexes.slice().reverse()) await page.locator('#americanHand .american-tile').nth(index).click();
               if (await page.locator('#americanPass').isDisabled()) throw new Error(`Charleston pass ${pass + 1} did not enable`);
               await page.locator('#americanPass').click();
             }
@@ -108,10 +112,10 @@ jobs:
             await page.setViewportSize({width:390,height:844});
             await page.reload({waitUntil:'networkidle'});
             await page.selectOption('#gameStyle', 'solitaire');
-            await page.getByRole('button', {name:'Start game'}).click();
-            if (await page.locator('#board .tile').count() !== 144) throw new Error('Mobile Solitaire render failed');
+            await page.getByRole('button', {name:/Resume game|Start game/}).click();
+            if (await page.locator('#board .tile').count() !== 144) throw new Error('Mobile Solitaire saved-game resume failed');
             await browser.close();
-            console.log('Mahjong American explicit-start + Charleston + Solitaire browser smoke test passed');
+            console.log('Mahjong American explicit-start + live combinations + Charleston + Solitaire browser smoke test passed');
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
       - name: Dump server log on failure

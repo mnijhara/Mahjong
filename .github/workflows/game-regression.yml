@@ -89,9 +89,10 @@ jobs:
             if (!savedBeforeReload) throw new Error('In-progress Solitaire game was not saved');
 
             await page.reload({waitUntil:'networkidle'});
-            if (await page.locator('#board .tile').count() !== 142) throw new Error('Saved Solitaire board did not restore after reload');
-            if ((await page.locator('#pairs').textContent()) !== '1 / 72') throw new Error('Saved pair counter did not restore');
             await page.selectOption('#gameStyle', 'solitaire');
+            await page.getByRole('button', {name:/Resume game|Start game/}).click();
+            if (await page.locator('#board .tile').count() !== 142) throw new Error('Saved Solitaire board did not restore after resume');
+            if ((await page.locator('#pairs').textContent()) !== '1 / 72') throw new Error('Saved pair counter did not restore');
             if ((await page.locator('#startGame').textContent()).trim() !== 'Resume game') throw new Error('Resume game affordance missing');
 
             await page.getByRole('button', {name:/Shuffle remaining/}).click();
@@ -111,7 +112,7 @@ jobs:
             if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('Mobile American Start game did not deal 14 tiles');
             await page.selectOption('#gameStyle', 'solitaire');
             await page.getByRole('button', {name:/Resume game|Start game/}).click();
-            if (await page.locator('#board .tile').count() !== 142) throw new Error('Mobile Solitaire saved-game restore failed');
+            if (await page.locator('#board .tile').count() !== 142) throw new Error('Mobile Solitaire saved-game resume failed');
             if (errors.length) throw new Error(errors.join('\n'));
             await browser.close();
             console.log(`American explicit-start + live combinations + Charleston + Solitaire save/resume + shuffle recovery + mobile browser regression passed (${process.env.TEST_VERSION})`);
