@@ -9,15 +9,15 @@
   if (!select || !description || !noteTitle || !noteCopy || !start) return;
 
   const styles = {
+    american: {
+      playable: true,
+      description: 'American Mah Jongg is the primary mode: four players, 152 tiles, Charleston, Jokers and a 14-tile winning hand.',
+      note: 'Playable table foundation: 152-tile deal, four seats, first Charleston and Joker-safe passing. Card validation, calling, scoring and computer turns are next.'
+    },
     solitaire: {
       playable: true,
-      description: 'Play the classic single-player matching game. This is the playable mode today.',
+      description: 'Play the classic single-player matching game with a solvable 144-tile layout, hints, undo and safe shuffle.',
       note: 'Single-player tile matching with a solvable 144-tile layout.'
-    },
-    american: {
-      playable: false,
-      description: 'American Mah Jongg is a four-player, 152-tile, card-driven game with a Charleston and Jokers. The full table rules are the next major game mode.',
-      note: 'Planned: 4-player NMJL-style play, Charleston, racks, discards, exposures, Jokers and card-based winning hands.'
     },
     riichi: {
       playable: false,
@@ -47,13 +47,14 @@
   };
 
   function renderStyle() {
-    const style = styles[select.value] || styles.solitaire;
+    const style = styles[select.value] || styles.american;
     description.textContent = style.description;
     noteTitle.textContent = select.options[select.selectedIndex].textContent.split(' — ')[0];
     noteCopy.textContent = style.note;
     start.disabled = !style.playable;
     start.textContent = style.playable ? 'Start game' : 'Coming soon';
     start.setAttribute('aria-disabled', String(!style.playable));
+    if (window.showAmericanGame) window.showAmericanGame(select.value === 'american');
   }
 
   select.addEventListener('change', renderStyle);
