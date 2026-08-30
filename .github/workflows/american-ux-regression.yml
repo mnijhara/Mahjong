@@ -99,16 +99,8 @@ jobs:
               const metrics = await p.evaluate(() => {
                 const doc = document.documentElement, body = document.body;
                 const panel = document.querySelector('.american-panel');
-                const table = document.querySelector('.american-table');
                 const rect = panel?.getBoundingClientRect();
-                return {
-                  viewportW: innerWidth, viewportH: innerHeight,
-                  scrollW: Math.max(doc.scrollWidth, body.scrollWidth),
-                  scrollH: Math.max(doc.scrollHeight, body.scrollHeight),
-                  panel: rect ? {x:rect.x,y:rect.y,right:rect.right,bottom:rect.bottom,width:rect.width,height:rect.height} : null,
-                  tableBottom: table?.getBoundingClientRect().bottom ?? 0,
-                  tableTop: table?.getBoundingClientRect().top ?? 0
-                };
+                return { viewportW: innerWidth, viewportH: innerHeight, scrollW: Math.max(doc.scrollWidth, body.scrollWidth), scrollH: Math.max(doc.scrollHeight, body.scrollHeight), panel: rect ? {x:rect.x,y:rect.y,right:rect.right,bottom:rect.bottom,width:rect.width,height:rect.height} : null };
               });
               if (metrics.scrollW > width + 2) throw new Error(`${label}: horizontal page overflow ${JSON.stringify(metrics)}`);
               if (metrics.scrollH > height + 2) throw new Error(`${label}: vertical page overflow ${JSON.stringify(metrics)}`);
@@ -129,14 +121,22 @@ jobs:
             if (await landscape.locator('#americanHand .american-tile').count() !== 14) throw new Error('Landscape viewport lost the playable rack');
             await assertSingleViewport('landscape phone', landscape, 844, 390);
 
-            const boxes = await landscape.locator('#americanPlayers .player-card').evaluateAll(els => els.map(e => { const r=e.getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height}; }));
-            if (new Set(boxes.map(b => Math.round(b.y / 3))).size !== 1) throw new Error(`Landscape player cards are not on one row: ${JSON.stringify(boxes)}`);
+            const boxes = await landscape.locator('#americanPlayers .player-card').evaluateAll(els => els.map(e => { const r=e.getBoundingClientRect(); return {x:r.x,y:r.y,right:r.right,bottom:r.bottom,width:r.width,height:r.height}; }));
+            if (boxes.length !== 4) throw new Error(`Expected four landscape seats, got ${boxes.length}`);
             if (Math.min(...boxes.map(b => b.width)) < 120) throw new Error(`Landscape player cards are too narrow: ${JSON.stringify(boxes)}`);
+            const top = boxes.reduce((a,b) => a.y < b.y ? a : b);
+            const bottom = boxes.reduce((a,b) => a.y > b.y ? a : b);
+            const left = boxes.reduce((a,b) => a.x < b.x ? a : b);
+            const right = boxes.reduce((a,b) => a.right > b.right ? a : b);
+            if (top.x + top.width / 2 < 844 * 0.35 || top.x + top.width / 2 > 844 * 0.65) throw new Error(`Top seat is not centered: ${JSON.stringify(boxes)}`);
+            if (bottom.x + bottom.width / 2 < 844 * 0.35 || bottom.x + bottom.width / 2 > 844 * 0.65) throw new Error(`Bottom seat is not centered: ${JSON.stringify(boxes)}`);
+            if (left.x > 844 * 0.35 || right.right < 844 * 0.65) throw new Error(`Side seats are not positioned at the sides: ${JSON.stringify(boxes)}`);
+            if (top.y > 110 || bottom.y < 390 * 0.60) throw new Error(`Top/bottom table seats are not vertically separated: ${JSON.stringify(boxes)}`);
 
             await landscape.close();
             if (errors.length) throw new Error(errors.join('\n'));
             await browser.close();
-            console.log('American Mahjong mobile single-viewport + actionable guidance + Charleston + draw-discard regression passed');
+            console.log('American Mahjong mobile single-viewport + actionable guidance + Charleston + draw-discard + reference-style landscape regression passed');
           })().catch(err => { console.error(err); process.exit(1); });
           NODE
       - name: Dump server log on failure
