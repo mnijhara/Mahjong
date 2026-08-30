@@ -1,0 +1,84 @@
+name: American Mahjong UX Regression
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  ux-browser-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0 --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Static JavaScript validation
+        run: |
+          node --check american-ux.js
+          node --check american-game.js
+      - name: Browser UX regression
+        run: |
+          python3 -m http.server 4173 >/tmp/mahjong-server.log 2>&1 &
+          node - <<'NODE'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            const page = await browser.newPage({viewport:{width:390,height:844}, deviceScaleFactor:1});
+            const errors = [];
+            page.on('console', msg => { if (msg.type() === 'error') errors.push(`console: ${msg.text()}`); });
+            page.on('pageerror', err => errors.push(`pageerror: ${err.message}`));
+            await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
+
+            if (await page.locator('#americanOrientationGate').isHidden()) throw new Error('Portrait orientation guidance is missing');
+            await page.locator('#americanOrientationDismiss').click();
+            if (!await page.locator('#americanOrientationGate').isHidden()) throw new Error('Portrait orientation dismissal failed');
+
+            await page.locator('#americanConfiguration').click();
+            if (!await page.locator('#americanSettings').isVisible()) throw new Error('American configuration panel did not open');
+            const tileStyle = page.locator('#americanTileStyle');
+            await tileStyle.selectOption('jade');
+            const themeStyle = await page.locator('#tile-theme-style').textContent();
+            if (!themeStyle.includes('#eef8f1')) throw new Error('American tile customization did not apply');
+            if ((await page.evaluate(() => localStorage.getItem('mahjong-tile-theme'))) !== 'jade') throw new Error('Tile customization was not persisted');
+
+            await page.locator('#americanStart').click();
+            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('American Start game did not deal 14 tiles');
+            if (await page.locator('#americanPlayers .player-card').count() !== 4) throw new Error('American table did not render four players');
+            if (await page.locator('#americanDirections .american-direction-card').count() !== 4) throw new Error('Suggested hand ranking did not render');
+            await page.locator('#americanHint').click();
+            if (await page.locator('#americanHand .american-tile.insight-focus').count() < 1) throw new Error('American Hint did not highlight a useful tile');
+            await page.locator('#americanSuggested').click();
+            if (!await page.locator('#americanInsights').isHidden()) throw new Error('Suggested hands toggle did not hide insights');
+            await page.locator('#americanSuggested').click();
+            if (await page.locator('#americanInsights').isHidden()) throw new Error('Suggested hands toggle did not restore insights');
+
+            await page.setViewportSize({width:844,height:390});
+            await page.reload({waitUntil:'networkidle'});
+            await page.locator('#gameStyle').selectOption('american');
+            await page.locator('#americanStart').click();
+            const cards = page.locator('#americanPlayers .player-card');
+            if (await cards.count() !== 4) throw new Error('Landscape table did not render four player cards');
+            const boxes = await cards.evaluateAll(els => els.map(e => { const r=e.getBoundingClientRect(); return {x:r.x,y:r.y,width:r.width,height:r.height}; }));
+            const rows = new Set(boxes.map(b => Math.round(b.y / 4)));
+            if (rows.size !== 1) throw new Error(`Landscape player cards are not on one table row: ${JSON.stringify(boxes)}`);
+            if (Math.min(...boxes.map(b => b.width)) < 120) throw new Error(`Landscape player cards are too narrow: ${JSON.stringify(boxes)}`);
+            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('Landscape American rack did not remain playable');
+
+            if (errors.length) throw new Error(errors.join('\n'));
+            await browser.close();
+            console.log('American Mahjong responsive table + landscape layout + configuration + tile customization + suggestions/hint regression passed');
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
+      - name: Dump server log on failure
+        if: failure()
+        run: cat /tmp/mahjong-server.log || true
