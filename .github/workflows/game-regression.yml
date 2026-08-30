@@ -50,7 +50,8 @@ jobs:
             if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('American Start game did not deal 14 tiles');
             if (!(await page.locator('#americanStatus').textContent()).includes('Charleston')) throw new Error('American Charleston did not start');
             for (let pass = 0; pass < 3; pass++) {
-              const tiles = page.locator('#americanHand .american-tile');
+              const tiles = page.locator('#americanHand .american-tile:not([aria-label*="Joker"])');
+              if (await tiles.count() < 3) throw new Error(`Not enough non-Joker tiles for Charleston pass ${pass + 1}`);
               await tiles.nth(0).click(); await tiles.nth(1).click(); await tiles.nth(2).click();
               if (await page.locator('#americanPass').isDisabled()) throw new Error(`Charleston pass ${pass + 1} did not enable`);
               await page.locator('#americanPass').click();
