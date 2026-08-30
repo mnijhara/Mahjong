@@ -31,7 +31,7 @@
     const wrap = document.createElement('div');
     wrap.id = 'tileCustomizer';
     wrap.className = 'tile-customizer';
-    wrap.innerHTML = '<label for="tileStyle">Tile design</label><select id="tileStyle" aria-label="Choose tile design"></select><label class="view-label" for="tableView">Table view</label><select id="tableView" aria-label="Choose table view"><option value="responsive">Responsive</option><option value="landscape">Landscape</option></select>';
+    wrap.innerHTML = '<label for="tileStyle">Tile design</label><select id="tileStyle" aria-label="Choose tile design"></select><label class="view-label" for="tableView">Table view</label><select id="tableView" aria-label="Choose table view"><option value="responsive">Responsive</option><option value="landscape">Landscape</option></select><p class="view-help" id="tableViewHelp">Landscape uses a wide table layout for easier play on a rotated phone.</p>';
     const picker = select.closest('.style-picker');
     if (!picker) return;
     picker.appendChild(wrap);
@@ -50,11 +50,26 @@
     try { savedView = localStorage.getItem('mahjong-table-view') || 'responsive'; } catch (e) {}
     viewSelect.value = savedView === 'landscape' ? 'landscape' : 'responsive';
     applyTableView(viewSelect.value);
-    viewSelect.addEventListener('change', () => { applyTableView(viewSelect.value); try { localStorage.setItem('mahjong-table-view', viewSelect.value); } catch (e) {} });
+    viewSelect.addEventListener('change', () => {
+      applyTableView(viewSelect.value);
+      try { localStorage.setItem('mahjong-table-view', viewSelect.value); } catch (e) {}
+    });
   }
 
   function applyTableView(value) {
-    document.body.classList.toggle('preferred-landscape', value === 'landscape');
+    const landscape = value === 'landscape';
+    document.body.classList.toggle('preferred-landscape', landscape);
+    const help = document.getElementById('tableViewHelp');
+    if (help) help.textContent = landscape
+      ? 'Landscape uses a wide four-seat table and keeps the rack horizontally playable.'
+      : 'Responsive adapts the table to the current screen size.';
+
+    // Use the native orientation API when the browser allows it. The CSS layout remains
+    // the reliable fallback because normal browser tabs cannot always lock device rotation.
+    try {
+      if (screen.orientation?.unlock && !landscape) screen.orientation.unlock();
+      if (screen.orientation?.lock && landscape) screen.orientation.lock('landscape').catch(() => {});
+    } catch (e) {}
   }
 
   function applyTileTheme(key) {
@@ -65,6 +80,7 @@
       .tile-customizer{margin-top:14px;width:min(560px,100%)}
       .tile-customizer label{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8b7158;margin-bottom:8px}
       .tile-customizer .view-label{margin-top:12px}
+      .tile-customizer .view-help{margin:7px 0 0;font-size:10px;line-height:1.45;color:var(--muted)}
       .tile-customizer select{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:#fffaf2;color:var(--ink);padding:0 42px 0 14px;font:600 13px 'DM Sans',sans-serif;box-shadow:0 5px 16px #243b2b0d;cursor:pointer}
       .tile-customizer select:focus-visible{outline:3px solid ${theme.accent};outline-offset:3px}
       .tile,.american-tile{background:${theme.face};border-color:${theme.edge};box-shadow:4px 5px 0 ${theme.shadow},5px 8px 12px #2a382d1d}
