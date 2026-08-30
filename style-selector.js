@@ -9,41 +9,13 @@
   if (!select || !description || !noteTitle || !noteCopy || !start) return;
 
   const styles = {
-    american: {
-      playable: true,
-      description: 'American Mah Jongg is the primary mode: four players, 152 tiles, Charleston, Jokers and a 14-tile winning hand.',
-      note: 'Playable table foundation: 152-tile deal, four seats, first Charleston and Joker-safe passing. Card validation, calling, scoring and computer turns are next.'
-    },
-    solitaire: {
-      playable: true,
-      description: 'Play the classic single-player matching game with a solvable 144-tile layout, hints, undo and safe shuffle.',
-      note: 'Single-player tile matching with a solvable 144-tile layout.'
-    },
-    riichi: {
-      playable: false,
-      description: 'Japanese Riichi Mahjong uses four players, calls such as Chi/Pon/Kan, Riichi declarations and yaku-based winning rules.',
-      note: 'Planned: Riichi table, calls, yaku, furiten, scoring and four-player flow.'
-    },
-    'hong-kong': {
-      playable: false,
-      description: 'Hong Kong Mahjong is a four-player traditional rules family with regional scoring and hand-building conventions.',
-      note: 'Planned: Hong Kong rules, table flow and configurable scoring.'
-    },
-    'chinese-classical': {
-      playable: false,
-      description: 'Chinese Classical Mahjong is an older four-player rules family with a different scoring philosophy from modern regional variants.',
-      note: 'Planned: Chinese Classical hand validation and scoring.'
-    },
-    taiwanese: {
-      playable: false,
-      description: 'Taiwanese Mahjong uses 16 tiles in the hand and distinctive scoring and winning-hand rules.',
-      note: 'Planned: 16-tile gameplay, scoring and table flow.'
-    },
-    singapore: {
-      playable: false,
-      description: 'Singapore Mahjong is a four-player variant with its own scoring and special hand rules.',
-      note: 'Planned: Singapore rules and scoring.'
-    }
+    american: { playable: true, description: 'American Mah Jongg is the primary mode: four players, 152 tiles, Charleston, Jokers and a 14-tile winning hand.', note: 'Playable table foundation: 152-tile deal, four seats, first Charleston and Joker-safe passing. Card validation, calling, scoring and computer turns are next.' },
+    solitaire: { playable: true, description: 'Play the classic single-player matching game with a solvable 144-tile layout, hints, undo and safe shuffle.', note: 'Single-player tile matching with a solvable 144-tile layout.' },
+    riichi: { playable: false, description: 'Japanese Riichi Mahjong uses four players, calls such as Chi/Pon/Kan, Riichi declarations and yaku-based winning rules.', note: 'Planned: Riichi table, calls, yaku, furiten, scoring and four-player flow.' },
+    'hong-kong': { playable: false, description: 'Hong Kong Mahjong is a four-player traditional rules family with regional scoring and hand-building conventions.', note: 'Planned: Hong Kong rules, table flow and configurable scoring.' },
+    'chinese-classical': { playable: false, description: 'Chinese Classical Mahjong is an older four-player rules family with a different scoring philosophy from modern regional variants.', note: 'Planned: Chinese Classical hand validation and scoring.' },
+    taiwanese: { playable: false, description: 'Taiwanese Mahjong uses 16 tiles in the hand and distinctive scoring and winning-hand rules.', note: 'Planned: 16-tile gameplay, scoring and table flow.' },
+    singapore: { playable: false, description: 'Singapore Mahjong is a four-player variant with its own scoring and special hand rules.', note: 'Planned: Singapore rules and scoring.' }
   };
 
   const tileThemes = {
@@ -59,39 +31,40 @@
     const wrap = document.createElement('div');
     wrap.id = 'tileCustomizer';
     wrap.className = 'tile-customizer';
-    wrap.innerHTML = '<label for="tileStyle">Tile design</label><select id="tileStyle" aria-label="Choose tile design"></select>';
+    wrap.innerHTML = '<label for="tileStyle">Tile design</label><select id="tileStyle" aria-label="Choose tile design"></select><label class="view-label" for="tableView">Table view</label><select id="tableView" aria-label="Choose table view"><option value="responsive">Responsive</option><option value="landscape">Landscape</option></select>';
     const picker = select.closest('.style-picker');
     if (!picker) return;
     picker.appendChild(wrap);
     const tileSelect = wrap.querySelector('#tileStyle');
     Object.entries(tileThemes).forEach(([value, theme]) => {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = theme.label;
-      tileSelect.appendChild(option);
+      const option = document.createElement('option'); option.value = value; option.textContent = theme.label; tileSelect.appendChild(option);
     });
-
     let saved = 'ivory';
     try { saved = localStorage.getItem('mahjong-tile-theme') || 'ivory'; } catch (e) {}
     tileSelect.value = tileThemes[saved] ? saved : 'ivory';
     applyTileTheme(tileSelect.value);
-    tileSelect.addEventListener('change', () => {
-      applyTileTheme(tileSelect.value);
-      try { localStorage.setItem('mahjong-tile-theme', tileSelect.value); } catch (e) {}
-    });
+    tileSelect.addEventListener('change', () => { applyTileTheme(tileSelect.value); try { localStorage.setItem('mahjong-tile-theme', tileSelect.value); } catch (e) {} });
+
+    const viewSelect = wrap.querySelector('#tableView');
+    let savedView = 'responsive';
+    try { savedView = localStorage.getItem('mahjong-table-view') || 'responsive'; } catch (e) {}
+    viewSelect.value = savedView === 'landscape' ? 'landscape' : 'responsive';
+    applyTableView(viewSelect.value);
+    viewSelect.addEventListener('change', () => { applyTableView(viewSelect.value); try { localStorage.setItem('mahjong-table-view', viewSelect.value); } catch (e) {} });
+  }
+
+  function applyTableView(value) {
+    document.body.classList.toggle('preferred-landscape', value === 'landscape');
   }
 
   function applyTileTheme(key) {
     const theme = tileThemes[key] || tileThemes.ivory;
     let style = document.getElementById('tile-theme-style');
-    if (!style) {
-      style = document.createElement('style');
-      style.id = 'tile-theme-style';
-      document.head.appendChild(style);
-    }
+    if (!style) { style = document.createElement('style'); style.id = 'tile-theme-style'; document.head.appendChild(style); }
     style.textContent = `
       .tile-customizer{margin-top:14px;width:min(560px,100%)}
       .tile-customizer label{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8b7158;margin-bottom:8px}
+      .tile-customizer .view-label{margin-top:12px}
       .tile-customizer select{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:#fffaf2;color:var(--ink);padding:0 42px 0 14px;font:600 13px 'DM Sans',sans-serif;box-shadow:0 5px 16px #243b2b0d;cursor:pointer}
       .tile-customizer select:focus-visible{outline:3px solid ${theme.accent};outline-offset:3px}
       .tile,.american-tile{background:${theme.face};border-color:${theme.edge};box-shadow:4px 5px 0 ${theme.shadow},5px 8px 12px #2a382d1d}
