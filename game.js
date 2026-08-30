@@ -71,15 +71,9 @@
     const active=tiles.filter(t=>!t.removed);
     if(!active.length)return;
     const cx=current.x+26,cy=current.y+34;
-    const candidates=active.filter(t=>{
-      const tx=t.x+26,ty=t.y+34;
-      return dx<0?tx<cx-4:dx>0?tx>cx+4:dy<0?ty<cy-4:ty>cy+4;
-    });
+    const candidates=active.filter(t=>{const tx=t.x+26,ty=t.y+34;return dx<0?tx<cx-4:dx>0?tx>cx+4:dy<0?ty<cy-4:ty>cy+4;});
     if(!candidates.length)return;
-    candidates.sort((a,b)=>{
-      const da=(a.x+26-cx)**2+(a.y+34-cy)**2,db=(b.x+26-cx)**2+(b.y+34-cy)**2;
-      return da-db;
-    });
+    candidates.sort((a,b)=>{const da=(a.x+26-cx)**2+(a.y+34-cy)**2,db=(b.x+26-cx)**2+(b.y+34-cy)**2;return da-db;});
     const el=board.querySelector(`[data-order="${candidates[0].order}"]`);if(el)el.focus();
   }
 
@@ -90,13 +84,7 @@
       el.type='button';el.className=`tile ${free?'free':'blocked'}${selected===t?' selected':''}`;el.style.cssText=`left:${t.x}px;top:${t.y}px;z-index:${t.z*200+t.order}`;
       el.dataset.order=String(t.order);
       el.setAttribute('aria-label',`${t.data.label} tile${free?', open':', blocked'}`);el.setAttribute('aria-disabled',String(!free));
-      el.addEventListener('keydown',e=>{
-        if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){
-          e.preventDefault();
-          const dx=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0,dy=e.key==='ArrowUp'?-1:e.key==='ArrowDown'?1:0;
-          focusAdjacent(t,dx,dy);
-        }
-      });
+      el.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();const dx=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0,dy=e.key==='ArrowUp'?-1:e.key==='ArrowDown'?1:0;focusAdjacent(t,dx,dy);}});
       const glyph=document.createElement('span');glyph.className='glyph';glyph.textContent=t.data.glyph;el.appendChild(glyph);
       const small=document.createElement('span');small.className='small';small.textContent=t.data.kind==='suited'?(t.data.suit==='characters'?'萬':t.data.suit==='bamboo'?'索':'筒'):t.data.kind==='honor'?'字':t.data.key==='flower'?'花':'季';el.appendChild(small);el.addEventListener('click',()=>clickTile(t));board.appendChild(el);
     });
@@ -105,7 +93,7 @@
   }
   function clickTile(t){
     if(!started)return;
-    cancelHint();
+    cancelHint(false);
     if(!isFree(t)){flash('That tile is blocked.');return;}
     if(selected===t){selected=null;render();return;}if(!selected){selected=t;render();return;}
     if(same(selected.data,t.data)){
@@ -114,16 +102,13 @@
     } else {selected=t;flash('Those tiles do not match.');render();beep(180,.08);}
   }
   function findPair(){const free=tiles.filter(t=>!t.removed&&isFree(t));for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)if(same(free[i].data,free[j].data))return [free[i],free[j]];return null;}
-  function cancelHint(){hintToken++;selected=null;}
+  function cancelHint(clearSelection=true){hintToken++;if(clearSelection)selected=null;}
   function undo(){
     if(!started)return;
     if(!history.length){if(selected!==null){cancelHint();render();flash('Selection cleared.');}return;}
     cancelHint();
     const action=history.pop();
-    if(action.type==='shuffle'){
-      action.before.forEach((data,order)=>{const tile=tiles[order];if(tile)tile.data={...data};});
-      render();flash('Shuffle undone.');beep(320,.06);return;
-    }
+    if(action.type==='shuffle'){action.before.forEach((data,order)=>{const tile=tiles[order];if(tile)tile.data={...data};});render();flash('Shuffle undone.');beep(320,.06);return;}
     const [a,b]=action.tiles;a.removed=false;b.removed=false;moves=Math.max(0,moves-1);pairs=Math.max(0,pairs-1);update();render();flash('Move undone.');beep(320,.06);
   }
   function update(){movesEl.textContent=moves;pairsEl.textContent=`${pairs} / 72`;if(undoBtn)undoBtn.disabled=!started||(!history.length&&selected===null);}
