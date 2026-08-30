@@ -46,8 +46,8 @@
     const labels = document.querySelectorAll('.stats span');
     if (labels.length >= 3) { labels[0].textContent = 'PHASE'; labels[1].textContent = 'WALL'; labels[2].textContent = 'HAND'; }
     if (time) time.textContent = phase === 'charleston' ? `PASS ${passIndex + 1}/3` : phase === 'play' ? 'PLAY' : 'READY';
-    if (moves) moves.textContent = String(wall.length);
-    if (pairs) pairs.textContent = `${players[0]?.hand.length || 0} tiles`;
+    if (moves) moves.textContent = started ? String(wall.length) : '—';
+    if (pairs) pairs.textContent = started ? `${players[0]?.hand.length || 0} tiles` : 'Ready';
   }
 
   function tileButton(tile, index) {
@@ -67,15 +67,24 @@
     const sorted = players[0]?.hand || [];
     sorted.forEach((tile, index) => hand.appendChild(tileButton(tile, index)));
     const count = $('americanSelection');
-    if (count) count.textContent = selected.length ? `${selected.length} / 3 selected` : 'Select 3 tiles to pass';
+    if (count) count.textContent = !started ? 'Start a hand to begin the Charleston' : selected.length ? `${selected.length} / 3 selected` : 'Select 3 tiles to pass';
     const pass = $('americanPass');
     if (pass) pass.disabled = phase !== 'charleston' || selected.length !== 3;
+    const start = $('americanStart');
+    if (start) start.textContent = started ? 'New hand ↻' : 'Start game';
   }
 
   function renderPlayers() {
     const rack = $('americanPlayers');
     if (!rack) return;
     rack.innerHTML = '';
+    if (!started) {
+      const empty = document.createElement('div');
+      empty.className = 'american-empty-state';
+      empty.innerHTML = '<strong>Ready to play</strong><span>Deal a new hand to begin the Charleston.</span>';
+      rack.appendChild(empty);
+      return;
+    }
     players.forEach((player, index) => {
       const card = document.createElement('section');
       card.className = `player-card${index === 0 ? ' human' : ''}${index === turn && phase === 'play' ? ' active' : ''}`;
@@ -155,7 +164,7 @@
 
   function startGame() {
     wall = buildSet();
-    players = names.map((name, index) => ({ name, hand: [] }));
+    players = names.map((name) => ({ name, hand: [] }));
     for (let round = 0; round < 13; round++) for (const player of players) player.hand.push(wall.pop());
     players[0].hand.push(wall.pop());
     players.forEach(player => player.hand.sort((a,b) => a.label.localeCompare(b.label)));
@@ -165,8 +174,6 @@
     const copy = $('styleNoteCopy');
     if (title) title.textContent = 'American Mah Jongg';
     if (copy) copy.textContent = '152-tile table · 4 players · Charleston first · 13-tile hands, East starts with 14.';
-    const start = $('startGame');
-    if (start) start.textContent = 'Restart hand';
     render();
   }
 
@@ -176,7 +183,13 @@
     if (solitaire) solitaire.classList.toggle('hidden', show);
     const actions = document.querySelector('.actions');
     if (actions) actions.classList.toggle('hidden', show);
-    if (show && !started) startGame();
+    if (show) {
+      if (!started) {
+        phase = 'idle';
+        setStatus('Ready to deal a new hand.');
+        render();
+      }
+    }
   }
 
   window.startAmericanGame = startGame;
