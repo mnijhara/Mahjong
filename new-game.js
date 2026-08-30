@@ -7,12 +7,13 @@
   if (!button || !select || !start) return;
 
   function sync() {
-    button.disabled = !start.disabled && select.value !== 'solitaire' && select.value !== 'american' ? true : false;
+    const supported = select.value === 'solitaire' || select.value === 'american';
+    button.disabled = !supported || start.disabled;
     button.setAttribute('aria-disabled', String(button.disabled));
   }
 
   button.addEventListener('click', () => {
-    if (start.disabled) return;
+    if (button.disabled) return;
     if (select.value === 'solitaire') {
       try { localStorage.removeItem('mahjong-solitaire-save-v1'); } catch (e) {}
     }
