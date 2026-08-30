@@ -112,6 +112,27 @@
     }).observe(status, { childList: true, characterData: true, subtree: true });
   }
 
+  // Blocked Solitaire tiles must never be keyboard-activatable. They are
+  // rendered as buttons by the game engine, so aria-disabled alone is not
+  // sufficient: native disabled semantics remove them from the tab order and
+  // suppress activation while preserving the visual board.
+  function hardenSolitaireTileAccessibility() {
+    const board = $('board');
+    if (!board) return;
+    const sync = () => {
+      board.querySelectorAll('.tile.blocked').forEach(tile => {
+        tile.disabled = true;
+        tile.setAttribute('tabindex', '-1');
+      });
+      board.querySelectorAll('.tile.free').forEach(tile => {
+        tile.disabled = false;
+        tile.removeAttribute('tabindex');
+      });
+    };
+    sync();
+    new MutationObserver(sync).observe(board, { childList: true, subtree: true });
+  }
+
   configBtn?.addEventListener('click', () => openSettings(!settings.classList.contains('open')));
   suggestedBtn?.addEventListener('click', () => {
     const visible = Boolean(insights && !insights.classList.contains('hidden'));
@@ -133,6 +154,7 @@
   setPhaseLabel();
   injectLiveTableMotionStyles();
   observeLiveTable();
+  hardenSolitaireTileAccessibility();
 
   const styleSelect = $('gameStyle');
   if (styleSelect) {
