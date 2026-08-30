@@ -46,6 +46,66 @@
     }
   };
 
+  const tileThemes = {
+    ivory: { label: 'Classic Ivory', face: 'linear-gradient(145deg,#fffefb,#eee9dd)', edge: '#cfc8b9', shadow: '#d4cec1', glyph: '#1c473a', accent: '#c99a45', back: 'linear-gradient(145deg,#f6f1e4,#d9d0bf)', backInk: '#8f7651' },
+    jade: { label: 'Jade Green', face: 'linear-gradient(145deg,#eef8f1,#cfe4d8)', edge: '#9db9aa', shadow: '#9ab6a6', glyph: '#174c3b', accent: '#2d8a70', back: 'linear-gradient(145deg,#d8eadf,#9fc4b1)', backInk: '#245d49' },
+    ocean: { label: 'Porcelain Blue', face: 'linear-gradient(145deg,#f4f9ff,#d9e5f1)', edge: '#a9b9c9', shadow: '#a8b8c8', glyph: '#244f70', accent: '#4f82aa', back: 'linear-gradient(145deg,#dbeaf5,#a7c5da)', backInk: '#315e7c' },
+    rose: { label: 'Rosewood', face: 'linear-gradient(145deg,#fff7f2,#ead8d1)', edge: '#c9aaa0', shadow: '#c5a49a', glyph: '#6b3540', accent: '#a95f6d', back: 'linear-gradient(145deg,#ead8d1,#c99da4)', backInk: '#70414a' },
+    contrast: { label: 'High Contrast', face: 'linear-gradient(145deg,#ffffff,#eeeeee)', edge: '#202020', shadow: '#222222', glyph: '#000000', accent: '#000000', back: 'linear-gradient(145deg,#444,#111)', backInk: '#ffffff' }
+  };
+
+  function installTileCustomizer() {
+    if (document.getElementById('tileCustomizer')) return;
+    const wrap = document.createElement('div');
+    wrap.id = 'tileCustomizer';
+    wrap.className = 'tile-customizer';
+    wrap.innerHTML = '<label for="tileStyle">Tile design</label><select id="tileStyle" aria-label="Choose tile design"></select>';
+    const picker = select.closest('.style-picker');
+    if (!picker) return;
+    picker.appendChild(wrap);
+    const tileSelect = wrap.querySelector('#tileStyle');
+    Object.entries(tileThemes).forEach(([value, theme]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = theme.label;
+      tileSelect.appendChild(option);
+    });
+
+    let saved = 'ivory';
+    try { saved = localStorage.getItem('mahjong-tile-theme') || 'ivory'; } catch (e) {}
+    tileSelect.value = tileThemes[saved] ? saved : 'ivory';
+    applyTileTheme(tileSelect.value);
+    tileSelect.addEventListener('change', () => {
+      applyTileTheme(tileSelect.value);
+      try { localStorage.setItem('mahjong-tile-theme', tileSelect.value); } catch (e) {}
+    });
+  }
+
+  function applyTileTheme(key) {
+    const theme = tileThemes[key] || tileThemes.ivory;
+    let style = document.getElementById('tile-theme-style');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'tile-theme-style';
+      document.head.appendChild(style);
+    }
+    style.textContent = `
+      .tile-customizer{margin-top:14px;width:min(560px,100%)}
+      .tile-customizer label{display:block;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8b7158;margin-bottom:8px}
+      .tile-customizer select{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:#fffaf2;color:var(--ink);padding:0 42px 0 14px;font:600 13px 'DM Sans',sans-serif;box-shadow:0 5px 16px #243b2b0d;cursor:pointer}
+      .tile-customizer select:focus-visible{outline:3px solid ${theme.accent};outline-offset:3px}
+      .tile,.american-tile{background:${theme.face};border-color:${theme.edge};box-shadow:4px 5px 0 ${theme.shadow},5px 8px 12px #2a382d1d}
+      .tile::after{border-color:${theme.edge}88}
+      .tile .glyph,.american-glyph{color:${theme.glyph}}
+      .tile.selected,.american-tile.selected{outline-color:${theme.accent}88}
+      .tile.free:hover,.american-tile:hover{box-shadow:4px 8px 0 ${theme.shadow},7px 14px 18px #2a382d2a}
+      .discard-tile{background:${theme.face};border:1px solid ${theme.edge};color:${theme.glyph}}
+      .mini-tile-back{background:${theme.back};border-color:${theme.edge}}
+      .mini-tile-back::before{border-color:${theme.edge};color:${theme.backInk}}
+      @media(max-width:800px){.tile-customizer{margin-top:12px}}
+    `;
+  }
+
   function renderStyle() {
     const style = styles[select.value] || styles.american;
     description.textContent = style.description;
@@ -58,6 +118,7 @@
     if (window.showAmericanGame) window.showAmericanGame(select.value === 'american');
   }
 
+  installTileCustomizer();
   select.addEventListener('change', renderStyle);
   renderStyle();
 })();
