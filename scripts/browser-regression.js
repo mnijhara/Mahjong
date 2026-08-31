@@ -133,7 +133,7 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     await page.locator('#playAgain').click();
     await page.waitForFunction(() => document.querySelectorAll('#board .tile').length === 144);
     if (await page.locator('#modal').isVisible()) fail('Play again left completion dialog open');
-    if (await page.evaluate(() => document.activeElement?.matches('#board .tile.free'))) fail('Play again did not restore focus to a board tile');
+    if (await page.evaluate(() => document.activeElement?.matches('#board .tile.free')) !== true) fail('Play again did not restore focus to a board tile');
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload({ waitUntil: 'networkidle' });
