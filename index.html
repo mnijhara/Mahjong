@@ -21,7 +21,7 @@
   <div class="app-shell">
     <header class="topbar">
       <div class="brand"><div class="brand-mark">萬</div><div><div class="brand-name">MAHJONG</div><div class="brand-sub">American Mah Jongg</div></div></div>
-      <div class="stats" aria-live="polite"><div><span>PHASE</span><strong id="time">READY</strong></div><div><span>WALL</span><strong id="moves">—</strong></div><div><span>HAND</span><strong id="pairs">Ready</strong></div></div>
+      <div class="stats"><div><span>PHASE</span><strong id="time">READY</strong></div><div><span>WALL</span><strong id="moves">—</strong></div><div><span>HAND</span><strong id="pairs">Ready</strong></div></div>
       <button class="icon-btn" id="soundBtn" type="button" aria-label="Toggle sound" title="Toggle sound">🔊</button>
     </header>
     <main>
@@ -88,7 +88,7 @@
     </main>
     <footer><span>Mahjong</span><span>Classic traditions · No account required</span></footer>
   </div>
-  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-card"><div class="modal-icon">✦</div><p class="eyebrow">Board cleared</p><h2 id="modalTitle">Beautifully done.</h2><p id="modalCopy"></p><div class="modal-stats"><div><span>TIME</span><strong id="finalTime">00:00</strong></div><div><span>MOVES</span><strong id="finalMoves">0</strong></div></div><button class="btn primary full" id="playAgain" type="button">Play again</button></div></div>
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalCopy"><div class="modal-card"><div class="modal-icon">✦</div><p class="eyebrow">Board cleared</p><h2 id="modalTitle">Beautifully done.</h2><p id="modalCopy"></p><div class="modal-stats"><div><span>TIME</span><strong id="finalTime">00:00</strong></div><div><span>MOVES</span><strong id="finalMoves">0</strong></div></div><button class="btn primary full" id="playAgain" type="button">Play again</button></div></div>
   <noscript><main><p>Mahjong needs JavaScript enabled to play.</p></main></noscript>
   <script src="american-game.js?v=20260830-7"></script>
   <script src="american-card-engine.js?v=20260830-7"></script>
