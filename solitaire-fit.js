@@ -3,7 +3,6 @@
 
   const BOARD_W = 1000;
   const BOARD_H = 590;
-  const MOBILE_MAX = 800;
   const board = document.getElementById('board');
   const wrap = board?.closest('.board-wrap');
   if (!board || !wrap) return;
@@ -12,7 +11,7 @@
 
   function fitBoard() {
     frame = 0;
-    if (!document.body.classList.contains('solitaire-mode') || window.innerWidth > MOBILE_MAX) {
+    if (!document.body.classList.contains('solitaire-mode')) {
       board.style.removeProperty('transform');
       board.style.removeProperty('margin');
       return;
@@ -23,8 +22,16 @@
     const availableHeight = Math.max(0, wrap.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom));
     if (availableWidth < 20 || availableHeight < 20) return;
 
-    // Keep the entire 1000×590 logical board visible. Width and height are both
-    // constraints, so short landscape phones no longer crop the top/bottom rows.
+    // Fit whenever either axis is smaller than the logical board. This covers
+    // short landscape phones as well as narrow portrait screens without
+    // imposing a viewport-width-only breakpoint.
+    const needsFit = availableWidth < BOARD_W || availableHeight < BOARD_H;
+    if (!needsFit) {
+      board.style.removeProperty('transform');
+      board.style.removeProperty('margin');
+      return;
+    }
+
     const scale = Math.min(availableWidth / BOARD_W, availableHeight / BOARD_H);
     const safeScale = Math.max(0.22, Math.min(scale, 0.8));
     board.style.transformOrigin = 'center center';
