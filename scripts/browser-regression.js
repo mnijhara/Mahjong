@@ -24,42 +24,41 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     }, previous, { timeout: 3000 });
     return page.locator('#board .tile.selected').first();
   };
+  const findOpenPair = async () => page.locator('#board .tile.free').evaluateAll(els => {
+    const groups = new Map();
+    for (const el of els) {
+      const key = el.dataset.matchKey;
+      if (!key) continue;
+      const list = groups.get(key) || [];
+      list.push(el.dataset.order);
+      groups.set(key, list);
+    }
+    return [...groups.values()].find(group => group.length >= 2) || [];
+  });
   const clearBoard = async () => {
     let shuffleCount = 0;
-    for (let pair = 0; pair < 72; pair++) {
-      let orders = await page.locator('#board .tile.free').evaluateAll(els => {
-        const groups = new Map();
-        for (const el of els) {
-          const key = el.dataset.matchKey;
-          if (!key) continue;
-          const list = groups.get(key) || [];
-          list.push(el.dataset.order);
-          groups.set(key, list);
-        }
-        return [...groups.values()].find(group => group.length >= 2) || [];
-      });
+    let safety = 0;
+    while (await count('#board .tile') > 0) {
+      safety++;
+      if (safety > 90) fail('Solitaire completion regression exceeded safe move limit');
+      if (await page.locator('#modal').isVisible()) break;
+      let orders = await findOpenPair();
       if (orders.length < 2) {
-        if (shuffleCount >= 6) fail(`Solitaire completion stalled after ${pair} pairs and ${shuffleCount} shuffles`);
+        if (await page.locator('#modal').isVisible()) break;
+        if (shuffleCount >= 6) fail(`Solitaire completion stalled with ${await count('#board .tile')} tiles remaining after ${shuffleCount} shuffles`);
         await page.getByRole('button', { name: /Shuffle remaining/ }).click();
         shuffleCount++;
         await page.waitForTimeout(30);
-        orders = await page.locator('#board .tile.free').evaluateAll(els => {
-          const groups = new Map();
-          for (const el of els) {
-            const key = el.dataset.matchKey;
-            if (!key) continue;
-            const list = groups.get(key) || [];
-            list.push(el.dataset.order);
-            groups.set(key, list);
-          }
-          return [...groups.values()].find(group => group.length >= 2) || [];
-        });
+        if (await page.locator('#modal').isVisible()) break;
+        orders = await findOpenPair();
       }
-      if (orders.length < 2) fail(`Shuffle did not expose an open matching pair after ${pair} pairs`);
+      if (orders.length < 2) fail(`Shuffle did not expose an open matching pair with ${await count('#board .tile')} tiles remaining`);
       await page.locator(`[data-order="${orders[0]}"]`).click();
       await page.locator(`[data-order="${orders[1]}"]`).click();
-      await page.waitForFunction(expected => document.querySelectorAll('#board .tile').length === expected, 142 - ((pair + 1) * 2));
+      const remaining = await count('#board .tile');
+      if (remaining > 0) await page.waitForFunction(expected => document.querySelectorAll('#board .tile').length === expected, remaining);
     }
+    if (await count('#board .tile') !== 0) fail(`Solitaire completion stopped with ${await count('#board .tile')} tiles remaining`);
   };
 
   try {
@@ -129,17 +128,7 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     await page.getByRole('button', { name: /New game/ }).click();
     if (await count('#board .tile') !== 144) fail('New Game did not create a fresh board');
     await page.waitForFunction(() => document.querySelectorAll('#board .tile.free').length > 1);
-    const matchingOrders = await page.locator('#board .tile.free').evaluateAll(els => {
-      const groups = new Map();
-      for (const el of els) {
-        const key = el.dataset.matchKey;
-        if (!key) continue;
-        const list = groups.get(key) || [];
-        list.push(el.dataset.order);
-        groups.set(key, list);
-      }
-      return [...groups.values()].find(group => group.length >= 2) || [];
-    });
+    const matchingOrders = await findOpenPair();
     if (matchingOrders.length < 2) fail('Fresh board did not expose a free matching pair');
     await page.locator(`[data-order="${matchingOrders[0]}"]`).click();
     await page.locator(`[data-order="${matchingOrders[1]}"]`).click();
