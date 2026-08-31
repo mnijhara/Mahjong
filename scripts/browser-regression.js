@@ -77,6 +77,13 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
 
     await page.evaluate(key => localStorage.removeItem(key), SAVE_KEY);
     await setGameStyle('solitaire');
+    const skipLink = page.locator('#skipToGameBoard');
+    if (await skipLink.count() !== 1) fail('Skip-to-game-board link missing');
+    await skipLink.focus();
+    await skipLink.press('Enter');
+    await page.waitForFunction(() => document.activeElement?.id === 'board');
+    if (await page.evaluate(() => document.activeElement?.id) !== 'board') fail('Skip link did not move focus to the game board');
+
     await page.getByRole('button', { name: 'Start game' }).click();
     if (await count('#board .tile') !== 144) fail('Expected 144 Solitaire tiles');
     const blockedCount = await count('#board .tile.blocked');
