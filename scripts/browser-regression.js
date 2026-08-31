@@ -9,6 +9,13 @@ const { chromium } = require('playwright');
 
   const fail = message => { throw new Error(message); };
   const count = selector => page.locator(selector).count();
+  const setGameStyle = async value => {
+    await page.locator('#gameStyle').evaluate((select, nextValue) => {
+      select.value = nextValue;
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }, value);
+    await page.waitForFunction(expected => document.body.classList.contains(`${expected}-mode`), value);
+  };
 
   try {
     await page.goto('http://127.0.0.1:4173/index.html', { waitUntil: 'networkidle' });
@@ -41,7 +48,7 @@ const { chromium } = require('playwright');
     }
     if (!(await page.locator('#americanStatus').textContent()).includes('Charleston complete')) fail('Charleston did not complete');
 
-    await page.selectOption('#gameStyle', 'solitaire');
+    await setGameStyle('solitaire');
     await page.getByRole('button', { name: 'Start game' }).click();
     if (await count('#board .tile') !== 144) fail('Expected 144 Solitaire tiles');
     const blockedCount = await count('#board .tile.blocked');
@@ -72,7 +79,7 @@ const { chromium } = require('playwright');
     if (!(await page.evaluate(() => Boolean(localStorage.getItem('mahjong-solitaire-save-v1'))))) fail('Solitaire save missing');
 
     await page.reload({ waitUntil: 'networkidle' });
-    await page.selectOption('#gameStyle', 'solitaire');
+    await setGameStyle('solitaire');
     await page.getByRole('button', { name: /Resume game|Start game/ }).click();
     if (await count('#board .tile') !== 142) fail('Saved Solitaire board did not restore');
 
@@ -87,11 +94,11 @@ const { chromium } = require('playwright');
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload({ waitUntil: 'networkidle' });
-    await page.selectOption('#gameStyle', 'american');
+    await setGameStyle('american');
     await page.locator('#americanStart').click();
     if (await count('#americanHand .american-tile') !== 14) fail('Mobile American Start game failed');
     if (await count('#americanDirections .american-direction-card') !== 4) fail('Mobile American candidate ranking failed');
-    await page.selectOption('#gameStyle', 'solitaire');
+    await setGameStyle('solitaire');
     await page.getByRole('button', { name: /Resume game|Start game/ }).click();
     if (await count('#board .tile') !== 142) fail('Mobile Solitaire resume failed');
     const viewport = await page.evaluate(() => ({ w: document.documentElement.scrollWidth, h: document.documentElement.scrollHeight, cw: document.documentElement.clientWidth, ch: document.documentElement.clientHeight }));
