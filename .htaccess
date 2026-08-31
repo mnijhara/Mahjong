@@ -1,0 +1,2 @@
+# Static-hosting fallback for Apache-compatible hosts such as Hostinger.
+ErrorDocument 404 /404.html
