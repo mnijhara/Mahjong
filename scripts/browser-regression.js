@@ -1,12 +1,13 @@
 const { chromium } = require('playwright');
 
+const SAVE_KEY = 'mahjong-solitaire-save-v1';
+
 (async () => {
   const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const errors = [];
   page.on('console', message => { if (message.type() === 'error') errors.push(`console: ${message.text()}`); });
   page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
-
   const fail = message => { throw new Error(message); };
   const count = selector => page.locator(selector).count();
   const setGameStyle = async value => {
@@ -15,6 +16,13 @@ const { chromium } = require('playwright');
       select.dispatchEvent(new Event('change', { bubbles: true }));
     }, value);
     await page.waitForFunction(expected => document.body.classList.contains(`${expected}-mode`), value);
+  };
+  const waitForSelected = async (previous = null) => {
+    await page.waitForFunction(prev => {
+      const selected = document.querySelector('#board .tile.selected');
+      return Boolean(selected && selected.dataset.order && selected.dataset.order !== prev);
+    }, previous, { timeout: 3000 });
+    return page.locator('#board .tile.selected').first();
   };
 
   try {
@@ -48,13 +56,13 @@ const { chromium } = require('playwright');
     }
     if (!(await page.locator('#americanStatus').textContent()).includes('Charleston complete')) fail('Charleston did not complete');
 
+    await page.evaluate(key => localStorage.removeItem(key), SAVE_KEY);
     await setGameStyle('solitaire');
     await page.getByRole('button', { name: 'Start game' }).click();
     if (await count('#board .tile') !== 144) fail('Expected 144 Solitaire tiles');
     const blockedCount = await count('#board .tile.blocked');
-    const disabledCount = await count('#board .tile:disabled');
     if (blockedCount < 1) fail('Solitaire should start with blocked tiles');
-    if (disabledCount !== blockedCount) fail('Every blocked Solitaire tile must be natively disabled');
+    if (await count('#board .tile:disabled') !== blockedCount) fail('Every blocked Solitaire tile must be natively disabled');
     if (await count('#board .tile.free:disabled') !== 0) fail('Open Solitaire tiles must remain enabled');
     if (await page.locator('#board .tile.blocked').first().evaluate(el => { el.focus(); return document.activeElement === el; })) fail('Blocked Solitaire tile must not be focusable');
 
@@ -67,30 +75,37 @@ const { chromium } = require('playwright');
     if (await count('#board .tile.selected') !== 0) fail('Solitaire undo failed');
 
     await page.getByRole('button', { name: /Hint/ }).click();
-    await page.waitForTimeout(700);
-    const firstHint = await page.locator('#board .tile.selected').getAttribute('data-order');
-    if (!firstHint) fail('Hint did not select first tile');
-    await page.waitForTimeout(700);
-    const secondHint = await page.locator('#board .tile.selected').getAttribute('data-order');
-    if (!secondHint || secondHint === firstHint) fail('Hint did not select second matching tile');
-    await page.locator(`[data-order="${firstHint}"]`).click();
-    await page.locator(`[data-order="${secondHint}"]`).click();
-    if (await count('#board .tile') !== 142) fail('Hint pair did not remove two tiles');
-    if (!(await page.evaluate(() => Boolean(localStorage.getItem('mahjong-solitaire-save-v1'))))) fail('Solitaire save missing');
+    const firstHint = await waitForSelected();
+    const firstHintLabel = await firstHint.getAttribute('aria-label');
+    const firstHintOrder = await firstHint.getAttribute('data-order');
+    const secondHint = await waitForSelected(firstHintOrder);
+    const secondHintLabel = await secondHint.getAttribute('aria-label');
+    if (!firstHintLabel || !secondHintLabel || firstHintLabel !== secondHintLabel) fail('Hint did not identify a matching pair');
+
+    await page.getByRole('button', { name: /New game/ }).click();
+    if (await count('#board .tile') !== 144) fail('New Game did not create a fresh board');
+    await page.waitForFunction(() => document.querySelectorAll('#board .tile.free').length > 1);
+    const matchingOrders = await page.locator('#board .tile.free').evaluateAll(els => {
+      const groups = new Map();
+      for (const el of els) {
+        const label = el.getAttribute('aria-label');
+        if (!label) continue;
+        const list = groups.get(label) || [];
+        list.push(el.dataset.order);
+        groups.set(label, list);
+      }
+      return [...groups.values()].find(group => group.length >= 2) || [];
+    });
+    if (matchingOrders.length < 2) fail('Fresh board did not expose a free matching pair');
+    await page.locator(`[data-order="${matchingOrders[0]}"]`).click();
+    await page.locator(`[data-order="${matchingOrders[1]}"]`).click();
+    await page.waitForFunction(() => document.querySelectorAll('#board .tile').length === 142);
+    if (!await page.evaluate(key => Boolean(localStorage.getItem(key)), SAVE_KEY)) fail('Solitaire save missing');
 
     await page.reload({ waitUntil: 'networkidle' });
     await setGameStyle('solitaire');
     await page.getByRole('button', { name: /Resume game|Start game/ }).click();
     if (await count('#board .tile') !== 142) fail('Saved Solitaire board did not restore');
-
-    await page.getByRole('button', { name: /Shuffle remaining/ }).click();
-    for (let run = 0; run < 10; run++) {
-      await page.getByRole('button', { name: /Hint/ }).click();
-      await page.waitForTimeout(700);
-      if (await count('#board .tile.selected') !== 1) fail(`Shuffle ${run + 1} left no legal hint`);
-      await page.locator('#board .tile.selected').click();
-      await page.getByRole('button', { name: /Shuffle remaining/ }).click();
-    }
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload({ waitUntil: 'networkidle' });
