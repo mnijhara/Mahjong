@@ -24,6 +24,25 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     }, previous, { timeout: 3000 });
     return page.locator('#board .tile.selected').first();
   };
+  const clearBoard = async () => {
+    for (let pair = 0; pair < 72; pair++) {
+      const orders = await page.locator('#board .tile.free').evaluateAll(els => {
+        const groups = new Map();
+        for (const el of els) {
+          const key = el.dataset.matchKey;
+          if (!key) continue;
+          const list = groups.get(key) || [];
+          list.push(el.dataset.order);
+          groups.set(key, list);
+        }
+        return [...groups.values()].find(group => group.length >= 2) || [];
+      });
+      if (orders.length < 2) fail(`Solitaire completion stalled after ${pair} pairs`);
+      await page.locator(`[data-order="${orders[0]}"]`).click();
+      await page.locator(`[data-order="${orders[1]}"]`).click();
+      await page.waitForFunction(expected => document.querySelectorAll('#board .tile').length === expected, 142 - ((pair + 1) * 2));
+    }
+  };
 
   try {
     await page.goto('http://127.0.0.1:4173/index.html', { waitUntil: 'networkidle' });
@@ -107,6 +126,15 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     await page.getByRole('button', { name: /Resume game|Start game/ }).click();
     if (await count('#board .tile') !== 142) fail('Saved Solitaire board did not restore');
 
+    await clearBoard();
+    if (await page.locator('#modal').isHidden()) fail('Completion dialog did not open after clearing the board');
+    if (await page.evaluate(key => localStorage.getItem(key), SAVE_KEY) !== null) fail('Completed Solitaire game should clear its saved state');
+    if (await page.locator('#playAgain').evaluate(el => document.activeElement === el) !== true) fail('Completion dialog did not move focus to Play again');
+    await page.locator('#playAgain').click();
+    await page.waitForFunction(() => document.querySelectorAll('#board .tile').length === 144);
+    if (await page.locator('#modal').isVisible()) fail('Play again left completion dialog open');
+    if (await page.evaluate(() => document.activeElement?.matches('#board .tile.free'))) fail('Play again did not restore focus to a board tile');
+
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload({ waitUntil: 'networkidle' });
     await setGameStyle('american');
@@ -115,7 +143,7 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     if (await count('#americanDirections .american-direction-card') !== 4) fail('Mobile American candidate ranking failed');
     await setGameStyle('solitaire');
     await page.getByRole('button', { name: /Resume game|Start game/ }).click();
-    if (await count('#board .tile') !== 142) fail('Mobile Solitaire resume failed');
+    if (await count('#board .tile') !== 144) fail('Mobile Solitaire fresh start failed');
     const viewport = await page.evaluate(() => ({ w: document.documentElement.scrollWidth, h: document.documentElement.scrollHeight, cw: document.documentElement.clientWidth, ch: document.documentElement.clientHeight }));
     if (viewport.w > viewport.cw + 1 || viewport.h > viewport.ch + 1) fail(`Mobile Solitaire viewport overflow: ${JSON.stringify(viewport)}`);
     if (errors.length) fail(errors.join('\n'));
