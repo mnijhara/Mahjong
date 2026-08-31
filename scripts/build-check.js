@@ -3,7 +3,7 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
-const required = ['index.html', 'styles.css', 'style-picker.css', 'american.css', 'american-insights.js', 'game.js', 'american-game.js', 'style-selector.js', 'manifest.webmanifest', 'robots.txt', 'icons/mahjong-192.svg'];
+const required = ['index.html', 'styles.css', 'style-picker.css', 'american.css', 'american-insights.js', 'game.js', 'american-game.js', 'style-selector.js', 'manifest.webmanifest', 'robots.txt', 'icons/mahjong-192.svg', '404.html', '.htaccess', 'solitaire-a11y.js', 'scripts/static-server.js'];
 
 for (const file of required) {
   const full = path.join(root, file);
@@ -12,7 +12,7 @@ for (const file of required) {
   }
 }
 
-for (const file of ['game.js', 'american-game.js', 'american-insights.js', 'style-selector.js']) {
+for (const file of ['game.js', 'american-game.js', 'american-insights.js', 'style-selector.js', 'solitaire-a11y.js', 'scripts/static-server.js']) {
   execFileSync(process.execPath, ['--check', path.join(root, file)], { stdio: 'inherit' });
 }
 
@@ -57,4 +57,19 @@ if (!/<svg\b/i.test(iconSvg) || !/viewBox=/i.test(iconSvg)) {
   throw new Error('Mahjong app icon must be a valid SVG with a viewBox.');
 }
 
+// Keep local CSS/JS/manifest/icon references in index.html synchronized with the shipped asset set.
+const localReferences = [];
+for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
+  const raw = match[1].split('#')[0].split('?')[0];
+  if (!raw || raw.startsWith('/') || raw.startsWith('//') || /^[a-z][a-z0-9+.-]*:/i.test(raw)) continue;
+  localReferences.push(raw);
+}
+for (const reference of localReferences) {
+  const assetPath = path.resolve(root, decodeURIComponent(reference));
+  if (!assetPath.startsWith(root + path.sep) || !fs.existsSync(assetPath) || !fs.statSync(assetPath).isFile()) {
+    throw new Error(`Referenced local asset is missing: ${reference}`);
+  }
+}
+
+console.log(`Validated ${localReferences.length} local HTML asset references.`);
 console.log('Mahjong production build validation passed.');
