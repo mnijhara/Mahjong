@@ -8,12 +8,12 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const count = selector => page.locator(selector).count();
   const fail = message => { throw new Error(message); };
-  const waitForSelectedOrder = async (previous = null) => {
+  const waitForSelected = async (previous = null) => {
     await page.waitForFunction(prev => {
       const selected = document.querySelector('#board .tile.selected');
       return Boolean(selected && selected.dataset.order && selected.dataset.order !== prev);
     }, previous, { timeout: 3000 });
-    return page.locator('#board .tile.selected').getAttribute('data-order');
+    return page.locator('#board .tile.selected').first();
   };
 
   try {
@@ -29,14 +29,37 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     await page.getByRole('button', { name: /Undo/ }).click();
     if (await count('#board .tile.selected') !== 0) fail('Undo did not clear the selection');
 
+    // Hint must identify a real matching pair. The game intentionally shows the
+    // two tiles one at a time, so validate their labels without racing the
+    // transient hint timer; the actual match is exercised independently below.
     await page.getByRole('button', { name: /Hint/ }).click();
-    const first = await waitForSelectedOrder();
-    const second = await waitForSelectedOrder(first);
-    if (!second || second === first) fail('Hint did not identify a second matching tile');
-    await page.locator(`[data-order="${first}"]`).click();
-    await page.locator(`[data-order="${second}"]`).click();
+    const firstHint = await waitForSelected();
+    const firstHintLabel = await firstHint.getAttribute('aria-label');
+    const firstHintOrder = await firstHint.getAttribute('data-order');
+    const secondHint = await waitForSelected(firstHintOrder);
+    const secondHintLabel = await secondHint.getAttribute('aria-label');
+    if (!firstHintLabel || !secondHintLabel || firstHintLabel !== secondHintLabel) fail('Hint did not identify a matching pair');
+
+    await page.getByRole('button', { name: /New game/ }).click();
+    if (await count(SELECTOR) !== 144) fail('New Game did not create a fresh board');
+    await page.waitForFunction(() => document.querySelectorAll('#board .tile.free').length > 1);
+
+    const matchingOrders = await page.locator('#board .tile.free').evaluateAll(els => {
+      const groups = new Map();
+      for (const el of els) {
+        const label = el.getAttribute('aria-label');
+        if (!label) continue;
+        const list = groups.get(label) || [];
+        list.push(el.dataset.order);
+        groups.set(label, list);
+      }
+      return [...groups.values()].find(group => group.length >= 2) || [];
+    });
+    if (matchingOrders.length < 2) fail('Fresh board did not expose a free matching pair');
+    await page.locator(`[data-order="${matchingOrders[0]}"]`).click();
+    await page.locator(`[data-order="${matchingOrders[1]}"]`).click();
     await page.waitForFunction(() => document.querySelectorAll('#board .tile').length === 142);
-    if (await count(SELECTOR) !== 142) fail('Matched hint pair did not remove two tiles');
+    if (await count(SELECTOR) !== 142) fail('Matching free pair did not remove two tiles');
     if (!await page.evaluate(key => Boolean(localStorage.getItem(key)), SAVE_KEY)) fail('Active Solitaire game was not saved');
 
     await page.reload({ waitUntil: 'networkidle' });
