@@ -28,7 +28,7 @@
     }
     for (const [key, glyph] of winds) for (let n = 0; n < 4; n++) tiles.push({ id: `${key}-${n}`, type: 'wind', key, label: `${key} Wind`, glyph });
     for (const [key, glyph] of dragons) for (let n = 0; n < 4; n++) tiles.push({ id: `${key}-dragon-${n}`, type: 'dragon', key, label: `${key} Dragon`, glyph });
-    for (let n = 1; n <= 8; n++) tiles.push({ id: `flower-${n}`, type: 'flower', key: 'flower', label: `Flower ${n}`, glyph: '✿' });
+    for (let n = 1; n <= 8; n++) tiles.push({ id: `flower-${n}`, type: 'flower', key: 'flower', value: n, label: `Flower ${n}`, glyph: '✿' });
     for (let n = 1; n <= 8; n++) tiles.push({ id: `joker-${n}`, type: 'joker', key: 'joker', label: 'Joker', glyph: '★' });
     if (tiles.length !== 152) throw new Error(`American set must contain 152 tiles, got ${tiles.length}`);
     return shuffle(tiles);
@@ -50,12 +50,32 @@
     if (pairs) pairs.textContent = started ? `${players[0]?.hand.length || 0} tiles` : 'Ready';
   }
 
+  function renderTileFace(tile) {
+    if (tile.type === 'suited') {
+      const count = tile.value;
+      const pipClass = tile.suit === 'dots' ? 'dots' : tile.suit === 'bams' ? 'bams' : 'craks';
+      const pips = Array.from({ length: count }, (_, i) => `<span class="tile-pip pip-${i + 1}">${tile.suit === 'dots' ? '●' : tile.suit === 'bams' ? '♣' : '萬'}</span>`).join('');
+      return `<span class="tile-corner tile-corner-top">${count}</span><span class="tile-suit-label">${suitName[tile.suit].toUpperCase()}</span><span class="tile-pips ${pipClass}" aria-hidden="true">${pips}</span><span class="tile-center-mark">${tile.suit === 'craks' ? '萬' : tile.suit === 'bams' ? '竹' : '●'}</span><span class="tile-corner tile-corner-bottom">${count}</span>`;
+    }
+    if (tile.type === 'wind') {
+      const windName = tile.key[0].toUpperCase() + tile.key.slice(1);
+      return `<span class="tile-corner tile-corner-top">${windName[0]}</span><span class="tile-hanzi wind-hanzi">${tile.glyph}</span><span class="tile-english">${windName} Wind</span>`;
+    }
+    if (tile.type === 'dragon') {
+      const dragonName = tile.key[0].toUpperCase() + tile.key.slice(1);
+      return `<span class="tile-corner tile-corner-top">${dragonName[0]}</span><span class="tile-hanzi dragon-hanzi dragon-${tile.key}">${tile.glyph}</span><span class="tile-english">${dragonName} Dragon</span>`;
+    }
+    if (tile.type === 'flower') return `<span class="tile-corner tile-corner-top">${tile.value}</span><span class="tile-hanzi flower-hanzi">✿</span><span class="tile-english">Flower ${tile.value}</span>`;
+    return `<span class="tile-joker-mark">★</span><span class="tile-joker-text">JOKER</span><span class="tile-joker-sub">Wild tile</span>`;
+  }
+
   function tileButton(tile, index) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = `american-tile${selected.includes(index) ? ' selected' : ''}`;
+    button.className = `american-tile tile-${tile.type}${tile.type === 'suited' ? ` suit-${tile.suit} value-${tile.value}` : tile.key ? ` key-${tile.key}` : ''}${selected.includes(index) ? ' selected' : ''}`;
     button.setAttribute('aria-label', tile.label + (tile.type === 'joker' ? ', Joker' : ''));
-    button.innerHTML = `<span class="american-glyph">${tile.glyph}</span><span class="american-value">${tile.type === 'suited' ? tile.value : tile.type === 'joker' ? 'J' : tile.type === 'flower' ? 'F' : tile.key?.[0]?.toUpperCase() || ''}</span>`;
+    button.title = tile.label;
+    button.innerHTML = renderTileFace(tile);
     button.addEventListener('click', () => toggleSelected(index));
     return button;
   }
@@ -103,9 +123,9 @@
     center.innerHTML = '';
     discards.slice(-18).forEach(tile => {
       const el = document.createElement('div');
-      el.className = 'discard-tile';
+      el.className = `discard-tile tile-${tile.type}${tile.type === 'suited' ? ` suit-${tile.suit}` : ''}`;
       el.title = tile.label;
-      el.textContent = tile.glyph;
+      el.textContent = tile.type === 'suited' ? `${tile.value} ${suitGlyph[tile.suit]}` : tile.glyph;
       center.appendChild(el);
     });
   }
