@@ -66,3 +66,28 @@ body.american-live-game .american-insight-panel{min-width:0}.american-live-game 
   body.american-live-game .american-insights{top:6%;width:70%;max-height:72%;grid-template-columns:1fr 1fr}.american-live-game .american-combination-grid,.american-live-game .american-direction-list{grid-template-columns:1fr 1fr}
   body.american-live-game .american-hand-wrap{height:74px;padding-left:16%;padding-right:16%}.american-live-game .american-tile{height:62px}.american-live-game .american-glyph{font-size:23px}
 }
+
+/* Clear, legible American Mah Jongg tile faces. Every suited tile shows its Arabic
+   number, suit name, and a countable 1–9 symbol field; honors have both Hanzi and
+   English labels so the rack remains understandable on small screens. */
+.american-tile{position:relative;overflow:hidden;background:linear-gradient(145deg,#fffdf7,#eee8da);color:#173e31;border:1px solid #cfc5b1;isolation:isolate}
+.american-tile:focus-visible{outline:3px solid #e5b84d;outline-offset:2px}
+.american-tile .tile-corner{position:absolute;z-index:4;font:900 12px/1 'DM Sans',sans-serif;color:#24382f}
+.american-tile .tile-corner-top{top:4px;left:5px}.american-tile .tile-corner-bottom{right:5px;bottom:4px}
+.american-tile .tile-suit-label{position:absolute;z-index:4;top:4px;right:4px;font:800 5px/1 'DM Sans',sans-serif;letter-spacing:.08em;opacity:.72}
+.american-tile .tile-pips{position:absolute;inset:18px 5px 7px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);place-items:center;gap:1px}
+.american-tile .tile-pip{display:grid;place-items:center;font-weight:900;line-height:1;text-shadow:0 1px 0 #fff}
+.american-tile .tile-pips.dots .tile-pip{font-size:11px;color:#b72e31}
+.american-tile .tile-pips.bams .tile-pip{font-size:12px;color:#176c48}
+.american-tile .tile-pips.craks .tile-pip{font-size:10px;color:#b42c2f}
+.american-tile .tile-center-mark{position:absolute;left:50%;top:50%;z-index:2;transform:translate(-50%,-50%);font:900 21px/1 Georgia,serif;opacity:.18;pointer-events:none}
+.american-tile.suit-dots .tile-center-mark{color:#b72e31}.american-tile.suit-bams .tile-center-mark{color:#176c48}.american-tile.suit-craks .tile-center-mark{color:#b42c2f}
+.american-tile .tile-hanzi{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font:900 35px/1 Georgia,'Noto Serif CJK SC',serif}
+.american-tile .tile-english{position:absolute;left:3px;right:3px;bottom:7px;text-align:center;font:800 5px/1 'DM Sans',sans-serif;letter-spacing:.02em;text-transform:uppercase}
+.american-tile .wind-hanzi{color:#1c332b}.american-tile .dragon-red{color:#c12f32}.american-tile .dragon-green{color:#19804f}.american-tile .dragon-white{color:#40534b;text-shadow:0 0 0 #40534b}
+.american-tile .flower-hanzi{color:#b2872e;font-size:30px}.american-tile .tile-joker-mark{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%);font-size:29px;color:#2a8b5c}.american-tile .tile-joker-text{position:absolute;left:3px;right:3px;top:54%;text-align:center;font:900 8px/1 'DM Sans',sans-serif;letter-spacing:.06em}.american-tile .tile-joker-sub{position:absolute;left:3px;right:3px;bottom:7px;text-align:center;font:700 5px/1 'DM Sans',sans-serif}
+@media(max-width:800px){
+  body.american-live-game .american-tile .tile-corner{font-size:8px}.american-live-game .american-tile .tile-corner-top{top:2px;left:3px}.american-live-game .american-tile .tile-corner-bottom{right:3px;bottom:2px}
+  body.american-live-game .american-tile .tile-suit-label{top:3px;right:2px;font-size:3.5px}.american-live-game .american-tile .tile-pips{inset:13px 3px 5px;gap:0}.american-live-game .american-tile .tile-pips.dots .tile-pip{font-size:8px}.american-live-game .american-tile .tile-pips.bams .tile-pip{font-size:8px}.american-live-game .american-tile .tile-pips.craks .tile-pip{font-size:7px}.american-live-game .american-tile .tile-center-mark{font-size:15px}.american-live-game .american-tile .tile-hanzi{font-size:23px}.american-live-game .american-tile .tile-english{bottom:4px;font-size:3.5px}.american-live-game .american-tile .flower-hanzi{font-size:22px}.american-live-game .american-tile .tile-joker-mark{font-size:20px}.american-live-game .american-tile .tile-joker-text{top:53%;font-size:5px}.american-live-game .american-tile .tile-joker-sub{bottom:4px;font-size:3.5px}
+}
+@media(orientation:landscape) and (max-width:900px){body.american-live-game .american-tile .tile-pips{inset:14px 3px 5px}.american-live-game .american-tile .tile-pips.dots .tile-pip{font-size:9px}.american-live-game .american-tile .tile-pips.bams .tile-pip{font-size:9px}.american-live-game .american-tile .tile-pips.craks .tile-pip{font-size:8px}}
