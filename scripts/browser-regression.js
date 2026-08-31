@@ -25,8 +25,9 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     return page.locator('#board .tile.selected').first();
   };
   const clearBoard = async () => {
+    let shuffleCount = 0;
     for (let pair = 0; pair < 72; pair++) {
-      const orders = await page.locator('#board .tile.free').evaluateAll(els => {
+      let orders = await page.locator('#board .tile.free').evaluateAll(els => {
         const groups = new Map();
         for (const el of els) {
           const key = el.dataset.matchKey;
@@ -37,7 +38,24 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
         }
         return [...groups.values()].find(group => group.length >= 2) || [];
       });
-      if (orders.length < 2) fail(`Solitaire completion stalled after ${pair} pairs`);
+      if (orders.length < 2) {
+        if (shuffleCount >= 6) fail(`Solitaire completion stalled after ${pair} pairs and ${shuffleCount} shuffles`);
+        await page.getByRole('button', { name: /Shuffle remaining/ }).click();
+        shuffleCount++;
+        await page.waitForTimeout(30);
+        orders = await page.locator('#board .tile.free').evaluateAll(els => {
+          const groups = new Map();
+          for (const el of els) {
+            const key = el.dataset.matchKey;
+            if (!key) continue;
+            const list = groups.get(key) || [];
+            list.push(el.dataset.order);
+            groups.set(key, list);
+          }
+          return [...groups.values()].find(group => group.length >= 2) || [];
+        });
+      }
+      if (orders.length < 2) fail(`Shuffle did not expose an open matching pair after ${pair} pairs`);
       await page.locator(`[data-order="${orders[0]}"]`).click();
       await page.locator(`[data-order="${orders[1]}"]`).click();
       await page.waitForFunction(expected => document.querySelectorAll('#board .tile').length === expected, 142 - ((pair + 1) * 2));
