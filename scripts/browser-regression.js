@@ -76,11 +76,11 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
 
     await page.getByRole('button', { name: /Hint/ }).click();
     const firstHint = await waitForSelected();
-    const firstHintLabel = await firstHint.getAttribute('aria-label');
+    const firstHintKey = await firstHint.getAttribute('data-match-key');
     const firstHintOrder = await firstHint.getAttribute('data-order');
     const secondHint = await waitForSelected(firstHintOrder);
-    const secondHintLabel = await secondHint.getAttribute('aria-label');
-    if (!firstHintLabel || !secondHintLabel || firstHintLabel !== secondHintLabel) fail('Hint did not identify a matching pair');
+    const secondHintKey = await secondHint.getAttribute('data-match-key');
+    if (!firstHintKey || !secondHintKey || firstHintKey !== secondHintKey) fail('Hint did not identify a matching pair');
 
     await page.getByRole('button', { name: /New game/ }).click();
     if (await count('#board .tile') !== 144) fail('New Game did not create a fresh board');
@@ -88,11 +88,11 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     const matchingOrders = await page.locator('#board .tile.free').evaluateAll(els => {
       const groups = new Map();
       for (const el of els) {
-        const label = el.getAttribute('aria-label');
-        if (!label) continue;
-        const list = groups.get(label) || [];
+        const key = el.dataset.matchKey;
+        if (!key) continue;
+        const list = groups.get(key) || [];
         list.push(el.dataset.order);
-        groups.set(label, list);
+        groups.set(key, list);
       }
       return [...groups.values()].find(group => group.length >= 2) || [];
     });
