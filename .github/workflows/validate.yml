@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  TEST_VERSION: american-strategy-engine-v1
+
 jobs:
   static:
     runs-on: ubuntu-latest
@@ -69,55 +72,8 @@ jobs:
           for i in {1..20}; do curl -fsS http://127.0.0.1:4173/index.html >/dev/null && exit 0; sleep 1; done
           cat /tmp/mahjong-server.log
           exit 1
-      - name: Run browser smoke test
-        run: |
-          node - <<'NODE'
-          const { chromium } = require('playwright');
-          (async () => {
-            const browser = await chromium.launch({headless:true});
-            const page = await browser.newPage({viewport:{width:1440,height:900}});
-            await page.goto('http://127.0.0.1:4173/index.html', {waitUntil:'networkidle'});
-            if (await page.locator('#gameStyle').inputValue() !== 'american') throw new Error('American mode is not the default');
-            if (await page.locator('#americanHand .american-tile').count() !== 0) throw new Error('American hand should not auto-start');
-            if (await page.locator('#americanStart').count() !== 1) throw new Error('American Start game control is missing');
-            await page.locator('#americanStart').click();
-            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('American Start game did not deal 14 tiles');
-            if (!(await page.locator('#americanStatus').textContent()).includes('Charleston')) throw new Error('American Charleston did not start');
-            if (await page.locator('#americanCombinations .american-combo-card').count() < 1) throw new Error('American combination guidance did not render');
-            for (let pass = 0; pass < 3; pass++) {
-              const indexes = await page.locator('#americanHand .american-tile').evaluateAll((els) => els.map((el, index) => ({ index, joker: /Joker/i.test(el.getAttribute('aria-label') || '') })).filter(x => !x.joker).slice(0, 3).map(x => x.index));
-              if (indexes.length < 3) throw new Error(`Not enough non-Joker tiles for Charleston pass ${pass + 1}`);
-              for (const index of indexes.slice().reverse()) await page.locator('#americanHand .american-tile').nth(index).click();
-              if (await page.locator('#americanPass').isDisabled()) throw new Error(`Charleston pass ${pass + 1} did not enable`);
-              await page.locator('#americanPass').click();
-            }
-            if (!(await page.locator('#americanStatus').textContent()).includes('Charleston complete')) throw new Error('Charleston did not complete');
-            if (await page.locator('#americanHand .american-tile').count() !== 14) throw new Error('East hand count changed after Charleston');
-            await page.selectOption('#gameStyle', 'solitaire');
-            await page.getByRole('button', {name:'Start game'}).click();
-            if (await page.locator('#board .tile').count() !== 144) throw new Error('Expected 144 Solitaire tiles');
-            if (await page.locator('#board .tile.free').count() < 1) throw new Error('No open Solitaire tile rendered');
-            const openTile = page.locator('#board .tile.free').first();
-            const label = await openTile.getAttribute('aria-label');
-            if (!label || !label.includes('open')) throw new Error('Open Solitaire tile missing accessible state');
-            await openTile.click();
-            if (await page.locator('#board .tile.selected').count() !== 1) throw new Error('Solitaire tile selection failed');
-            await page.getByRole('button', {name:/Undo/}).click();
-            if (await page.locator('#board .tile.selected').count() !== 0) throw new Error('Solitaire undo failed');
-            await page.getByRole('button', {name:/Hint/}).click();
-            await page.waitForTimeout(150);
-            if (await page.locator('#board .tile.selected').count() < 1) throw new Error('Solitaire hint failed');
-            await page.getByRole('button', {name:/Shuffle remaining/}).click();
-            if (await page.locator('#board .tile').count() !== 144) throw new Error('Solitaire shuffle changed tile count');
-            await page.setViewportSize({width:390,height:844});
-            await page.reload({waitUntil:'networkidle'});
-            await page.selectOption('#gameStyle', 'solitaire');
-            await page.getByRole('button', {name:/Resume game|Start game/}).click();
-            if (await page.locator('#board .tile').count() !== 144) throw new Error('Mobile Solitaire saved-game resume failed');
-            await browser.close();
-            console.log('Mahjong American explicit-start + live combinations + Charleston + Solitaire browser smoke test passed');
-          })().catch(err => { console.error(err); process.exit(1); });
-          NODE
+      - name: Run browser regression suite
+        run: node scripts/browser-regression.js
       - name: Dump server log on failure
         if: failure()
         run: cat /tmp/mahjong-server.log || true
