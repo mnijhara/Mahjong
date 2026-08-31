@@ -33,6 +33,8 @@ jobs:
           test -s american-game.js
           test -s american-insights.js
           test -s game.js
+          test -s solitaire-a11y.js
+          test -s 404.html
           test -s manifest.webmanifest
           test -s robots.txt
           grep -q 'id="board"' index.html
@@ -41,6 +43,8 @@ jobs:
           grep -q 'id="americanPass"' index.html
           grep -q 'id="americanCombinations"' index.html
           grep -q '72 / 72\|/ 72' game.js index.html
+          grep -q 'solitaire-a11y.js' index.html
+          grep -q 'id="board"' 404.html || true
       - name: Check for accidental secrets
         run: |
           if grep -RniE '\b(api[_-]?key|secret[_-]?key|private[_-]?key|password|access[_-]?token|auth[_-]?token)\b[[:space:]]*[:=][[:space:]]*["'"'][^"'"']{12,}["'"']' --exclude-dir=.git --exclude-dir=.github --exclude='*.md' .; then
@@ -49,7 +53,7 @@ jobs:
           fi
       - name: Check application content policy
         run: |
-          if grep -niE 'my love|birthday|anniversary|dedication' index.html styles.css american.css american-game.js american-insights.js game.js style-selector.js manifest.webmanifest robots.txt; then
+          if grep -niE 'my love|birthday|anniversary|dedication' index.html styles.css american.css american-game.js american-insights.js game.js style-selector.js solitaire-a11y.js manifest.webmanifest robots.txt 404.html; then
             echo 'Personal or occasion-specific content detected in application files.'
             exit 1
           fi
@@ -72,6 +76,11 @@ jobs:
           for i in {1..20}; do curl -fsS http://127.0.0.1:4173/index.html >/dev/null && exit 0; sleep 1; done
           cat /tmp/mahjong-server.log
           exit 1
+      - name: Verify static 404 fallback
+        run: |
+          status=$(curl -s -o /tmp/mahjong-404.html -w '%{http_code}' http://127.0.0.1:4173/a-missing-game-route)
+          test "$status" = "404"
+          grep -qi 'Mahjong Solitaire' /tmp/mahjong-404.html
       - name: Run browser regression suite
         run: node scripts/browser-regression.js
       - name: Dump server log on failure
