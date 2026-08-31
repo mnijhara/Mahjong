@@ -1,0 +1,93 @@
+/* American Mahjong tile-face legibility pass.
+   Keep every face understandable at phone and desktop sizes: large Arabic value,
+   unmistakable suit mark/name, and generous spacing for touch use. */
+.american-tile{
+  overflow:hidden;
+  background:linear-gradient(145deg,#fffefb,#eee8dc);
+}
+.american-tile .tile-pips{display:none!important}
+.american-tile .tile-center-mark{
+  display:grid;
+  place-items:center;
+  position:absolute;
+  inset:19px 7px 18px;
+  font-family:"Noto Sans Symbols 2","Noto Sans CJK JP","Segoe UI Symbol",serif;
+  font-size:34px;
+  line-height:1;
+  font-weight:800;
+  color:#173e31;
+}
+.american-tile .tile-suit-label{
+  position:absolute;
+  top:5px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:5;
+  font:900 7px/1 "DM Sans",sans-serif;
+  letter-spacing:.12em;
+  color:#6b6255;
+  white-space:nowrap;
+}
+.american-tile .tile-corner-top{
+  top:5px!important;
+  left:5px!important;
+  font-size:13px!important;
+  font-weight:900!important;
+}
+.american-tile .tile-corner-bottom{
+  right:5px!important;
+  bottom:4px!important;
+  font-size:12px!important;
+  font-weight:900!important;
+}
+.american-tile.suit-dots .tile-center-mark{color:#9b3f37}
+.american-tile.suit-bams .tile-center-mark{color:#17694e}
+.american-tile.suit-craks .tile-center-mark{color:#334f8d}
+.american-tile.tile-wind .tile-hanzi,
+.american-tile.tile-dragon .tile-hanzi,
+.american-tile.tile-flower .tile-hanzi{
+  display:grid;
+  place-items:center;
+  min-height:36px;
+  margin-top:9px;
+  font-family:"Noto Sans CJK JP","Noto Serif CJK JP","Segoe UI Symbol",serif;
+  font-size:34px;
+  line-height:1;
+}
+.american-tile .tile-english{
+  position:absolute;
+  left:3px;
+  right:3px;
+  bottom:4px;
+  text-align:center;
+  font:800 7px/1 "DM Sans",sans-serif;
+  letter-spacing:.04em;
+  color:#6b6255;
+  white-space:nowrap;
+}
+.american-tile.tile-joker{background:linear-gradient(145deg,#fffaf0,#eee2f3)}
+.american-tile .tile-joker-mark{font-size:29px;line-height:1;color:#6d3e8b}
+.american-tile .tile-joker-text{font:900 8px/1 "DM Sans",sans-serif;letter-spacing:.1em;color:#6d3e8b}
+.american-tile .tile-joker-sub{font:700 6px/1 "DM Sans",sans-serif;color:#6b6255}
+@media(max-width:800px){
+  .american-tile .tile-center-mark{font-size:30px;inset:17px 4px 16px}
+  .american-tile .tile-suit-label{font-size:6px;top:4px}
+  .american-tile .tile-corner-top{font-size:11px!important}
+  .american-tile .tile-corner-bottom{font-size:10px!important}
+  .american-tile .tile-english{font-size:6px}
+  .american-tile.tile-wind .tile-hanzi,
+  .american-tile.tile-dragon .tile-hanzi,
+  .american-tile.tile-flower .tile-hanzi{font-size:28px;margin-top:7px}
+}
+@media(max-width:460px){
+  .american-tile .tile-center-mark{font-size:27px}
+  .american-tile .tile-suit-label{letter-spacing:.08em}
+}
+body.american-live-game .american-tile .tile-center-mark{font-size:30px}
+body.american-live-game .american-tile .tile-suit-label{font-size:6px}
+body.american-live-game .american-tile .tile-corner-top{font-size:10px!important}
+body.american-live-game .american-tile .tile-corner-bottom{font-size:9px!important}
+body.american-live-game .american-tile .tile-english{font-size:5px}
+body.american-live-game .american-tile.tile-wind .tile-hanzi,
+body.american-live-game .american-tile.tile-dragon .tile-hanzi,
+body.american-live-game .american-tile.tile-flower .tile-hanzi{font-size:25px;margin-top:6px}
