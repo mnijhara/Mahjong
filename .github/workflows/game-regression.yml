@@ -36,10 +36,32 @@ jobs:
       - name: Start static server and wait for readiness
         run: |
           nohup node scripts/static-server.js >/tmp/mahjong-server.log 2>&1 &
-          for i in {1..30}; do if curl -fsS http://127.0.0.1:4173/index.html >/dev/null; then exit 0; fi; sleep 0.5; done
-          cat /tmp/mahjong-server.log; exit 1
+          server_pid=$!
+          ready=false
+          for i in {1..30}; do
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              cat /tmp/mahjong-server.log
+              exit 1
+            fi
+            if curl -fsS http://127.0.0.1:4173/index.html >/dev/null; then
+              echo "Static server ready after ${i} attempt(s)."
+              ready=true
+              break
+            fi
+            sleep 0.5
+          done
+          if [ "$ready" != true ]; then
+            echo 'Static server did not become ready within 15 seconds.'
+            cat /tmp/mahjong-server.log
+            exit 1
+          fi
+          echo "Static server ready (pid ${server_pid})."
       - name: Exercise American and Solitaire browser paths
-        run: node scripts/browser-regression.js
+        run: |
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          node scripts/browser-regression.js
+        env:
+          server_pid: "$(pgrep -f 'node scripts/static-server.js' | head -n 1)"
       - name: Dump server log on failure
         if: failure()
         run: cat /tmp/mahjong-server.log || true
