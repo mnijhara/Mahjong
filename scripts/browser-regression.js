@@ -143,6 +143,7 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     await clearBoard();
     if (await page.locator('#modal').isHidden()) fail('Completion dialog did not open after clearing the board');
     if (await page.evaluate(key => localStorage.getItem(key), SAVE_KEY) !== null) fail('Completed Solitaire game should clear its saved state');
+    await page.waitForFunction(() => document.activeElement?.id === 'playAgain', null, { timeout: 2000 });
     if (await page.locator('#playAgain').evaluate(el => document.activeElement === el) !== true) fail('Completion dialog did not move focus to Play again');
     await page.locator('#playAgain').click();
     await page.waitForFunction(() => document.querySelectorAll('#board .tile').length === 144);
