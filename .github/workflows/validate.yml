@@ -95,7 +95,8 @@ jobs:
         run: |
           status=$(curl --retry 5 --retry-delay 1 -s -o /tmp/mahjong-404.html -w '%{http_code}' http://127.0.0.1:4173/a-missing-game-route)
           test "$status" = "404"
-          grep -qi 'Mahjong Solitaire' /tmp/mahjong-404.html
+          grep -qi 'Page not found' /tmp/mahjong-404.html
+          grep -qi 'Return to Mahjong' /tmp/mahjong-404.html
       - name: Run browser regression suite
         run: node scripts/browser-regression.js
       - name: Dump server log on failure
