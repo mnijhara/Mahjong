@@ -7,6 +7,7 @@
   <meta name="description" content="Mahjong — choose a style and play a polished, accessible tile game for everyone.">
   <meta name="robots" content="index,follow">
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/mahjong-192.svg" type="image/svg+xml">
   <title>Mahjong · Choose Your Style</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="style-picker.css">
@@ -17,6 +18,7 @@
   <link rel="stylesheet" href="american-tile-legibility.css?v=20260831-1">
 </head>
 <body>
+  <a class="skip-link" href="#board">Skip to game board</a>
   <div class="app-shell">
     <header class="topbar">
       <div class="brand"><div class="brand-mark">萬</div><div><div class="brand-name">MAHJONG</div><div class="brand-sub">American Mah Jongg</div></div></div>
@@ -88,7 +90,7 @@
     <footer><span>Mahjong</span><span>Classic traditions · No account required</span></footer>
   </div>
   <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalCopy"><div class="modal-card"><div class="modal-icon">✦</div><p class="eyebrow">Board cleared</p><h2 id="modalTitle">Beautifully done.</h2><p id="modalCopy"></p><div class="modal-stats"><div><span>TIME</span><strong id="finalTime">00:00</strong></div><div><span>MOVES</span><strong id="finalMoves">0</strong></div></div><button class="btn primary full" id="playAgain" type="button">Play again</button></div></div>
-  <noscript><main><p>Mahjong needs JavaScript enabled to play.</p></main></noscript>
+  <noscript><p>Mahjong needs JavaScript enabled to play.</p></noscript>
   <script src="american-game.js?v=20260830-7"></script>
   <script src="american-card-engine.js?v=20260830-7"></script>
   <script src="american-insights.js?v=20260830-7"></script>
@@ -97,5 +99,10 @@
   <script src="style-selector.js?v=20260830-7"></script>
   <script src="new-game.js?v=20260830-7"></script>
   <script src="american-ux.js?v=20260830-7"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {}));
+    }
+  </script>
 </body>
 </html>
