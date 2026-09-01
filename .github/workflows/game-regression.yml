@@ -12,6 +12,10 @@ permissions:
 env:
   TEST_VERSION: american-strategy-engine-v1
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   browser-regression:
     runs-on: ubuntu-latest
@@ -37,6 +41,7 @@ jobs:
         run: |
           nohup node scripts/static-server.js >/tmp/mahjong-server.log 2>&1 &
           server_pid=$!
+          echo "$server_pid" >/tmp/mahjong-server.pid
           ready=false
           for i in {1..30}; do
             if ! kill -0 "$server_pid" 2>/dev/null; then
@@ -58,10 +63,9 @@ jobs:
           echo "Static server ready (pid ${server_pid})."
       - name: Exercise American and Solitaire browser paths
         run: |
+          server_pid=$(cat /tmp/mahjong-server.pid)
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           node scripts/browser-regression.js
-        env:
-          server_pid: "$(pgrep -f 'node scripts/static-server.js' | head -n 1)"
       - name: Dump server log on failure
         if: failure()
         run: cat /tmp/mahjong-server.log || true
