@@ -1,2 +1,22 @@
-# Static-hosting fallback for Apache-compatible hosts such as Hostinger.
+# Static-hosting configuration for Apache-compatible hosts such as Hostinger.
 ErrorDocument 404 /404.html
+DirectoryIndex index.html
+Options -Indexes
+
+# Prevent browsers from MIME-sniffing or sending unnecessary referrer data.
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# Keep HTML fresh while allowing static assets to be cached between visits.
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 1 hour"
+  ExpiresByType text/javascript "access plus 1 hour"
+  ExpiresByType application/javascript "access plus 1 hour"
+  ExpiresByType application/manifest+json "access plus 1 hour"
+</IfModule>
