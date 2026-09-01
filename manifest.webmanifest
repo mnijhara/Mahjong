@@ -1,11 +1,15 @@
 {
+  "id": "./",
   "name": "Mahjong",
   "short_name": "Mahjong",
   "description": "A polished Mahjong game with American Mah Jongg and Solitaire styles.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#f5f1e8",
   "theme_color": "#0d1b16",
+  "categories": ["games", "entertainment"],
   "icons": [
     {
       "src": "icons/mahjong-192.svg",
