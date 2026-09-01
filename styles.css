@@ -3,8 +3,8 @@
 @media(max-width:800px){.tile.free{min-width:48px;min-height:48px}.bottom-bar .text-btn{padding:10px 8px}}
 body.solitaire-mode{overflow-x:hidden}
 @media(max-width:800px){
-  body.solitaire-mode .app-shell{height:100svh;min-height:100svh;padding:8px 10px;overflow:hidden}
-  body.solitaire-mode main{height:calc(100svh - 46px);min-height:0;overflow:hidden;display:flex;flex-direction:column}
+  body.solitaire-mode .app-shell{height:100svh;min-height:100svh;padding:8px 10px;overflow:hidden;display:flex;flex-direction:column}
+  body.solitaire-mode main{height:auto;min-height:0;overflow:hidden;display:flex;flex-direction:column;flex:1 1 auto}
   body.solitaire-mode .topbar{height:38px;flex:0 0 38px}
   body.solitaire-mode .brand{gap:7px}.solitaire-mode .brand-mark{width:32px;height:32px;border-radius:9px;font-size:17px}.solitaire-mode .brand-name{font-size:10px}.solitaire-mode .brand-sub{font-size:9px}
   body.solitaire-mode .stats{gap:9px;margin-right:5px}.solitaire-mode .stats div{min-width:auto}.solitaire-mode .stats span{font-size:6px}.solitaire-mode .stats strong{font-size:10px;margin-top:1px}.solitaire-mode .icon-btn{width:32px;height:32px;border-radius:9px;font-size:14px}
@@ -31,7 +31,7 @@ body.solitaire-mode{overflow-x:hidden}
 @media(max-width:800px) and (orientation:landscape){
   html,body{width:100%;height:100%;min-height:100%;overflow:hidden}
   body.solitaire-mode .app-shell{position:fixed;inset:0;width:100%;height:100%;min-height:100%;max-height:100%;padding:4px 8px;overflow:hidden}
-  body.solitaire-mode main{height:calc(100% - 42px);min-height:0;max-height:calc(100% - 42px);overflow:hidden}
+  body.solitaire-mode main{height:auto;min-height:0;max-height:none;flex:1 1 auto;overflow:hidden}
   body.solitaire-mode .board-wrap{height:auto;max-height:none;min-height:0;flex:1 1 auto;contain:layout paint}
   body.solitaire-mode .game-card{min-height:0;max-height:none;flex:1 1 auto}
 }
