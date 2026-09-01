@@ -1,6 +1,8 @@
 # Production defaults for Apache/LiteSpeed hosts such as Hostinger.
 # Keep application behavior unchanged while improving transport, caching and isolation.
 
+ErrorDocument 404 /404.html
+
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
