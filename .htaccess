@@ -1,22 +1,25 @@
-# Static-hosting configuration for Apache-compatible hosts such as Hostinger.
-ErrorDocument 404 /404.html
-DirectoryIndex index.html
-Options -Indexes
+# Production defaults for Apache/LiteSpeed hosts such as Hostinger.
+# Keep application behavior unchanged while improving transport, caching and isolation.
 
-# Prevent browsers from MIME-sniffing or sending unnecessary referrer data.
 <IfModule mod_headers.c>
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
-  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 </IfModule>
 
-# Keep HTML fresh while allowing static assets to be cached between visits.
 <IfModule mod_expires.c>
   ExpiresActive On
   ExpiresByType text/html "access plus 0 seconds"
-  ExpiresByType text/css "access plus 1 hour"
-  ExpiresByType text/javascript "access plus 1 hour"
-  ExpiresByType application/javascript "access plus 1 hour"
-  ExpiresByType application/manifest+json "access plus 1 hour"
+  ExpiresByType text/css "access plus 7 days"
+  ExpiresByType text/javascript "access plus 7 days"
+  ExpiresByType application/javascript "access plus 7 days"
+  ExpiresByType application/manifest+json "access plus 1 day"
+  ExpiresByType image/svg+xml "access plus 30 days"
+</IfModule>
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(css|js|svg)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
 </IfModule>
