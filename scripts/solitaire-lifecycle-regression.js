@@ -29,16 +29,15 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     await page.getByRole('button', { name: /Undo/ }).click();
     if (await count('#board .tile.selected') !== 0) fail('Undo did not clear the selection');
 
-    // Hint must identify a real matching pair. The game intentionally shows the
-    // two tiles one at a time, so validate their labels without racing the
-    // transient hint timer; the actual match is exercised independently below.
+    // Hint must identify a real matching pair. Flowers and seasons intentionally
+    // use different face labels while matching by family, so compare matchKey.
     await page.getByRole('button', { name: /Hint/ }).click();
     const firstHint = await waitForSelected();
-    const firstHintLabel = await firstHint.getAttribute('aria-label');
+    const firstHintKey = await firstHint.getAttribute('data-match-key');
     const firstHintOrder = await firstHint.getAttribute('data-order');
     const secondHint = await waitForSelected(firstHintOrder);
-    const secondHintLabel = await secondHint.getAttribute('aria-label');
-    if (!firstHintLabel || !secondHintLabel || firstHintLabel !== secondHintLabel) fail('Hint did not identify a matching pair');
+    const secondHintKey = await secondHint.getAttribute('data-match-key');
+    if (!firstHintKey || !secondHintKey || firstHintKey !== secondHintKey) fail('Hint did not identify a matching pair');
 
     await page.getByRole('button', { name: /New game/ }).click();
     if (await count(SELECTOR) !== 144) fail('New Game did not create a fresh board');
@@ -47,11 +46,11 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     const matchingOrders = await page.locator('#board .tile.free').evaluateAll(els => {
       const groups = new Map();
       for (const el of els) {
-        const label = el.getAttribute('aria-label');
-        if (!label) continue;
-        const list = groups.get(label) || [];
+        const key = el.getAttribute('data-match-key');
+        if (!key) continue;
+        const list = groups.get(key) || [];
         list.push(el.dataset.order);
-        groups.set(label, list);
+        groups.set(key, list);
       }
       return [...groups.values()].find(group => group.length >= 2) || [];
     });
