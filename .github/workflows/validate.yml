@@ -75,17 +75,25 @@ jobs:
       - name: Start static server
         run: |
           nohup node scripts/static-server.js >/tmp/mahjong-server.log 2>&1 &
+          server_pid=$!
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:4173/index.html >/dev/null; then
+              echo "Static server ready after ${i} attempt(s)."
               exit 0
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo 'Static server exited before becoming ready.'
+              cat /tmp/mahjong-server.log
+              exit 1
             fi
             sleep 0.5
           done
+          echo 'Static server did not become ready within 15 seconds.'
           cat /tmp/mahjong-server.log
           exit 1
       - name: Verify static 404 fallback
         run: |
-          status=$(curl -s -o /tmp/mahjong-404.html -w '%{http_code}' http://127.0.0.1:4173/a-missing-game-route)
+          status=$(curl --retry 5 --retry-delay 1 -s -o /tmp/mahjong-404.html -w '%{http_code}' http://127.0.0.1:4173/a-missing-game-route)
           test "$status" = "404"
           grep -qi 'Mahjong Solitaire' /tmp/mahjong-404.html
       - name: Run browser regression suite
