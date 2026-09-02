@@ -39,6 +39,7 @@ jobs:
           test -s scripts/static-server.js
           test -s manifest.webmanifest
           test -s sw.js
+          test -s sw-register.js
           test -s icons/mahjong-192.svg
           test -s icons/mahjong-512.svg
           test -s robots.txt
@@ -49,10 +50,11 @@ jobs:
           grep -q 'id="americanCombinations"' index.html
           grep -q '72 / 72\|/ 72' game.js index.html
           grep -q 'solitaire-a11y.js' index.html
-          grep -q "serviceWorker.register('./sw.js'" index.html
+          grep -q 'sw-register.js' index.html
+          grep -q "serviceWorker.register('./sw.js'" sw-register.js
           grep -q 'ErrorDocument 404 /404.html' .htaccess
-          grep -q 'updateViaCache: .none.' index.html
-          grep -q 'mahjong-static-v3' sw.js
+          grep -q 'updateViaCache: .none.' sw-register.js
+          grep -q 'mahjong-static-v4' sw.js
           grep -q 'mahjong-512.svg' manifest.webmanifest
       - name: Check for accidental secrets
         run: |
@@ -62,7 +64,7 @@ jobs:
           fi
       - name: Check application content policy
         run: |
-          if grep -niE 'my love|birthday|anniversary|dedication' index.html styles.css american.css american-game.js american-insights.js game.js style-selector.js solitaire-a11y.js manifest.webmanifest robots.txt 404.html .htaccess scripts/static-server.js; then
+          if grep -niE 'my love|birthday|anniversary|dedication' index.html styles.css american.css american-game.js american-insights.js game.js style-selector.js solitaire-a11y.js manifest.webmanifest robots.txt 404.html .htaccess scripts/static-server.js sw-register.js sw.js; then
             echo 'Personal or occasion-specific content detected in application files.'
             exit 1
           fi
