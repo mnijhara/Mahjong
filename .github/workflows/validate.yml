@@ -38,6 +38,9 @@ jobs:
           test -s .htaccess
           test -s scripts/static-server.js
           test -s manifest.webmanifest
+          test -s sw.js
+          test -s icons/mahjong-192.svg
+          test -s icons/mahjong-512.svg
           test -s robots.txt
           grep -q 'id="board"' index.html
           grep -q 'id="americanTable"' index.html
@@ -46,7 +49,11 @@ jobs:
           grep -q 'id="americanCombinations"' index.html
           grep -q '72 / 72\|/ 72' game.js index.html
           grep -q 'solitaire-a11y.js' index.html
+          grep -q "serviceWorker.register('./sw.js'" index.html
           grep -q 'ErrorDocument 404 /404.html' .htaccess
+          grep -q 'updateViaCache: .none.' index.html
+          grep -q 'mahjong-static-v3' sw.js
+          grep -q 'mahjong-512.svg' manifest.webmanifest
       - name: Check for accidental secrets
         run: |
           if grep -RniE '\b(api[_-]?key|secret[_-]?key|private[_-]?key|password|access[_-]?token|auth[_-]?token)\b[[:space:]]*[:=][[:space:]]*["'"'][^"'"']{12,}["'"']' --exclude-dir=.git --exclude-dir=.github --exclude='*.md' .; then
