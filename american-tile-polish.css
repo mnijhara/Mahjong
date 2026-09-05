@@ -1,0 +1,19 @@
+.american-tile{position:relative;display:block;overflow:hidden!important;background:linear-gradient(145deg,#fffefa,#ebe5d8);color:#173e31;border:1px solid #c9c0ae!important;border-radius:7px!important}
+.american-tile .polish-number{position:absolute;left:6px;top:5px;z-index:3;font:900 15px/1 'DM Sans',sans-serif;color:#172c25}
+.american-tile .polish-suit{position:absolute;right:5px;top:6px;z-index:3;font:800 5px/1 'DM Sans',sans-serif;letter-spacing:.12em;color:#526158}
+.american-tile .polish-pips{position:absolute;inset:23px 5px 8px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);place-items:center;gap:1px}
+.american-tile .polish-pip{width:100%;height:100%;display:grid;place-items:center;font-weight:900;line-height:1;opacity:0}
+.american-tile .polish-pip.on{opacity:1}
+.american-tile .polish-pips.dot .polish-pip{font-size:14px;color:#b72f34}.american-tile .polish-pips.bam .polish-pip{font-size:13px;color:#176d4a}.american-tile .polish-pips.crak .polish-pip{font-size:12px;color:#b52d31}
+.american-tile .polish-pips.bam .polish-pip.on:before{content:'▥';font-family:Georgia,serif;transform:scaleX(.72)}
+.american-tile .polish-pips.crak .polish-pip.on:before{content:'萬';font-family:Georgia,serif}
+.american-tile .polish-pips.dot .polish-pip.on:before{content:'●'}
+.american-tile .polish-hanzi{position:absolute;left:50%;top:39%;transform:translate(-50%,-50%);font:900 36px/1 Georgia,'Noto Serif CJK SC',serif}
+.american-tile .polish-corner{position:absolute;left:6px;top:5px;font:900 10px/1 'DM Sans',sans-serif}
+.american-tile .polish-label{position:absolute;left:3px;right:3px;bottom:7px;text-align:center;font:900 5px/1 'DM Sans',sans-serif;letter-spacing:.07em;color:#43544c}
+.american-tile .polish-hanzi.wind{color:#1b352c}.american-tile .polish-hanzi.dragon-red{color:#bd3034}.american-tile .polish-hanzi.dragon-green{color:#198151}.american-tile .polish-hanzi.dragon-white{color:#465a52}
+.american-tile .polish-flower{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font:900 39px/1 Georgia,serif;color:#b4862a}.american-tile .polish-joker{position:absolute;left:50%;top:37%;transform:translate(-50%,-50%);font-size:36px;color:#24865a}.american-tile .polish-joker-text{position:absolute;left:3px;right:3px;top:57%;text-align:center;font:900 8px/1 'DM Sans',sans-serif;letter-spacing:.08em}.american-tile .polish-accessible{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media(max-width:800px){
+ .american-tile .polish-number{left:3px;top:3px;font-size:9px}.american-tile .polish-suit{right:2px;top:4px;font-size:3px}.american-tile .polish-pips{inset:14px 2px 5px}.american-tile .polish-pips.dot .polish-pip{font-size:8px}.american-tile .polish-pips.bam .polish-pip{font-size:8px}.american-tile .polish-pips.crak .polish-pip{font-size:7px}.american-tile .polish-hanzi{font-size:23px}.american-tile .polish-corner{left:3px;top:3px;font-size:7px}.american-tile .polish-label{bottom:4px;font-size:3px}.american-tile .polish-flower{font-size:24px}.american-tile .polish-joker{font-size:22px}.american-tile .polish-joker-text{top:55%;font-size:5px}
+}
+@media(orientation:landscape) and (max-width:900px){.american-tile .polish-pips{inset:15px 2px 5px}.american-tile .polish-pips.dot .polish-pip{font-size:9px}.american-tile .polish-pips.bam .polish-pip{font-size:9px}.american-tile .polish-pips.crak .polish-pip{font-size:8px}}
