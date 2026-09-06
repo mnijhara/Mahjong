@@ -23,9 +23,7 @@
 
   function buildSet() {
     const tiles = [];
-    for (const suit of ['dots','bams','craks']) for (let value = 1; value <= 9; value++) for (let n = 0; n < 4; n++) {
-      tiles.push({ id: `${suit}-${value}-${n}`, type: 'suited', suit, value, label: `${value} ${suitName[suit]}`, glyph: suitGlyph[suit] });
-    }
+    for (const suit of ['dots','bams','craks']) for (let value = 1; value <= 9; value++) for (let n = 0; n < 4; n++) tiles.push({ id: `${suit}-${value}-${n}`, type: 'suited', suit, value, label: `${value} ${suitName[suit]}`, glyph: suitGlyph[suit] });
     for (const [key, glyph] of winds) for (let n = 0; n < 4; n++) tiles.push({ id: `${key}-${n}`, type: 'wind', key, label: `${key} Wind`, glyph });
     for (const [key, glyph] of dragons) for (let n = 0; n < 4; n++) tiles.push({ id: `${key}-dragon-${n}`, type: 'dragon', key, label: `${key} Dragon`, glyph });
     for (let n = 1; n <= 8; n++) tiles.push({ id: `flower-${n}`, type: 'flower', key: 'flower', value: n, label: `Flower ${n}`, glyph: '✿' });
@@ -34,15 +32,10 @@
     return shuffle(tiles);
   }
 
-  function setStatus(text) {
-    const el = $('americanStatus');
-    if (el) el.textContent = text;
-  }
+  function setStatus(text) { const el = $('americanStatus'); if (el) el.textContent = text; }
 
   function updateStats() {
-    const time = $('time');
-    const moves = $('moves');
-    const pairs = $('pairs');
+    const time = $('time'), moves = $('moves'), pairs = $('pairs');
     const labels = document.querySelectorAll('.stats span');
     if (labels.length >= 3) { labels[0].textContent = 'PHASE'; labels[1].textContent = 'WALL'; labels[2].textContent = 'HAND'; }
     if (time) time.textContent = phase === 'charleston' ? `PASS ${passIndex + 1}/3` : phase === 'play' ? 'PLAY' : 'READY';
@@ -57,14 +50,8 @@
       const pips = Array.from({ length: count }, (_, i) => `<span class="tile-pip pip-${i + 1}">${tile.suit === 'dots' ? '●' : tile.suit === 'bams' ? '♣' : '萬'}</span>`).join('');
       return `<span class="tile-corner tile-corner-top">${count}</span><span class="tile-suit-label">${suitName[tile.suit].toUpperCase()}</span><span class="tile-pips ${pipClass}" aria-hidden="true">${pips}</span><span class="tile-center-mark">${tile.suit === 'craks' ? '萬' : tile.suit === 'bams' ? '竹' : '●'}</span><span class="tile-corner tile-corner-bottom">${count}</span>`;
     }
-    if (tile.type === 'wind') {
-      const windName = tile.key[0].toUpperCase() + tile.key.slice(1);
-      return `<span class="tile-corner tile-corner-top">${windName[0]}</span><span class="tile-hanzi wind-hanzi">${tile.glyph}</span><span class="tile-english">${windName} Wind</span>`;
-    }
-    if (tile.type === 'dragon') {
-      const dragonName = tile.key[0].toUpperCase() + tile.key.slice(1);
-      return `<span class="tile-corner tile-corner-top">${dragonName[0]}</span><span class="tile-hanzi dragon-hanzi dragon-${tile.key}">${tile.glyph}</span><span class="tile-english">${dragonName} Dragon</span>`;
-    }
+    if (tile.type === 'wind') { const windName = tile.key[0].toUpperCase() + tile.key.slice(1); return `<span class="tile-corner tile-corner-top">${windName[0]}</span><span class="tile-hanzi wind-hanzi">${tile.glyph}</span><span class="tile-english">${windName} Wind</span>`; }
+    if (tile.type === 'dragon') { const dragonName = tile.key[0].toUpperCase() + tile.key.slice(1); return `<span class="tile-corner tile-corner-top">${dragonName[0]}</span><span class="tile-hanzi dragon-hanzi dragon-${tile.key}">${tile.glyph}</span><span class="tile-english">${dragonName} Dragon</span>`; }
     if (tile.type === 'flower') return `<span class="tile-corner tile-corner-top">${tile.value}</span><span class="tile-hanzi flower-hanzi">✿</span><span class="tile-english">Flower ${tile.value}</span>`;
     return `<span class="tile-joker-mark">★</span><span class="tile-joker-text">JOKER</span><span class="tile-joker-sub">Wild tile</span>`;
   }
@@ -81,63 +68,41 @@
   }
 
   function renderHand() {
-    const hand = $('americanHand');
-    if (!hand) return;
+    const hand = $('americanHand'); if (!hand) return;
     hand.innerHTML = '';
     const current = players[0]?.hand || [];
     current.forEach((tile, index) => hand.appendChild(tileButton(tile, index)));
     window.updateAmericanInsights?.(current, { started, phase });
     const count = $('americanSelection');
-    if (count) count.textContent = !started ? 'Start a hand to begin the Charleston' : phase === 'charleston' ? (selected.length ? `${selected.length} / 3 selected` : 'Select 3 tiles to pass') : 'Your turn · draw, then discard one tile';
-    const pass = $('americanPass');
-    if (pass) pass.disabled = phase !== 'charleston' || selected.length !== 3;
-    const start = $('americanStart');
-    if (start) start.textContent = started ? 'New hand ↻' : 'Start game';
+    if (count) count.textContent = !started ? 'Start a hand to begin the Charleston' : phase === 'charleston' ? (selected.length ? `${selected.length} / 3 selected` : 'Select 3 tiles to pass') : turn === 0 ? 'Your turn · draw, then discard one tile' : `${names[turn]} is thinking…`;
+    const pass = $('americanPass'); if (pass) pass.disabled = phase !== 'charleston' || selected.length !== 3;
+    const start = $('americanStart'); if (start) start.textContent = started ? 'New hand ↻' : 'Start game';
   }
 
   function renderPlayers() {
-    const rack = $('americanPlayers');
-    if (!rack) return;
+    const rack = $('americanPlayers'); if (!rack) return;
     rack.innerHTML = '';
-    if (!started) {
-      const empty = document.createElement('div');
-      empty.className = 'american-empty-state';
-      empty.innerHTML = '<strong>Ready to play</strong><span>Deal a new hand to begin the Charleston.</span>';
-      rack.appendChild(empty);
-      return;
-    }
+    if (!started) { const empty = document.createElement('div'); empty.className = 'american-empty-state'; empty.innerHTML = '<strong>Ready to play</strong><span>Deal a new hand to begin the Charleston.</span>'; rack.appendChild(empty); return; }
     players.forEach((player, index) => {
       const card = document.createElement('section');
       card.className = `player-card seat-${names[index].toLowerCase()}${index === 0 ? ' human' : ''}${index === turn && phase === 'play' ? ' active' : ''}`;
-      const hiddenRack = index === 0
-        ? '<span class="rack-placeholder">Your tiles are shown below</span>'
-        : Array.from({ length: player.hand.length }, (_, tileIndex) => `<span class="mini-tile-back" aria-hidden="true"><span>${tileIndex + 1}</span></span>`).join('');
+      const hiddenRack = index === 0 ? '<span class="rack-placeholder">Your tiles are shown below</span>' : Array.from({ length: player.hand.length }, (_, tileIndex) => `<span class="mini-tile-back" aria-hidden="true"><span>${tileIndex + 1}</span></span>`).join('');
       card.innerHTML = `<div class="player-head"><strong>${names[index]}</strong><span>${index === 0 ? 'You' : 'Computer'}</span></div><div class="rack-count">${player.hand.length} tiles${index === 0 ? ' · visible below' : ' · concealed'}</div><div class="mini-rack ${index === 0 ? 'your-rack' : 'opponent-rack'}" aria-label="${index === 0 ? 'Your rack is shown below' : `${names[index]} concealed rack, ${player.hand.length} tiles face down`}" role="img">${hiddenRack}</div>`;
       rack.appendChild(card);
     });
   }
 
   function renderDiscard() {
-    const center = $('americanDiscards');
-    if (!center) return;
+    const center = $('americanDiscards'); if (!center) return;
     center.innerHTML = '';
-    discards.slice(-18).forEach(tile => {
-      const el = document.createElement('div');
-      el.className = `discard-tile tile-${tile.type}${tile.type === 'suited' ? ` suit-${tile.suit}` : ''}`;
-      el.title = tile.label;
-      el.textContent = tile.type === 'suited' ? `${tile.value} ${suitGlyph[tile.suit]}` : tile.glyph;
-      center.appendChild(el);
-    });
+    discards.slice(-18).forEach(tile => { const el = document.createElement('div'); el.className = `discard-tile tile-${tile.type}${tile.type === 'suited' ? ` suit-${tile.suit}` : ''}`; el.title = tile.label; el.textContent = tile.type === 'suited' ? `${tile.value} ${suitGlyph[tile.suit]}` : tile.glyph; center.appendChild(el); });
   }
 
-  function render() {
-    renderHand(); renderPlayers(); renderDiscard(); updateStats();
-  }
+  function render() { renderHand(); renderPlayers(); renderDiscard(); updateStats(); window.dispatchEvent(new CustomEvent('mahjong:american-update')); }
 
   function toggleSelected(index) {
     if (phase !== 'charleston') return;
-    const tile = players[0].hand[index];
-    if (!tile) return;
+    const tile = players[0].hand[index]; if (!tile) return;
     if (tile.type === 'joker') { setStatus('Jokers cannot be passed during the Charleston.'); return; }
     if (selected.includes(index)) selected = selected.filter(i => i !== index);
     else if (selected.length < 3) selected = [...selected, index];
@@ -145,20 +110,14 @@
     renderHand();
   }
 
-  function chooseAiPass(hand) {
-    const candidates = hand.map((tile, index) => ({ tile, index })).filter(x => x.tile.type !== 'joker');
-    shuffle(candidates);
-    return candidates.slice(0, 3).map(x => x.index).sort((a,b) => b-a);
-  }
+  function chooseAiPass(hand) { const candidates = hand.map((tile, index) => ({ tile, index })).filter(x => x.tile.type !== 'joker'); shuffle(candidates); return candidates.slice(0, 3).map(x => x.index).sort((a,b) => b-a); }
 
   function exchange(direction) {
     const incoming = players.map(() => []);
     players.forEach((player, index) => {
       const picks = index === 0 ? [...selected].sort((a,b) => b-a) : chooseAiPass(player.hand);
-      const outgoing = picks.map(i => player.hand[i]);
-      picks.forEach(i => player.hand.splice(i, 1));
-      const target = (index + direction + 4) % 4;
-      incoming[target].push(...outgoing);
+      const outgoing = picks.map(i => player.hand[i]); picks.forEach(i => player.hand.splice(i, 1));
+      const target = (index + direction + 4) % 4; incoming[target].push(...outgoing);
     });
     players.forEach((player, index) => player.hand.push(...incoming[index]));
     selected = [];
@@ -166,36 +125,22 @@
 
   function passCharleston() {
     if (phase !== 'charleston' || selected.length !== 3) return;
-    const directions = [1, 2, 3];
-    exchange(directions[passIndex]);
-    passIndex++;
-    if (passIndex >= 3) {
-      phase = 'play'; turn = 0;
-      players[0].hand.sort((a,b) => a.label.localeCompare(b.label));
-      setStatus('Charleston complete. East starts: draw one tile, then discard one.');
-    } else {
-      setStatus(`Pass ${passIndex + 1}: choose three tiles to pass ${directions[passIndex] === 1 ? 'right' : directions[passIndex] === 2 ? 'across' : 'left'}.`);
-    }
+    const directions = [1, 2, 3]; exchange(directions[passIndex]); passIndex++;
+    if (passIndex >= 3) { phase = 'play'; turn = 0; players[0].hand.sort((a,b) => a.label.localeCompare(b.label)); setStatus('Charleston complete. East starts: draw one tile, then discard one.'); }
+    else setStatus(`Pass ${passIndex + 1}: choose three tiles to pass ${directions[passIndex] === 1 ? 'right' : directions[passIndex] === 2 ? 'across' : 'left'}.`);
     render();
   }
 
-  function drawTile(playerIndex) {
-    if (!wall.length) return null;
-    const tile = wall.pop();
-    players[playerIndex].hand.push(tile);
-    return tile;
-  }
+  function drawTile(playerIndex) { if (!wall.length) return null; const tile = wall.pop(); players[playerIndex].hand.push(tile); return tile; }
 
   function aiDiscardIndex(playerIndex) {
     const hand = players[playerIndex].hand;
     const candidates = window.americanCardEngine?.analyze(hand) || [];
     const keep = new Set((candidates[0]?.keep || []).map(String));
-    let best = -1;
-    let bestPenalty = Infinity;
+    let best = -1, bestPenalty = Infinity;
     hand.forEach((tile, index) => {
       if (tile.type === 'joker') return;
-      const label = tile.label;
-      const protectedTile = keep.has(label) || keep.has(`${tile.value}s`);
+      const protectedTile = keep.has(tile.label) || keep.has(`${tile.value}s`);
       const duplicate = hand.some((other, i) => i !== index && other.type === tile.type && other.suit === tile.suit && other.value === tile.value && other.key === tile.key);
       const penalty = (protectedTile ? 100 : 0) + (duplicate ? 20 : 0) + (tile.type === 'suited' ? 0 : 8);
       if (penalty < bestPenalty) { bestPenalty = penalty; best = index; }
@@ -203,16 +148,33 @@
     return best >= 0 ? best : Math.max(0, hand.length - 1);
   }
 
-  function playComputerTurn(playerIndex) {
+  function sleep(ms) { return new Promise(resolve => window.setTimeout(resolve, ms)); }
+
+  async function playComputerTurn(playerIndex) {
     if (phase !== 'play' || !players[playerIndex]) return;
     turn = playerIndex;
+    setStatus(`${names[playerIndex]} draws…`);
+    render();
+    await sleep(260);
+    if (phase !== 'play') return;
     drawTile(playerIndex);
+    setStatus(`${names[playerIndex]} is choosing a discard…`);
+    render();
+    await sleep(300);
+    if (phase !== 'play') return;
     const discardIndex = aiDiscardIndex(playerIndex);
     if (discardIndex >= 0) discards.push(players[playerIndex].hand.splice(discardIndex, 1)[0]);
+    setStatus(`${names[playerIndex]} discarded. Next player.`);
+    render();
+    await sleep(220);
   }
 
-  function advanceAfterHumanDiscard() {
-    for (let index = 1; index < 4; index++) playComputerTurn(index);
+  async function advanceAfterHumanDiscard() {
+    for (let index = 1; index < 4; index++) {
+      if (phase !== 'play') return;
+      await playComputerTurn(index);
+    }
+    if (phase !== 'play') return;
     turn = 0;
     if (wall.length) drawTile(0);
     if (players[0].hand.length > 14) players[0].hand.splice(14);
@@ -222,41 +184,28 @@
 
   function discard(index) {
     if (phase !== 'play' || turn !== 0 || players[0].hand.length !== 14) return;
-    const tile = players[0].hand[index];
-    if (!tile) return;
-    players[0].hand.splice(index, 1);
-    discards.push(tile);
-    setStatus('Computers are drawing and discarding…');
-    render();
-    window.setTimeout(advanceAfterHumanDiscard, 120);
+    const tile = players[0].hand[index]; if (!tile) return;
+    players[0].hand.splice(index, 1); discards.push(tile);
+    setStatus('Computers are drawing and discarding…'); render();
+    window.setTimeout(() => { advanceAfterHumanDiscard(); }, 120);
   }
 
   function highlightHint() {
-    const cards = [...document.querySelectorAll('#americanDirections .american-direction-card')];
-    const first = cards[0];
+    const cards = [...document.querySelectorAll('#americanDirections .american-direction-card')], first = cards[0];
     if (first) { first.classList.add('hint-focus'); window.setTimeout(() => first.classList.remove('hint-focus'), 1500); }
     const combo = document.querySelector('#americanCombinations .american-combo-card');
-    if (combo) combo.click();
-    else {
-      const tile = document.querySelector('#americanHand .american-tile:not(.selected)');
-      tile?.classList.add('insight-focus');
-      window.setTimeout(() => tile?.classList.remove('insight-focus'), 1500);
-    }
+    if (combo) combo.click(); else { const tile = document.querySelector('#americanHand .american-tile:not(.selected)'); tile?.classList.add('insight-focus'); window.setTimeout(() => tile?.classList.remove('insight-focus'), 1500); }
     if (phase === 'charleston') setStatus('Hint: protect the strongest suggested family and use the highlighted tiles when choosing your pass.');
     else if (phase === 'play') setStatus('Hint: the highlighted family is your strongest current direction; discard a tile outside it when possible.');
   }
 
   function startGame() {
-    wall = buildSet();
-    players = names.map((name) => ({ name, hand: [] }));
+    wall = buildSet(); players = names.map(name => ({ name, hand: [] }));
     for (let round = 0; round < 13; round++) for (const player of players) player.hand.push(wall.pop());
-    players[0].hand.push(wall.pop());
-    players.forEach(player => player.hand.sort((a,b) => a.label.localeCompare(b.label)));
+    players[0].hand.push(wall.pop()); players.forEach(player => player.hand.sort((a,b) => a.label.localeCompare(b.label)));
     discards = []; selected = []; passIndex = 0; turn = 0; phase = 'charleston'; started = true;
-    document.body.classList.add('american-live-game');
-    setStatus('Charleston: First round: right. Select 3 tiles to pass.');
-    const title = $('styleNoteTitle');
-    const copy = $('styleNoteCopy');
+    document.body.classList.add('american-live-game'); setStatus('Charleston: First round: right. Select 3 tiles to pass.');
+    const title = $('styleNoteTitle'), copy = $('styleNoteCopy');
     if (title) title.textContent = 'American Mah Jongg';
     if (copy) copy.textContent = '152-tile table · 4 players · Charleston first · 13-tile hands, East starts with 14.';
     render();
@@ -264,38 +213,21 @@
 
   function endGame() {
     started = false; phase = 'idle'; players = []; wall = []; discards = []; selected = []; passIndex = 0; turn = 0;
-    document.body.classList.remove('american-live-game');
-    setStatus('Ready to deal a new hand.');
-    render();
+    document.body.classList.remove('american-live-game'); setStatus('Ready to deal a new hand.'); render();
   }
 
   function showAmerican(show) {
     table.classList.toggle('hidden', !show);
-    const solitaire = document.querySelector('.game-card');
-    if (solitaire) solitaire.classList.toggle('hidden', show);
-    const actions = document.querySelector('.actions');
-    if (actions) actions.classList.toggle('hidden', show);
+    const solitaire = document.querySelector('.game-card'); if (solitaire) solitaire.classList.toggle('hidden', show);
+    const actions = document.querySelector('.actions'); if (actions) actions.classList.toggle('hidden', show);
     if (!show) document.body.classList.remove('american-live-game');
     if (show && !started) { phase = 'idle'; setStatus('Ready to deal a new hand.'); render(); }
   }
 
-  window.startAmericanGame = startGame;
-  window.showAmericanGame = showAmerican;
-  window.americanHint = highlightHint;
+  window.startAmericanGame = startGame; window.showAmericanGame = showAmerican; window.americanHint = highlightHint;
   window.americanGameState = () => ({ started, phase, wall: wall.length, hand: players[0]?.hand.length || 0, turn, selected: selected.length });
 
-  $('americanPass')?.addEventListener('click', passCharleston);
-  $('americanStart')?.addEventListener('click', startGame);
-  $('americanNewHand')?.addEventListener('click', startGame);
-  $('americanEndGame')?.addEventListener('click', endGame);
-  $('americanHint')?.addEventListener('click', highlightHint);
-  $('americanHand')?.addEventListener('click', (event) => {
-    const tile = event.target.closest('.american-tile');
-    if (!tile || phase !== 'play') return;
-    const buttons = [...$('americanHand').querySelectorAll('.american-tile')];
-    const index = buttons.indexOf(tile);
-    if (index >= 0) discard(index);
-  });
-
+  $('americanPass')?.addEventListener('click', passCharleston); $('americanStart')?.addEventListener('click', startGame); $('americanNewHand')?.addEventListener('click', startGame); $('americanEndGame')?.addEventListener('click', endGame); $('americanHint')?.addEventListener('click', highlightHint);
+  $('americanHand')?.addEventListener('click', event => { const tile = event.target.closest('.american-tile'); if (!tile || phase !== 'play') return; const buttons = [...$('americanHand').querySelectorAll('.american-tile')]; const index = buttons.indexOf(tile); if (index >= 0) discard(index); });
   updateStats();
 })();
