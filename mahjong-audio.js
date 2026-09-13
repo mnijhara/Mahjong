@@ -32,8 +32,20 @@
     return noiseBuffer;
   }
 
+  // Subtle tactile haptic pulse on modern touch devices
+  function triggerHaptic(type = 'light') {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        if (type === 'light') navigator.vibrate(8);
+        else if (type === 'medium') navigator.vibrate(16);
+        else if (type === 'heavy') navigator.vibrate([12, 40, 20]);
+      } catch (e) {}
+    }
+  }
+
   // Realistic heavy tile click (urea resin / bone collision)
   function playClick(options = {}) {
+    triggerHaptic('light');
     if (muted) return;
     const ac = getContext();
     if (!ac) return;
@@ -126,6 +138,7 @@
 
   // Harmonic bell chime on Chi, Pon, Kan, or valid match
   function playChime(success = true) {
+    triggerHaptic(success ? 'medium' : 'light');
     if (muted) return;
     const ac = getContext();
     if (!ac) return;
@@ -156,6 +169,7 @@
 
   // Victory fanfare (rich ascending pentatonic progression)
   function playWin() {
+    triggerHaptic('heavy');
     if (muted) return;
     const ac = getContext();
     if (!ac) return;
@@ -214,6 +228,7 @@
     playSlide,
     playChime,
     playWin,
+    triggerHaptic,
     toggleSound,
     setMuted,
     isMuted: () => muted

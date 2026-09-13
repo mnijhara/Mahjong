@@ -43,7 +43,8 @@ for (const file of [
   'style-selector.js',
   'solitaire-a11y.js',
   'scripts/static-server.js',
-  'scripts/chinese-regression.js'
+  'scripts/chinese-regression.js',
+  'scripts/full-crawler-audit.js'
 ]) {
   execFileSync(process.execPath, ['--check', path.join(root, file)], { stdio: 'inherit' });
 }

@@ -14,7 +14,7 @@
     riichi: { playable: true, description: 'Japanese Riichi Mahjong uses four players, calls such as Chi/Pon/Kan, Riichi declarations and yaku-based winning rules.', note: 'Playable 4-player table with Dora, calls, and winning hand validation.' },
     'hong-kong': { playable: true, description: 'Hong Kong Mahjong is a four-player traditional rules family with regional scoring, live Chow/Pung/Kong/Hu claiming and Fan calculation.', note: 'Playable 4-player table with 144 tiles, live claims, and hand scoring.' },
     'chinese-classical': { playable: true, description: 'Chinese Classical Mahjong is a traditional four-player rules family with 144 tiles and classic hand-building conventions.', note: 'Playable 4-player table with dealer rotation and meld validation.' },
-    taiwanese: { playable: false, description: 'Taiwanese Mahjong uses 16 tiles in the hand and distinctive scoring and winning-hand rules.', note: 'Planned: 16-tile gameplay, scoring and table flow.' },
+    taiwanese: { playable: true, description: 'Taiwanese Mahjong features 16-tile hands (East starts with 17), 5 melds + 1 pair winning structure, and traditional Tai scoring.', note: 'Playable 16-tile table with dealer rotation, Chow/Pung/Kong claims and Tai scoring.' },
     singapore: { playable: false, description: 'Singapore Mahjong is a four-player variant with its own scoring and special hand rules.', note: 'Planned: Singapore rules and scoring.' }
   };
 
@@ -107,7 +107,7 @@
       document.body.classList.toggle(`${k}-mode`, val === k);
     });
 
-    const isChineseFamily = val === 'hong-kong' || val === 'chinese-classical' || val === 'riichi';
+    const isChineseFamily = val === 'hong-kong' || val === 'chinese-classical' || val === 'riichi' || val === 'taiwanese';
     document.body.classList.toggle('chinese-mode', isChineseFamily);
 
     description.textContent = style.description;
@@ -119,7 +119,7 @@
     start.setAttribute('aria-disabled', String(!style.playable));
 
     if (window.showAmericanGame) window.showAmericanGame(val === 'american');
-    if (window.showChineseGame) window.showChineseGame(isChineseFamily);
+    if (window.showChineseGame) window.showChineseGame(isChineseFamily, val);
 
     const solitaireCard = document.querySelector('.game-card');
     if (solitaireCard) solitaireCard.classList.toggle('hidden', val !== 'solitaire');
@@ -137,8 +137,8 @@
 
   start.addEventListener('click', () => {
     const val = select.value;
-    if (val === 'hong-kong' || val === 'chinese-classical' || val === 'riichi') {
-      if (window.startChineseGame) window.startChineseGame();
+    if (val === 'hong-kong' || val === 'chinese-classical' || val === 'riichi' || val === 'taiwanese') {
+      if (window.startChineseGame) window.startChineseGame(val);
     }
   });
 
