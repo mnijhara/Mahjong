@@ -27,6 +27,7 @@ const required = [
   'mahjong-codex.js',
   'solitaire-layouts.css',
   'solitaire-layouts.js',
+  'american-charleston-immersive.css',
   'scripts/static-server.js'
 ];
 

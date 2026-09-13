@@ -1,0 +1,401 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   American Mah Jongg · Immersive Tabletop Experience & Charleston Flow
+   Gives life, personality, and tactile authenticity to the 4-player table.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. The Charleston Pass Reveal Card ────────────────────────────────────── */
+.american-pass-reveal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  z-index: 50;
+  width: min(92%, 520px);
+  background: rgba(14, 38, 30, 0.94);
+  border: 1px solid rgba(242, 216, 144, 0.4);
+  border-radius: 18px;
+  padding: 16px 20px 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  color: #fff;
+  text-align: center;
+  animation: passRevealAppear 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes passRevealAppear {
+  0% { transform: translate(-50%, -50%) scale(0.85); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.american-pass-reveal.fade-out {
+  opacity: 0;
+  transform: translate(-50%, -52%) scale(0.96);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+
+.pass-reveal-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #f2d890;
+  color: #3b2c14;
+  font: 800 10px/1 'DM Sans', sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  margin-bottom: 12px;
+}
+
+.pass-reveal-section {
+  margin-bottom: 10px;
+}
+.pass-reveal-section.incoming {
+  background: rgba(45, 138, 112, 0.2);
+  border: 1px solid rgba(158, 214, 181, 0.3);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.pass-reveal-section.outgoing {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 8px 14px;
+}
+
+.pass-reveal-subtitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #e5ede8;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.pass-reveal-subtitle strong {
+  color: #f2d890;
+  font-weight: 700;
+}
+
+.pass-reveal-tiles {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mini-reveal-tile {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: linear-gradient(145deg, #fffefa, #eee8dc);
+  border: 1px solid #c9c0ae;
+  box-shadow: 2px 3px 0 #071c1555, 0 4px 10px rgba(0,0,0,0.25);
+  color: #173e31;
+  font-size: 11px;
+  font-weight: 700;
+  min-width: 80px;
+}
+.mini-reveal-tile .reveal-glyph {
+  font-size: 16px;
+  font-family: serif;
+  line-height: 1;
+}
+.mini-reveal-tile .reveal-label {
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.pass-reveal-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 10px 0;
+}
+
+.pass-reveal-action {
+  border: 0;
+  background: linear-gradient(135deg, #f2d890, #d9be6e);
+  color: #3b2c14;
+  font: 800 12px/1 'DM Sans', sans-serif;
+  letter-spacing: 0.04em;
+  padding: 10px 22px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(242, 216, 144, 0.35);
+  transition: all 0.15s ease;
+  margin-top: 6px;
+}
+.pass-reveal-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(242, 216, 144, 0.5);
+}
+
+/* ── 2. Newly Received Tiles Highlighting in Player Rack ──────────────────── */
+.american-tile.newly-received {
+  position: relative;
+  outline: 3px solid #f2d890 !important;
+  box-shadow: 0 0 16px rgba(242, 216, 144, 0.6), 2px 4px 0 #d0c8b8 !important;
+  animation: newlyReceivedPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.american-tile.newly-received::before {
+  content: '✦ NEW';
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #f2d890;
+  color: #3b2c14;
+  font: 800 7px/1 'DM Sans', sans-serif;
+  letter-spacing: 0.06em;
+  padding: 2px 4px;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  z-index: 10;
+  pointer-events: none;
+  animation: newTagPulse 1.8s infinite;
+}
+
+@keyframes newlyReceivedPop {
+  0% { transform: translateY(-14px) scale(1.08); }
+  50% { transform: translateY(-4px) scale(0.96); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes newTagPulse {
+  0%, 100% { opacity: 1; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.8; transform: translateX(-50%) scale(0.92); }
+}
+
+/* ── 3. Animated Passing Tiles Table Overlay ──────────────────────────────── */
+.american-pass-animation-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 35;
+  overflow: hidden;
+}
+
+.table-flying-bundle {
+  position: absolute;
+  display: flex;
+  gap: 3px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: rgba(20, 59, 47, 0.9);
+  border: 1px solid #f2d890;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 36;
+}
+.table-flying-bundle .mini-tile-back {
+  width: 14px;
+  height: 20px;
+}
+
+/* Flight trajectories based on pass direction */
+.flight-east-to-south {
+  animation: flyEastToSouth 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.flight-south-to-west {
+  animation: flySouthToWest 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.flight-west-to-north {
+  animation: flyWestToNorth 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.flight-north-to-east {
+  animation: flyNorthToEast 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.flight-east-to-west {
+  animation: flyEastToWest 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.flight-west-to-east {
+  animation: flyWestToEast 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.flight-south-to-north {
+  animation: flySouthToNorth 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.flight-north-to-south {
+  animation: flyNorthToSouth 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.flight-east-to-north {
+  animation: flyEastToNorth 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.flight-north-to-west-2 {
+  animation: flyNorthToWest 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.flight-west-to-south-2 {
+  animation: flyWestToSouth 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.flight-south-to-east {
+  animation: flySouthToEast 0.65s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes flyEastToSouth {
+  0% { left: 50%; bottom: 8%; transform: translate(-50%, 0) scale(0.9); opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 12%; top: 38%; transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+}
+@keyframes flySouthToWest {
+  0% { left: 12%; top: 38%; transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 50%; top: 12%; transform: translate(-50%, 0) scale(1); opacity: 0.8; }
+}
+@keyframes flyWestToNorth {
+  0% { left: 50%; top: 12%; transform: translate(-50%, 0) scale(0.9); opacity: 0; }
+  20% { opacity: 1; }
+  100% { right: 12%; top: 38%; transform: translate(50%, -50%) scale(1); opacity: 0.8; }
+}
+@keyframes flyNorthToEast {
+  0% { right: 12%; top: 38%; transform: translate(50%, -50%) scale(0.9); opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 50%; bottom: 8%; transform: translate(-50%, 0) scale(1.05); opacity: 0.9; }
+}
+@keyframes flyEastToWest {
+  0% { left: 50%; bottom: 8%; transform: translate(-50%, 0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 50%; top: 12%; transform: translate(-50%, 0); opacity: 0.8; }
+}
+@keyframes flyWestToEast {
+  0% { left: 50%; top: 12%; transform: translate(-50%, 0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 50%; bottom: 8%; transform: translate(-50%, 0) scale(1.05); opacity: 0.9; }
+}
+@keyframes flySouthToNorth {
+  0% { left: 12%; top: 38%; transform: translate(-50%, -50%); opacity: 0; }
+  20% { opacity: 1; }
+  100% { right: 12%; top: 38%; transform: translate(50%, -50%); opacity: 0.8; }
+}
+@keyframes flyNorthToSouth {
+  0% { right: 12%; top: 38%; transform: translate(50%, -50%); opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 12%; top: 38%; transform: translate(-50%, -50%); opacity: 0.8; }
+}
+@keyframes flyEastToNorth {
+  0% { left: 50%; bottom: 8%; transform: translate(-50%, 0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { right: 12%; top: 38%; transform: translate(50%, -50%); opacity: 0.8; }
+}
+@keyframes flyNorthToWest {
+  0% { right: 12%; top: 38%; transform: translate(50%, -50%); opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 50%; top: 12%; transform: translate(-50%, 0); opacity: 0.8; }
+}
+@keyframes flyWestToSouth {
+  0% { left: 50%; top: 12%; transform: translate(-50%, 0); opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 12%; top: 38%; transform: translate(-50%, -50%); opacity: 0.8; }
+}
+@keyframes flySouthToEast {
+  0% { left: 12%; top: 38%; transform: translate(-50%, -50%); opacity: 0; }
+  20% { opacity: 1; }
+  100% { left: 50%; bottom: 8%; transform: translate(-50%, 0) scale(1.05); opacity: 0.9; }
+}
+
+/* ── 4. Opponent Speech & Reaction Bubbles ────────────────────────────────── */
+.player-speech-bubble {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #f2d890;
+  color: #3b2c14;
+  font: 700 9px/1.2 'DM Sans', sans-serif;
+  padding: 4px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  pointer-events: none;
+  z-index: 20;
+  animation: speechPop 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.player-speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 4px 4px 0 4px;
+  border-style: solid;
+  border-color: #f2d890 transparent transparent transparent;
+}
+@keyframes speechPop {
+  0% { transform: translateX(-50%) scale(0.6); opacity: 0; }
+  100% { transform: translateX(-50%) scale(1); opacity: 1; }
+}
+
+/* ── 5. Opponent Card Avatars & Presence ──────────────────────────────────── */
+.player-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1f5b48;
+  color: #f2d890;
+  font-family: serif;
+  font-size: 15px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(242, 216, 144, 0.4);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  flex: none;
+}
+.player-head-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.player-persona-title {
+  font-size: 10px;
+  color: #f2d890;
+  font-weight: 700;
+}
+
+/* ── 6. Discard Arena Glow for Latest Discard ─────────────────────────────── */
+.discard-tile.latest-discard {
+  outline: 2.5px solid #f2d890 !important;
+  box-shadow: 0 0 12px rgba(242, 216, 144, 0.7), 2px 2px 0 rgba(0,0,0,0.3) !important;
+  transform: translateY(-2px);
+  position: relative;
+  z-index: 8;
+  animation: discardDrop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes discardDrop {
+  0% { transform: translateY(-16px) scale(1.2); opacity: 0; }
+  100% { transform: translateY(-2px) scale(1); opacity: 1; }
+}
+
+/* ── Mobile adjustments ─────────────────────────────────────────────────── */
+@media (max-width: 800px) {
+  .american-pass-reveal {
+    width: 96%;
+    padding: 12px 14px 14px;
+  }
+  .pass-reveal-badge {
+    font-size: 8px;
+    padding: 3px 8px;
+    margin-bottom: 8px;
+  }
+  .pass-reveal-subtitle {
+    font-size: 9px;
+  }
+  .mini-reveal-tile {
+    padding: 4px 7px;
+    font-size: 9px;
+    min-width: 60px;
+  }
+  .mini-reveal-tile .reveal-glyph {
+    font-size: 13px;
+  }
+  .mini-reveal-tile .reveal-label {
+    font-size: 8px;
+  }
+  .pass-reveal-action {
+    font-size: 10px;
+    padding: 8px 16px;
+  }
+  .player-speech-bubble {
+    font-size: 7px;
+    padding: 3px 6px;
+    top: -14px;
+  }
+}
