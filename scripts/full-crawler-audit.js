@@ -289,6 +289,49 @@ async function testRoute(path, expectedStatus = 200) {
 
   results.passed.push('Mahjong Solitaire Gameplay');
 
+  // ── 10. Layout Switcher ──────────────────────────────────────────
+  console.log('\n--- 10. Solitaire Layout Switcher ---');
+  // Switch to solitaire mode first
+  await page.selectOption('#gameStyle', 'solitaire');
+  await page.waitForTimeout(200);
+  // Start a game to ensure layout switcher is visible
+  await page.click('#startGame');
+  await page.waitForTimeout(400);
+
+  const layoutSwitcher = await page.locator('#layoutSwitcher').isVisible();
+  if (!layoutSwitcher) throw new Error('Layout switcher not found on solitaire board');
+  console.log('✓ Layout switcher rendered on solitaire board');
+
+  const layoutPills = await page.locator('.layout-pill').count();
+  if (layoutPills < 5) throw new Error(`Expected at least 5 layout pills, found ${layoutPills}`);
+  console.log(`✓ ${layoutPills} layout pills rendered`);
+
+  // Click the Dragon layout pill
+  await page.locator('.layout-pill[data-layout-id="dragon"]').click();
+  await page.waitForTimeout(500); // allow transition animation
+
+  const dragonActive = await page.locator('.layout-pill[data-layout-id="dragon"].active').isVisible();
+  if (!dragonActive) throw new Error('Dragon layout pill did not become active after click');
+  console.log('✓ Dragon layout selected — pill shows active state');
+
+  const boardLayout = await page.locator('#board').getAttribute('data-layout');
+  if (boardLayout !== 'dragon') throw new Error(`Board data-layout expected "dragon", got "${boardLayout}"`);
+  console.log('✓ Board data-layout attribute updated to "dragon"');
+
+  // Tiles should be present on the new layout
+  const tileCount = await page.locator('#board .tile').count();
+  if (tileCount < 100) throw new Error(`Dragon layout tile count too low: ${tileCount}`);
+  console.log(`✓ Dragon layout rendered ${tileCount} tiles`);
+
+  // Switch back to Turtle
+  await page.locator('.layout-pill[data-layout-id="turtle"]').click();
+  await page.waitForTimeout(400);
+  const turtleActive = await page.locator('.layout-pill[data-layout-id="turtle"].active').isVisible();
+  if (!turtleActive) throw new Error('Turtle layout pill did not become active after click');
+  console.log('✓ Switched back to Turtle layout successfully');
+  results.passed.push('Solitaire Layout Switcher (5 layouts)');
+
+  // ── Check console / page errors ─────────────────────────────────
   // Check console / page errors
   if (consoleErrors.length > 0) {
     console.error('Console errors detected:', consoleErrors);

@@ -1,0 +1,108 @@
+/* ═══════════════════════════════════════════════════════════════
+   Solitaire Layout Switcher
+   A floating row of layout cards shown below the solitaire board.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Container ─────────────────────────────────────────────────── */
+.layout-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px 12px;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 253, 248, 0.6);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.layout-switcher::-webkit-scrollbar { display: none; }
+
+.layout-switcher-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  color: var(--muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+  margin-right: 2px;
+}
+
+/* ── Layout Pill Buttons ───────────────────────────────────────── */
+.layout-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 13px;
+  border: 1px solid var(--line);
+  background: #fffaf1;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+  min-height: 32px;
+  position: relative;
+}
+.layout-pill:hover {
+  border-color: var(--gold);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(201, 154, 69, 0.18);
+}
+.layout-pill.active {
+  background: var(--jade);
+  color: #fff;
+  border-color: var(--jade);
+  box-shadow: 0 3px 10px rgba(21, 61, 50, 0.28);
+}
+.layout-pill.active:hover {
+  transform: none;
+  box-shadow: 0 3px 10px rgba(21, 61, 50, 0.28);
+}
+.layout-pill-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+.layout-pill-name {
+  font-size: 10px;
+}
+
+/* ── Layout transition: board blurs and fades on switch ────────── */
+.board.layout-transitioning {
+  opacity: 0;
+  filter: blur(4px);
+  transform: scale(0.97);
+  transition: opacity 0.18s ease, filter 0.18s ease, transform 0.18s ease;
+}
+.board.layout-entering {
+  opacity: 1;
+  filter: none;
+  transform: scale(1);
+  transition: opacity 0.25s ease 0.04s, filter 0.25s ease 0.04s, transform 0.25s ease 0.04s;
+}
+
+/* ── Board canvas resize for non-turtle layouts ────────────────── */
+.board[data-layout="pyramid"] { width: 988px; height: 570px; }
+.board[data-layout="dragon"]  { width: 1024px; height: 580px; }
+.board[data-layout="castle"]  { width: 1000px; height: 590px; }
+.board[data-layout="crab"]    { width: 1100px; height: 560px; }
+
+/* ── Mobile: compact switcher ──────────────────────────────────── */
+@media (max-width: 800px) {
+  .layout-switcher {
+    padding: 6px 10px 7px;
+    gap: 4px;
+  }
+  .layout-switcher-label {
+    display: none;
+  }
+  .layout-pill {
+    min-height: 27px;
+    padding: 3px 9px;
+    font-size: 9px;
+    gap: 3px;
+  }
+  .layout-pill-icon {
+    font-size: 12px;
+  }
+}

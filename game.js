@@ -6,19 +6,103 @@
   const SAVE_KEY='mahjong-solitaire-save-v1';
   const FOCUS_KEY='mahjong-focus-mode';
   const ZEN_KEY='mahjong-zen-mode';
+  const LAYOUT_KEY='mahjong-layout';
   let focusMode = false;
   try { focusMode = localStorage.getItem(FOCUS_KEY) === 'true'; } catch(e){}
   let zenMode = false;
   try { zenMode = localStorage.getItem(ZEN_KEY) === 'true'; } catch(e){}
   let comboStreak = 0, lastMatchTime = 0, comboTimeout = null;
+  let activeLayoutId = 'turtle';
+  try { const s = localStorage.getItem(LAYOUT_KEY); if(s) activeLayoutId = s; } catch(e){}
   const honors=[['東','east'],['南','south'],['西','west'],['北','north'],['中','red'],['發','green'],['白','white']];
   const special=[['梅','flower'],['蘭','flower'],['菊','flower'],['竹','flower'],['春','season'],['夏','season'],['秋','season'],['冬','season']];
   const chinese=['一','二','三','四','五','六','七','八','九'];
   const bamboo=['🀐','🀑','🀒','🀓','🀔','🀕','🀖','🀗','🀘'];
   let tiles=[],selected=null,moves=0,pairs=0,startTime=0,timer=null,soundOn=true,started=false,history=[],hintToken=0,audioContext=null,completionFocusOrder=null;
-  const positions=[];
-  function addLayer(z,rows,cols,x0,y0,dx=52,dy=68){for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)positions.push({x:x0+c*dx,y:y0+r*dy,z});}
-  addLayer(0,6,16,84,90);addLayer(1,4,8,292,158);addLayer(2,3,4,396,226);addLayer(3,2,2,448,260);
+  let positions=[], solutionOrder=[];
+
+  /* ── Layout loading ─────────────────────────────────────────── */
+  function loadLayout(id) {
+    const layout = (window.getLayoutById && window.getLayoutById(id)) || null;
+    if(layout && layout.positions && layout.solutionOrder) {
+      positions = layout.positions;
+      solutionOrder = layout.solutionOrder;
+      activeLayoutId = id;
+      board.dataset.layout = id;
+    } else {
+      // Fallback: build classic turtle inline
+      positions = [];
+      function addLayer(z,rows,cols,x0,y0){for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)positions.push({x:x0+c*52,y:y0+r*68,z});}
+      addLayer(0,6,16,84,90);addLayer(1,4,8,292,158);addLayer(2,3,4,396,226);addLayer(3,2,2,448,260);
+      solutionOrder=[15,32,48,127,79,95,33,119,14,112,31,96,0,103,97,120,34,78,77,94,47,104,1,80,13,93,63,98,2,111,35,92,49,76,91,99,30,64,50,102,65,81,46,82,29,62,66,90,12,45,16,28,27,61,11,60,3,10,83,89,4,51,5,88,17,67,6,87,18,84,19,44,9,20,21,135,22,118,23,100,59,126,131,139,141,143,75,110,8,43,113,132,130,140,52,142,121,136,68,109,42,74,125,138,36,105,37,128,69,106,122,137,101,129,117,134,24,58,73,124,57,116,41,133,86,108,38,107,53,114,72,123,54,115,26,55,25,39,40,70,7,71,56,85];
+      activeLayoutId = 'turtle';
+      board.dataset.layout = 'turtle';
+    }
+    // Sync board canvas size to layout
+    const layoutDef = window.SOLITAIRE_LAYOUTS?.find(l=>l.id===activeLayoutId);
+    if(!layoutDef) {board.style.width='1000px';board.style.height='590px';}
+  }
+
+  /* ── Layout Switcher UI ─────────────────────────────────────── */
+  function buildLayoutSwitcher() {
+    if(document.getElementById('layoutSwitcher')) return;
+    const layouts = window.SOLITAIRE_LAYOUTS;
+    if(!layouts || !layouts.length) return;
+    const gameCard = board.closest('.game-card');
+    if(!gameCard) return;
+    const switcher = document.createElement('div');
+    switcher.className = 'layout-switcher';
+    switcher.id = 'layoutSwitcher';
+    switcher.setAttribute('role', 'group');
+    switcher.setAttribute('aria-label', 'Board layout selector');
+    const label = document.createElement('span');
+    label.className = 'layout-switcher-label';
+    label.textContent = 'Layout';
+    switcher.appendChild(label);
+    for(const layout of layouts) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'layout-pill' + (layout.id === activeLayoutId ? ' active' : '');
+      btn.dataset.layoutId = layout.id;
+      btn.setAttribute('aria-pressed', String(layout.id === activeLayoutId));
+      btn.setAttribute('title', layout.desc || layout.name);
+      btn.innerHTML = `<span class="layout-pill-icon">${layout.icon}</span><span class="layout-pill-name">${layout.name}</span>`;
+      btn.addEventListener('click', () => switchLayout(layout.id));
+      switcher.appendChild(btn);
+    }
+    // Insert switcher after bottom-bar (below solitaire controls)
+    const bottomBar = gameCard.querySelector('.bottom-bar');
+    if(bottomBar) bottomBar.insertAdjacentElement('afterend', switcher);
+    else gameCard.appendChild(switcher);
+  }
+
+  function switchLayout(id) {
+    if(id === activeLayoutId && started) return;
+    try { localStorage.setItem(LAYOUT_KEY, id); } catch(e){}
+    // Animate board out, swap layout, animate in
+    board.classList.add('layout-transitioning');
+    setTimeout(() => {
+      loadLayout(id);
+      clearSavedGame();
+      // Update pill buttons
+      const switcher = document.getElementById('layoutSwitcher');
+      if(switcher) {
+        switcher.querySelectorAll('.layout-pill').forEach(btn => {
+          const isActive = btn.dataset.layoutId === id;
+          btn.classList.toggle('active', isActive);
+          btn.setAttribute('aria-pressed', String(isActive));
+        });
+      }
+      board.classList.remove('layout-transitioning');
+      board.classList.add('layout-entering');
+      setTimeout(() => board.classList.remove('layout-entering'), 300);
+      // Start a fresh game on the new layout
+      start(false);
+      window.mahjongAudio?.playSlide();
+      flash(`${window.getLayoutById?.(id)?.icon || ''} ${window.getLayoutById?.(id)?.name || id} layout`);
+    }, 200);
+  }
+
   const types=[];
   for(const suit of ['characters','bamboo','dots'])for(let i=0;i<9;i++)for(let n=0;n<4;n++)types.push({kind:'suited',suit,value:i,label:suit==='dots'?String(i+1):chinese[i],glyph:suit==='characters'?chinese[i]:suit==='bamboo'?bamboo[i]:'●'});
   for(const [glyph,key] of honors)for(let n=0;n<4;n++)types.push({kind:'honor',key,glyph,label:glyph});
@@ -28,12 +112,12 @@
   function matchKey(data){if(data.kind==='special'||data.kind==='honor')return `${data.kind}:${data.key}`;return `${data.kind}:${data.suit}:${data.value}`;}
   function overlap(a,b){return a.x<b.x+52&&a.x+52>b.x&&a.y<b.y+68&&a.y+68>b.y;}
   function isFree(t,active=tiles){if(active.some(o=>!o.removed&&o.z>t.z&&overlap(t,o)))return false;const left=active.some(o=>!o.removed&&o.z===t.z&&o.x<t.x&&o.x+52>t.x-3&&Math.abs(o.y-t.y)<20);const right=active.some(o=>!o.removed&&o.z===t.z&&o.x>t.x&&o.x<t.x+55&&Math.abs(o.y-t.y)<20);return !left||!right;}
-  const solutionOrder=[15,32,48,127,79,95,33,119,14,112,31,96,0,103,97,120,34,78,77,94,47,104,1,80,13,93,63,98,2,111,35,92,49,76,91,99,30,64,50,102,65,81,46,82,29,62,66,90,12,45,16,28,27,61,11,60,3,10,83,89,4,51,5,88,17,67,6,87,18,84,19,44,9,20,21,135,22,118,23,100,59,126,131,139,141,143,75,110,8,43,113,132,130,140,52,142,121,136,68,109,42,74,125,138,36,105,37,128,69,106,122,137,101,129,117,134,24,58,73,124,57,116,41,133,86,108,38,107,53,114,72,123,54,115,26,55,25,39,40,70,7,71,56,85];
   function makeSolvableDeck(){const unique=[];types.forEach(t=>{if(t.kind==='special')return;if(!unique.some(u=>same(u,t)))unique.push({...t});});const pairTypes=[];unique.forEach(t=>{pairTypes.push([{...t},{...t}]);pairTypes.push([{...t},{...t}]);});const flowers=special.filter(t=>t[1]==='flower').map(t=>({kind:'special',key:'flower',glyph:t[0],label:t[0]}));const seasons=special.filter(t=>t[1]==='season').map(t=>({kind:'special',key:'season',glyph:t[0],label:t[0]}));pairTypes.push([flowers[0],flowers[1]],[flowers[2],flowers[3]],[seasons[0],seasons[1]],[seasons[2],seasons[3]]);if(pairTypes.length!==72)throw new Error(`Invalid deck pair count: ${pairTypes.length}`);shuffle(pairTypes);const deck=new Array(144);for(let i=0;i<72;i++){const pair=pairTypes[i].slice();shuffle(pair);deck[solutionOrder[i*2]]=pair[0];deck[solutionOrder[i*2+1]]=pair[1];}return deck;}
-  function saveState(){if(!started||!tiles.length||modal.classList.contains('hidden')===false)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,savedAt:Date.now(),elapsed:Math.max(0,Date.now()-startTime),moves,pairs,selected:selected?.order??null,tiles:tiles.map(t=>({x:t.x,y:t.y,z:t.z,order:t.order,removed:t.removed,data:t.data})),history:history.map(action=>action.type==='move'?{type:'move',tiles:action.tiles.map(t=>t.order)}:{type:'shuffle',before:[...action.before.entries()]} )}));}catch(e){}}
+  function saveState(){if(!started||!tiles.length||modal.classList.contains('hidden')===false)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,savedAt:Date.now(),layoutId:activeLayoutId,elapsed:Math.max(0,Date.now()-startTime),moves,pairs,selected:selected?.order??null,tiles:tiles.map(t=>({x:t.x,y:t.y,z:t.z,order:t.order,removed:t.removed,data:t.data})),history:history.map(action=>action.type==='move'?{type:'move',tiles:action.tiles.map(t=>t.order)}:{type:'shuffle',before:[...action.before.entries()]} )}));}catch(e){}}
   function hasSavedGame(){try{return !!localStorage.getItem(SAVE_KEY);}catch(e){return false;}}
   function clearSavedGame(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
-  function restoreSavedGame(){if(!hasSavedGame())return false;try{const saved=JSON.parse(localStorage.getItem(SAVE_KEY));if(!saved||saved.version!==1||!Array.isArray(saved.tiles)||saved.tiles.length!==144){clearSavedGame();return false;}tiles=saved.tiles.map(t=>({...t}));const byOrder=new Map(tiles.map(t=>[t.order,t]));history=Array.isArray(saved.history)?saved.history.map(action=>action.type==='move'?{type:'move',tiles:(action.tiles||[]).map(order=>byOrder.get(order)).filter(Boolean)}:{type:'shuffle',before:new Map(action.before||[])}).filter(action=>action.type==='shuffle'||action.tiles.length===2):[];moves=Number.isFinite(saved.moves)?Math.max(0,saved.moves):0;pairs=Number.isFinite(saved.pairs)?Math.max(0,saved.pairs):0;selected=saved.selected===null||saved.selected===undefined?null:byOrder.get(saved.selected)||null;started=true;startTime=Date.now()-Math.max(0,Number(saved.elapsed)||0);clearInterval(timer);timer=setInterval(tick,1000);tick();modal.classList.add('hidden');messageEl.classList.add('hidden');render();flash('Saved game restored.');return true;}catch(e){clearSavedGame();return false;}}
+  function restoreSavedGame(){if(!hasSavedGame())return false;try{const saved=JSON.parse(localStorage.getItem(SAVE_KEY));if(!saved||saved.version!==1||!Array.isArray(saved.tiles)||saved.tiles.length!==144){clearSavedGame();return false;}// Restore layout from saved game
+if(saved.layoutId && saved.layoutId !== activeLayoutId){loadLayout(saved.layoutId);}tiles=saved.tiles.map(t=>({...t}));const byOrder=new Map(tiles.map(t=>[t.order,t]));history=Array.isArray(saved.history)?saved.history.map(action=>action.type==='move'?{type:'move',tiles:(action.tiles||[]).map(order=>byOrder.get(order)).filter(Boolean)}:{type:'shuffle',before:new Map(action.before||[])}).filter(action=>action.type==='shuffle'||action.tiles.length===2):[];moves=Number.isFinite(saved.moves)?Math.max(0,saved.moves):0;pairs=Number.isFinite(saved.pairs)?Math.max(0,saved.pairs):0;selected=saved.selected===null||saved.selected===undefined?null:byOrder.get(saved.selected)||null;started=true;startTime=Date.now()-Math.max(0,Number(saved.elapsed)||0);clearInterval(timer);timer=setInterval(tick,1000);tick();modal.classList.add('hidden');messageEl.classList.add('hidden');render();flash('Saved game restored.');return true;}catch(e){clearSavedGame();return false;}}
   function findSolvableShufflePairs(active){const remaining=new Set(active.map(t=>t.order));const solution=[];let nodes=0;function search(){if(remaining.size===0)return true;if(++nodes>5000)return false;const current=active.filter(t=>remaining.has(t.order));const free=current.filter(t=>isFree(t,current));if(free.length<2)return false;const candidates=[];for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)candidates.push([free[i],free[j]]);shuffle(candidates);for(const [a,b] of candidates){remaining.delete(a.order);remaining.delete(b.order);solution.push([a.order,b.order]);if(search())return true;solution.pop();remaining.add(a.order);remaining.add(b.order);}return false;}return search()?solution:null;}
   function safeShuffleRemaining(){const active=tiles.filter(t=>!t.removed);if(active.length<2)return false;const groups=[],standard=[],flowers=[],seasons=[];active.forEach(t=>{if(t.data.kind==='special'){(t.data.key==='flower'?flowers:seasons).push({...t.data});return;}const found=standard.find(g=>same(g[0],t.data));if(found)found.push({...t.data});else standard.push([{...t.data}]);});if(standard.some(group=>group.length%2!==0)||flowers.length%2!==0||seasons.length%2!==0)return false;standard.forEach(group=>{for(let i=0;i<group.length;i+=2)groups.push([group[i],group[i+1]]);});for(let i=0;i<flowers.length;i+=2)groups.push([flowers[i],flowers[i+1]]);for(let i=0;i<seasons.length;i+=2)groups.push([seasons[i],seasons[i+1]]);if(groups.length!==active.length/2)return false;const before=new Map(active.map(t=>[t.order,{...t.data}]));const pairOrders=findSolvableShufflePairs(active);if(!pairOrders)return false;shuffle(groups);pairOrders.forEach(([a,b],index)=>{const pair=groups[index].slice();shuffle(pair);tiles[a].data=pair[0];tiles[b].data=pair[1];});if(!findPair()){before.forEach((data,order)=>{tiles[order].data={...data};});return false;}history.push({type:'shuffle',before});saveState();return true;}
   function focusAdjacent(current,dx,dy){const active=tiles.filter(t=>!t.removed);if(!active.length)return;const cx=current.x+26,cy=current.y+34,candidates=active.filter(t=>{const tx=t.x+26,ty=t.y+34;return dx<0?tx<cx-4:dx>0?tx>cx+4:dy<0?ty<cy-4:ty>cy+4;});if(!candidates.length)return;candidates.sort((a,b)=>{const da=(a.x+26-cx)**2+(a.y+34-cy)**2,db=(b.x+26-cx)**2+(b.y+34-cy)**2;return da-db;});const el=board.querySelector(`[data-order="${candidates[0].order}"]`);if(el)el.focus();}
@@ -93,7 +177,9 @@
   function flash(text){messageEl.textContent=text;messageEl.classList.remove('hidden');clearTimeout(flash.t);flash.t=setTimeout(()=>messageEl.classList.add('hidden'),1300);}
   function formatTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
   function tick(){if(zenMode)timeEl.textContent='ZEN ☯';else timeEl.textContent=formatTime(Math.floor((Date.now()-startTime)/1000));}
-  function start(focusBoard=false){if($('gameStyle')?.value==='american'&&window.startAmericanGame){window.startAmericanGame();return;}if(!started&&restoreSavedGame()){updateFocusModeUI();updateZenModeUI();return;}clearInterval(timer);cancelHint();started=true;startTime=Date.now();moves=0;pairs=0;comboStreak=0;lastMatchTime=0;history=[];const deck=makeSolvableDeck();tiles=positions.map((p,i)=>({...p,data:deck[i],order:i,removed:false}));modal.classList.add('hidden');messageEl.classList.add('hidden');updateFocusModeUI();updateZenModeUI();if(zenMode)timeEl.textContent='ZEN ☯';else timeEl.textContent='00:00';render();if(focusBoard)focusFirstAvailable();saveState();window.mahjongAudio?.playClick();}
+  function start(focusBoard=false){if($('gameStyle')?.value==='american'&&window.startAmericanGame){window.startAmericanGame();return;}if(!started&&restoreSavedGame()){updateFocusModeUI();updateZenModeUI();return;}clearInterval(timer);cancelHint();started=true;startTime=Date.now();moves=0;pairs=0;comboStreak=0;lastMatchTime=0;history=[];// Ensure positions are loaded for current layout
+if(!positions.length) loadLayout(activeLayoutId);
+const deck=makeSolvableDeck();tiles=positions.map((p,i)=>({...p,data:deck[i],order:i,removed:false}));modal.classList.add('hidden');messageEl.classList.add('hidden');updateFocusModeUI();updateZenModeUI();if(zenMode)timeEl.textContent='ZEN ☯';else timeEl.textContent='00:00';timer=setInterval(tick,1000);render();if(focusBoard)focusFirstAvailable();saveState();window.mahjongAudio?.playClick();}
   function finish(matchedFocusOrder=null){clearInterval(timer);cancelHint();started=false;clearSavedGame();completionFocusOrder=matchedFocusOrder;$('finalTime').textContent=timeEl.textContent;$('finalMoves').textContent=moves;$('modalTitle').textContent='Board cleared!';$('modalCopy').textContent=zenMode?`You cleared all 144 tiles peacefully in Zen mode, with ${moves} moves.`:`You cleared all 144 tiles in ${timeEl.textContent}, with ${moves} moves.`;modal.classList.remove('hidden');requestAnimationFrame(()=>{const playAgain=$('playAgain');if(playAgain)playAgain.focus();});update();window.mahjongAudio?.playWin();}
   function shuffleRemaining(){if($('gameStyle')?.value==='american')return;if(!started){start();return;}cancelHint();if(safeShuffleRemaining()){render();flash('Remaining tiles safely shuffled.');window.mahjongAudio?.playSlide();}else flash('Shuffle unavailable for this board state.');}
   function hint(){if($('gameStyle')?.value==='american')return;if(!started){flash('Start a game first.');return;}const pair=findPair();if(!pair){flash('No matching open pair found. Shuffle to continue.');return;}cancelHint();const token=hintToken;selected=pair[0];render();saveState();window.mahjongAudio?.playSlide();setTimeout(()=>{if(!started||token!==hintToken)return;selected=pair[1];render();saveState();setTimeout(()=>{if(!started||token!==hintToken)return;selected=null;render();saveState();},650);},650);}
@@ -101,6 +187,14 @@
   $('startGame').addEventListener('click',()=>start());$('playAgain').addEventListener('click',()=>start(true));$('shuffle').addEventListener('click',shuffleRemaining);$('hint').addEventListener('click',hint);if(undoBtn)undoBtn.addEventListener('click',undo);$('soundBtn').addEventListener('click',()=>{soundOn=!soundOn;$('soundBtn').textContent=soundOn?'🔊':'🔇';window.mahjongAudio?.setMuted(!soundOn);});
   $('focusModeBtn')?.addEventListener('click', toggleFocusMode);
   $('zenModeBtn')?.addEventListener('click', toggleZenMode);
+  // Initialize layout (from localStorage or default)
+  loadLayout(activeLayoutId);
+  // Build layout switcher after DOM is ready
+  if(document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', buildLayoutSwitcher);
+  } else {
+    buildLayoutSwitcher();
+  }
   updateFocusModeUI();
   updateZenModeUI();
   document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='h')hint();if(e.key.toLowerCase()==='u')undo();if(e.key==='Escape'){cancelHint();render();saveState();}});

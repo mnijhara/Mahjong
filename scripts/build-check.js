@@ -25,6 +25,8 @@ const required = [
   'solitaire-a11y.js',
   'mahjong-codex.css',
   'mahjong-codex.js',
+  'solitaire-layouts.css',
+  'solitaire-layouts.js',
   'scripts/static-server.js'
 ];
 
@@ -45,6 +47,7 @@ for (const file of [
   'style-selector.js',
   'solitaire-a11y.js',
   'mahjong-codex.js',
+  'solitaire-layouts.js',
   'scripts/static-server.js',
   'scripts/chinese-regression.js',
   'scripts/full-crawler-audit.js'
