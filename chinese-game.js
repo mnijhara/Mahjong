@@ -31,13 +31,14 @@
     ALL_CANDIDATE_TILES.push({ type: 'dragon', key, label: `${key.toUpperCase()} Dragon`, glyph });
   });
 
-  let currentStyle = 'hong-kong'; // 'hong-kong', 'chinese-classical', 'taiwanese', 'riichi'
+  let currentStyle = 'hong-kong'; // 'hong-kong', 'chinese-classical', 'taiwanese', 'riichi', 'sichuan'
   let wall = [];
   let deadWall = [];
   let doraIndicator = null;
   let riichiDeclared = [false, false, false, false];
   let riichiPot = 0;
   let playerScores = [25000, 25000, 25000, 25000];
+  let sichuanWinners = [];
 
   let discards = [];
   let players = [];
@@ -92,6 +93,11 @@
       }
     });
 
+    // Sichuan uses strictly 108 suited tiles (no winds, dragons, flowers)
+    if (currentStyle === 'sichuan') {
+      return shuffle(tiles);
+    }
+
     // 4 Winds x 4 copies
     WINDS.forEach(([key, glyph]) => {
       for (let copy = 0; copy < 4; copy++) {
@@ -107,7 +113,7 @@
     });
 
     // 8 Flowers/Seasons (only for Hong Kong, Classical, Taiwanese)
-    if (currentStyle !== 'riichi') {
+    if (currentStyle !== 'riichi' && currentStyle !== 'sichuan') {
       FLOWERS.forEach((glyph, idx) => {
         tiles.push({ id: `flower-${idx}`, type: 'flower', key: 'flower', label: `Flower ${glyph}`, glyph });
       });
@@ -399,6 +405,50 @@
     return { fan: han, breakdown, unit: 'Han (飜)' };
   }
 
+  function calculateSichuanFan(hand, melds, winningTile, isZimo) {
+    const allTiles = [...hand, ...melds.flat()];
+    let fan = 1;
+    const breakdown = ['Ping Hu (平胡 / Base Win) 1 Fan'];
+
+    if (isZimo) {
+      fan += 1;
+      breakdown.push('Self-Draw (Zimo / 自摸) +1 Fan');
+    }
+
+    // Seven Pairs (Qi Dui)
+    const counts = new Map();
+    hand.forEach(t => {
+      const k = tileKey(t);
+      counts.set(k, (counts.get(k) || 0) + 1);
+    });
+    let pairs = 0;
+    for (const c of counts.values()) {
+      if (c === 2 || c === 4) pairs += c / 2;
+    }
+    const isQiDui = hand.length === 14 && pairs === 7;
+    if (isQiDui) {
+      fan += 4;
+      breakdown.push('Seven Pairs (Qi Dui / 七對) +4 Fan');
+    }
+
+    // All Triplets (Dui Dui Hu)
+    const hasSequences = melds.some(m => m.length === 3 && m[0].type === 'suited' && m[0].value !== m[1].value);
+    if (!isQiDui && !hasSequences) {
+      fan += 2;
+      breakdown.push('All Triplets (Dui Dui Hu / 對對糊) +2 Fan');
+    }
+
+    // Pure One-Suit (Qing Yi Se)
+    const suitedTiles = allTiles.filter(t => t.type === 'suited');
+    const suitsInHand = new Set(suitedTiles.map(t => t.suit));
+    if (suitsInHand.size === 1) {
+      fan += 4;
+      breakdown.push('Pure One-Suit (Qing Yi Se / 清一色) +4 Fan');
+    }
+
+    return { fan, breakdown, unit: 'Fan (番)' };
+  }
+
   function scoreForVariant(hand, melds, winningTile, isZimo, winnerIndex) {
     if (currentStyle === 'taiwanese') {
       return calculateTai(hand, melds, winningTile, isZimo);
@@ -406,11 +456,15 @@
     if (currentStyle === 'riichi') {
       return calculateHan(hand, melds, winningTile, isZimo, winnerIndex);
     }
+    if (currentStyle === 'sichuan') {
+      return calculateSichuanFan(hand, melds, winningTile, isZimo);
+    }
     return calculateFan(hand, melds, winningTile, isZimo);
   }
 
   function checkHumanClaims(discardedTile, fromPlayer) {
     if (fromPlayer === 0) return null; // Can't claim your own tile
+    if (currentStyle === 'sichuan' && sichuanWinners.some(w => w.playerIndex === 0)) return null; // Human already won
     const hand = players[0].hand;
     const key = tileKey(discardedTile);
 
@@ -419,10 +473,10 @@
     const canKong = matches.length === 3;
     const canPung = matches.length >= 2;
 
-    // Chow is only legal from the player to your immediate left (Player 3)
+    // Chow is only legal in non-Sichuan rules from the player to your immediate left (Player 3)
     let canChow = false;
     let chowOptions = [];
-    if (fromPlayer === 3 && discardedTile.type === 'suited') {
+    if (currentStyle !== 'sichuan' && fromPlayer === 3 && discardedTile.type === 'suited') {
       const v = discardedTile.value;
       const s = discardedTile.suit;
       const has = (val) => hand.some(t => t.suit === s && t.value === val);
@@ -450,6 +504,9 @@
     } else if (currentStyle === 'riichi') {
       if (kicker) kicker.textContent = 'Japanese Riichi Mahjong · Dora, Riichi & Yaku · 4 Players';
       if (h2) h2.textContent = 'Riichi Mahjong Arena';
+    } else if (currentStyle === 'sichuan') {
+      if (kicker) kicker.textContent = 'Sichuan Bloody Rules · 108 Suited Tiles · Battle to the End';
+      if (h2) h2.textContent = 'Chengdu Bloody Arena';
     } else if (currentStyle === 'chinese-classical') {
       if (kicker) kicker.textContent = 'Chinese Classical Tradition · 144 Tiles · 4 Players';
       if (h2) h2.textContent = 'Classical Mahjong Table';
@@ -468,6 +525,7 @@
     if (compass) {
       if (currentStyle === 'riichi') compass.textContent = 'Riichi Table · 東一局';
       else if (currentStyle === 'taiwanese') compass.textContent = 'Taiwanese 16-Tile · 東風圈';
+      else if (currentStyle === 'sichuan') compass.textContent = 'Sichuan Bloody Battle · 血战到底';
       else compass.textContent = 'East Round · 東風局';
     }
 
@@ -526,6 +584,9 @@
           let extra = '';
           if (currentStyle === 'riichi') {
             extra = ` · <span class="seat-score-badge${riichiDeclared[i] ? ' riichi-active' : ''}">${playerScores[i].toLocaleString()} pts${riichiDeclared[i] ? ' [立直]' : ''}</span>`;
+          } else if (currentStyle === 'sichuan' && sichuanWinners.some(w => w.playerIndex === i)) {
+            const rank = sichuanWinners.findIndex(w => w.playerIndex === i) + 1;
+            extra = ` · <span class="seat-score-badge sichuan-won" style="background:#e63946;color:#fff;">[Winner #${rank}]</span>`;
           }
           countSpan.innerHTML = `${players[i].hand.length} tiles · ${players[i].melds.length} melds${extra}`;
         }
@@ -553,7 +614,7 @@
     const handEl = $('chineseHand');
     if (handEl && players[0]) {
       handEl.innerHTML = '';
-      const isPlayerTurn = started && currentTurn === 0 && phase === 'turn';
+      const isPlayerTurn = started && currentTurn === 0 && phase === 'turn' && !(currentStyle === 'sichuan' && sichuanWinners.some(w => w.playerIndex === 0));
       players[0].hand.forEach((tile, index) => {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -604,7 +665,11 @@
     // Status Badge
     const statusEl = $('chineseStatusBadge');
     if (statusEl) {
-      statusEl.textContent = !started ? 'Ready' : phase === 'claim' ? 'Claim Available' : currentTurn === 0 ? 'Your Turn (Choose discard)' : `${BOT_NAMES[currentTurn]} thinking…`;
+      if (currentStyle === 'sichuan' && sichuanWinners.some(w => w.playerIndex === 0)) {
+        statusEl.textContent = `You won (#${sichuanWinners.findIndex(w => w.playerIndex === 0) + 1})! Spectating remaining battle...`;
+      } else {
+        statusEl.textContent = !started ? 'Ready' : phase === 'claim' ? 'Claim Available' : currentTurn === 0 ? 'Your Turn (Choose discard)' : `${BOT_NAMES[currentTurn]} thinking…`;
+      }
     }
   }
 
@@ -676,7 +741,7 @@
     if (action === 'hu') {
       p.hand.push(tile);
       const score = scoreForVariant(p.hand, p.melds, tile, false, 0);
-      finishGame(0, score);
+      handlePlayerWin(0, score, tile, false);
       return;
     }
 
@@ -725,9 +790,20 @@
     }
   }
 
+  function getNextActivePlayer(startIdx) {
+    for (let step = 0; step < 4; step++) {
+      const candidate = ((startIdx + step) % 4 + 4) % 4;
+      if (!sichuanWinners.some(w => w.playerIndex === candidate)) {
+        return candidate;
+      }
+    }
+    return -1;
+  }
+
   function discardTile(playerIndex, tileIndex) {
     if (phase !== 'turn' || currentTurn !== playerIndex) return;
     const tile = players[playerIndex].hand.splice(tileIndex, 1)[0];
+    tile.discardedBy = playerIndex;
     discards.push(tile);
     window.mahjongAudio?.playSlide();
 
@@ -746,21 +822,40 @@
 
     // AI Check for wins
     for (let i = 1; i < 4; i++) {
-      if (i !== playerIndex && isWinningHand([...players[i].hand, tile])) {
+      if (i !== playerIndex && !sichuanWinners.some(w => w.playerIndex === i) && isWinningHand([...players[i].hand, tile])) {
         players[i].hand.push(tile);
-        finishGame(i, scoreForVariant(players[i].hand, players[i].melds, tile, false, i));
+        handlePlayerWin(i, scoreForVariant(players[i].hand, players[i].melds, tile, false, i), tile, false);
         return;
       }
     }
 
     // Advance to next player
-    advanceToNextPlayer((playerIndex + 1) % 4);
+    const nextPlayer = currentStyle === 'sichuan' ? getNextActivePlayer(playerIndex + 1) : (playerIndex + 1) % 4;
+    advanceToNextPlayer(nextPlayer);
   }
 
   function advanceToNextPlayer(nextPlayerIndex) {
+    if (currentStyle === 'sichuan') {
+      if (sichuanWinners.length >= 3 || wall.length === 0) {
+        finishSichuanGame();
+        return;
+      }
+      if (nextPlayerIndex === -1 || sichuanWinners.some(w => w.playerIndex === nextPlayerIndex)) {
+        nextPlayerIndex = getNextActivePlayer(nextPlayerIndex === -1 ? 0 : nextPlayerIndex);
+        if (nextPlayerIndex === -1) {
+          finishSichuanGame();
+          return;
+        }
+      }
+    }
+
     currentTurn = nextPlayerIndex;
     if (wall.length === 0) {
-      finishGame(-1, { fan: 0, breakdown: ['Wall exhausted · Draw game (Liuju / 流局)'], unit: 'Pts' });
+      if (currentStyle === 'sichuan') {
+        finishSichuanGame();
+      } else {
+        finishGame(-1, { fan: 0, breakdown: ['Wall exhausted · Draw game (Liuju / 流局)'], unit: 'Pts' });
+      }
       return;
     }
 
@@ -783,13 +878,67 @@
     }
   }
 
+  function calculateDiscardDanger(tile, aiIndex) {
+    const riichiCallers = [];
+    for (let i = 0; i < 4; i++) {
+      if (i !== aiIndex && riichiDeclared[i]) riichiCallers.push(i);
+    }
+    if (riichiCallers.length === 0) return 0; // No Riichi threat
+
+    const key = tileKey(tile);
+
+    // 1. GENBUTSU (現物) Check:
+    // Any tile discarded by a Riichi caller is 100% safe against them (Furiten rule)
+    let safeAgainstAllRiichi = true;
+    for (const caller of riichiCallers) {
+      const isCallerGenbutsu = discards.some(d => d.discardedBy === caller && tileKey(d) === key);
+      if (!isCallerGenbutsu) {
+        safeAgainstAllRiichi = false;
+      }
+    }
+    if (safeAgainstAllRiichi) {
+      return 0; // Absolute 100% Genbutsu safety!
+    }
+
+    // Check visible copies across all discards and exposed melds
+    let visibleCount = 0;
+    discards.forEach(d => { if (tileKey(d) === key) visibleCount++; });
+    players.forEach(p => {
+      p.melds.forEach(m => {
+        m.forEach(t => { if (tileKey(t) === key) visibleCount++; });
+      });
+    });
+
+    // 2. Dead Honors (Winds / Dragons)
+    if (tile.type === 'wind' || tile.type === 'dragon') {
+      if (visibleCount >= 3) return 1; // 4th honor is 99.9% safe (cannot be sequence)
+      if (visibleCount === 2) return 10;
+      return 30;
+    }
+
+    // 3. Suited Terminals (1 and 9) vs Middle Simples (2-8)
+    let danger = 50;
+    if (tile.type === 'suited') {
+      if (tile.value === 1 || tile.value === 9) {
+        danger = 20 - (visibleCount * 4);
+      } else if (tile.value === 2 || tile.value === 8) {
+        danger = 40 - (visibleCount * 4);
+      } else {
+        // 3-7 are dangerous ryanmen (two-sided) wait tiles
+        danger = 70 - (visibleCount * 4);
+      }
+    }
+
+    return Math.max(2, danger);
+  }
+
   function aiPlayTurn(aiIndex) {
     if (phase !== 'turn' || currentTurn !== aiIndex) return;
     const p = players[aiIndex];
 
     // Check if AI won on self-draw
     if (isWinningHand(p.hand)) {
-      finishGame(aiIndex, scoreForVariant(p.hand, p.melds, p.hand[p.hand.length - 1], true, aiIndex));
+      handlePlayerWin(aiIndex, scoreForVariant(p.hand, p.melds, p.hand[p.hand.length - 1], true, aiIndex), p.hand[p.hand.length - 1], true);
       return;
     }
 
@@ -803,7 +952,23 @@
       }
     }
 
-    // Choose discard
+    // Betaori (ベタオリ / Full Defensive Fold) when an opponent declared Riichi
+    const hasRiichiThreat = riichiDeclared.some((decl, i) => i !== aiIndex && decl);
+    if (hasRiichiThreat) {
+      let bestIdx = 0;
+      let minDanger = Infinity;
+      p.hand.forEach((tile, idx) => {
+        const danger = calculateDiscardDanger(tile, aiIndex);
+        if (danger < minDanger) {
+          minDanger = danger;
+          bestIdx = idx;
+        }
+      });
+      discardTile(aiIndex, bestIdx);
+      return;
+    }
+
+    // Standard offensive discard selection
     let bestIdx = p.hand.length - 1;
     let minScore = Infinity;
 
@@ -822,6 +987,85 @@
     });
 
     discardTile(aiIndex, bestIdx);
+  }
+
+  function handlePlayerWin(winnerIndex, scoreResult, winningTile, isZimo) {
+    if (currentStyle === 'sichuan') {
+      sichuanWinners.push({
+        playerIndex: winnerIndex,
+        score: scoreResult,
+        winningTile,
+        isZimo
+      });
+      window.mahjongAudio?.playWin();
+
+      if (sichuanWinners.length >= 3 || wall.length === 0) {
+        finishSichuanGame();
+        return;
+      }
+
+      const statusEl = $('chineseStatusBadge');
+      if (statusEl) {
+        statusEl.textContent = `${BOT_NAMES[winnerIndex]} won! (${scoreResult.fan} Fan). Battle continues!`;
+      }
+
+      renderTable();
+
+      const nextPlayer = getNextActivePlayer(winnerIndex + 1);
+      if (nextPlayer === -1) {
+        finishSichuanGame();
+      } else {
+        advanceToNextPlayer(nextPlayer);
+      }
+      return;
+    }
+
+    finishGame(winnerIndex, scoreResult);
+  }
+
+  function finishSichuanGame() {
+    phase = 'finished';
+    started = false;
+
+    window.mahjongAudio?.playWin();
+
+    let modal = $('chineseWinModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'chineseWinModal';
+      modal.className = 'modal';
+      document.body.appendChild(modal);
+    }
+    modal.classList.remove('hidden');
+
+    const humanWon = sichuanWinners.some(w => w.playerIndex === 0);
+    const winnersList = sichuanWinners.map((w, idx) => {
+      return `<div style="margin: 6px 0; padding: 6px 12px; background: rgba(0,0,0,0.05); border-radius: 8px;">
+        <strong>#${idx + 1} Winner: ${BOT_NAMES[w.playerIndex]}</strong> — ${w.score.fan} Fan (${w.score.breakdown.join(', ')})
+      </div>`;
+    }).join('');
+
+    modal.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-icon">🩸</div>
+        <p class="eyebrow">Sichuan Bloody Rules · Battle to the End</p>
+        <h2>${humanWon ? 'Victory in the Bloody Arena!' : 'Bloody Battle Concluded!'}</h2>
+        <p>${sichuanWinners.length} player(s) successfully went Mahjong before wall exhaustion.</p>
+        <div style="text-align: left; margin: 16px 0;">
+          ${winnersList || '<p>No winners — wall exhausted (Liuju / 流局).</p>'}
+        </div>
+        <div class="modal-stats">
+          <div><span>WINNERS</span><strong>${sichuanWinners.length} / 3</strong></div>
+          <div><span>WALL REMAINING</span><strong>${wall.length}</strong></div>
+        </div>
+        <button class="btn primary full" id="chinesePlayAgainBtn" type="button">Deal Next Battle</button>
+      </div>
+    `;
+
+    modal.querySelector('#chinesePlayAgainBtn').addEventListener('click', () => {
+      modal.classList.add('hidden');
+      startGame();
+    });
   }
 
   function finishGame(winnerIndex, scoreResult) {
@@ -867,13 +1111,14 @@
       currentStyle = styleName;
     } else if ($('gameStyle')) {
       const gs = $('gameStyle').value;
-      if (['hong-kong', 'chinese-classical', 'taiwanese', 'riichi'].includes(gs)) {
+      if (['hong-kong', 'chinese-classical', 'taiwanese', 'riichi', 'sichuan'].includes(gs)) {
         currentStyle = gs;
       }
     }
 
     wall = buildChineseDeck();
     discards = [];
+    sichuanWinners = [];
     riichiDeclared = [false, false, false, false];
     riichiPot = 0;
     playerScores = [25000, 25000, 25000, 25000];
@@ -936,7 +1181,8 @@
     turn: currentTurn,
     style: currentStyle,
     dora: doraIndicator ? doraIndicator.label : null,
-    handSize: players[0]?.hand?.length || 0
+    handSize: players[0]?.hand?.length || 0,
+    sichuanWinners: sichuanWinners.length
   });
 
   $('chineseStartBtn')?.addEventListener('click', () => startGame());

@@ -16,11 +16,12 @@ const { chromium } = require('playwright');
     await studioBtn.click();
     if (!await page.locator('#tileStudioModal').isVisible()) throw new Error('Tile Studio modal did not open');
 
-    // Test Material Theme Swatch (Ebony & Gold)
+    // Test Material Theme Swatches (Ebony & Gold, Washizu Crystal)
     await page.locator('.material-card[data-theme="ebony"]').click();
     if ((await page.evaluate(() => localStorage.getItem('mahjong-tile-theme'))) !== 'ebony') throw new Error('Ebony theme not persisted');
 
-    // Close Studio
+    await page.locator('.material-card[data-theme="crystal"]').click();
+    if ((await page.evaluate(() => localStorage.getItem('mahjong-tile-theme'))) !== 'crystal') throw new Error('Crystal theme not persisted');
     await page.locator('#studioApplyBtn').click();
     if (await page.locator('#tileStudioModal').isVisible()) throw new Error('Tile Studio modal did not close');
 
@@ -36,11 +37,28 @@ const { chromium } = require('playwright');
     await page.waitForTimeout(120);
     if (await page.locator('#chineseDiscardGrid .discard-tile').count() < 1) throw new Error('Discard not recorded in Chinese discard grid');
 
+    // 3. Test Sichuan Bloody Rules Selection & 108 Tile Wall
+    await page.selectOption('#gameStyle', 'sichuan');
+    await page.waitForTimeout(100);
+    const sichuanState = await page.evaluate(() => window.chineseGameState());
+    if (sichuanState.style !== 'sichuan') throw new Error('Sichuan style state not set');
+    // 108 tiles - (13 * 4 + 1) = 108 - 53 = 55 in wall
+    if (sichuanState.wall !== 55) throw new Error(`Sichuan wall should have 55 tiles remaining, got ${sichuanState.wall}`);
+    const sichuanHeader = await page.locator('.chinese-header h2').textContent();
+    if (!sichuanHeader.includes('Chengdu Bloody Arena')) throw new Error('Sichuan arena header missing');
+
+    // 4. Test Riichi Mahjong Selection
+    await page.selectOption('#gameStyle', 'riichi');
+    await page.waitForTimeout(100);
+    const riichiState = await page.evaluate(() => window.chineseGameState());
+    if (riichiState.style !== 'riichi') throw new Error('Riichi style state not set');
+    if (!riichiState.dora) throw new Error('Riichi Dora indicator missing');
+
     // Reset theme back to ivory for clean state
     await page.evaluate(() => localStorage.setItem('mahjong-tile-theme', 'ivory'));
 
     if (errors.length) throw new Error(errors.join('\n'));
-    console.log('Chinese Mahjong + Tile Studio regression passed cleanly');
+    console.log('Chinese Mahjong + Washizu Crystal + Sichuan Bloody Rules regression passed cleanly');
   } finally {
     await browser.close();
   }

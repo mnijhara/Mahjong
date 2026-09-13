@@ -85,14 +85,14 @@ async function testRoute(path, expectedStatus = 200) {
   await page.waitForSelector('#tileStudioModal:not(.hidden)');
   console.log('✓ Tile Studio modal opened');
 
-  const themes = ['ivory', 'jade', 'ocean', 'rose', 'ebony', 'neon', 'contrast'];
+  const themes = ['ivory', 'jade', 'ocean', 'rose', 'ebony', 'neon', 'contrast', 'crystal'];
   for (const t of themes) {
     await page.locator(`.material-card[data-theme="${t}"]`).click();
     await page.waitForTimeout(40);
     const persisted = await page.evaluate(() => localStorage.getItem('mahjong-tile-theme'));
     if (persisted !== t) throw new Error(`Theme ${t} did not persist`);
   }
-  console.log(`✓ Cycled through all ${themes.length} handcrafted material themes`);
+  console.log(`✓ Cycled through all ${themes.length} handcrafted material themes (including Washizu Crystal)`);
 
   // Test Filters
   const filters = ['natural', 'jade', 'cinnabar', 'sepia', 'cyber', 'gold'];
@@ -194,6 +194,18 @@ async function testRoute(path, expectedStatus = 200) {
   console.log(`✓ Riichi rendered ${scoreBadges} player score placards (25,000 pts)`);
   if (scoreBadges !== 3) throw new Error(`Expected 3 opponent score badges, found ${scoreBadges}`);
   results.passed.push('Japanese Riichi HUD & Dora Engine');
+
+  // 2F-2: Play Sichuan Bloody Rules Mahjong
+  console.log('\nTesting Sichuan Bloody Rules Mahjong Table...');
+  await page.selectOption('#gameStyle', 'sichuan');
+  await page.waitForSelector('#chineseTable:not(.hidden)');
+  const sichuanState = await page.evaluate(() => window.chineseGameState());
+  console.log(`✓ Sichuan mode initialized with 108 suited tiles (${sichuanState.wall} remaining in wall)`);
+  if (sichuanState.wall !== 55) throw new Error(`Expected 55 wall tiles in Sichuan, got ${sichuanState.wall}`);
+  await page.locator('#chineseHand .chinese-tile').first().click();
+  await page.waitForTimeout(100);
+  console.log('✓ Sichuan human discard executed');
+  results.passed.push('Sichuan Bloody Rules (108 Suited Tiles)');
 
   // 2G: Play Mahjong Solitaire
   console.log('\nTesting Mahjong Solitaire...');

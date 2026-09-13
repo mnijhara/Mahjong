@@ -15,6 +15,7 @@
     'hong-kong': { playable: true, description: 'Hong Kong Mahjong is a four-player traditional rules family with regional scoring, live Chow/Pung/Kong/Hu claiming and Fan calculation.', note: 'Playable 4-player table with 144 tiles, live claims, and hand scoring.' },
     'chinese-classical': { playable: true, description: 'Chinese Classical Mahjong is a traditional four-player rules family with 144 tiles and classic hand-building conventions.', note: 'Playable 4-player table with dealer rotation and meld validation.' },
     taiwanese: { playable: true, description: 'Taiwanese Mahjong features 16-tile hands (East starts with 17), 5 melds + 1 pair winning structure, and traditional Tai scoring.', note: 'Playable 16-tile table with dealer rotation, Chow/Pung/Kong claims and Tai scoring.' },
+    sichuan: { playable: true, description: 'Sichuan Bloody Rules (血战到底): 108 suited tiles, no honors. Winner bows out, remaining players battle to the end until 3 win or wall exhausts.', note: 'Playable 4-player table with 108 suited tiles, multi-winner resolution and Bloody Battle scoring.' },
     singapore: { playable: false, description: 'Singapore Mahjong is a four-player variant with its own scoring and special hand rules.', note: 'Planned: Singapore rules and scoring.' }
   };
 
@@ -25,7 +26,8 @@
     rose: { label: 'Rosewood', face: 'linear-gradient(145deg,#fff7f2,#ead8d1)', edge: '#c9aaa0', shadow: '#c5a49a', glyph: '#6b3540', accent: '#a95f6d', back: 'linear-gradient(145deg,#ead8d1,#c99da4)', backInk: '#70414a' },
     ebony: { label: 'Ebony & Gold', face: 'linear-gradient(145deg,#232326,#131314)', edge: '#4a4437', shadow: '#22201c', glyph: '#f2c94c', accent: '#e5b839', back: 'linear-gradient(145deg,#1f1c16,#0d0b07)', backInk: '#ffd700' },
     neon: { label: 'Cyberpunk Neon', face: 'linear-gradient(145deg,#121820,#080c10)', edge: '#00e5ff', shadow: '#005f73', glyph: '#00f0ff', accent: '#ff0055', back: 'linear-gradient(145deg,#1a092b,#090212)', backInk: '#ff007f' },
-    contrast: { label: 'High Contrast', face: 'linear-gradient(145deg,#ffffff,#eeeeee)', edge: '#202020', shadow: '#222222', glyph: '#000000', accent: '#000000', back: 'linear-gradient(145deg,#444,#111)', backInk: '#ffffff' }
+    contrast: { label: 'High Contrast', face: 'linear-gradient(145deg,#ffffff,#eeeeee)', edge: '#202020', shadow: '#222222', glyph: '#000000', accent: '#000000', back: 'linear-gradient(145deg,#444,#111)', backInk: '#ffffff' },
+    crystal: { label: 'Washizu Crystal', face: 'linear-gradient(135deg,rgba(240,250,255,0.8),rgba(195,225,245,0.45))', edge: 'rgba(255,255,255,0.85)', shadow: 'rgba(150,195,215,0.4)', glyph: '#0f4c5c', accent: '#00b4d8', back: 'linear-gradient(135deg,rgba(225,245,255,0.7),rgba(175,220,240,0.45))', backInk: '#0f4c5c' }
   };
 
   function installTileCustomizer() {
@@ -87,7 +89,7 @@
       .tile-customizer .view-label{margin-top:12px}.tile-customizer .view-help{margin:7px 0 0;font-size:10px;line-height:1.45;color:var(--muted)}
       .tile-customizer select{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:#fffaf2;color:var(--ink);padding:0 42px 0 14px;font:600 13px 'DM Sans',sans-serif;box-shadow:0 5px 16px #243b2b0d;cursor:pointer}
       .tile-customizer select:focus-visible{outline:3px solid ${theme.accent};outline-offset:3px}
-      .tile,.american-tile,.chinese-tile{background:${theme.face};border-color:${theme.edge};box-shadow:4px 5px 0 ${theme.shadow},5px 8px 12px #2a382d1d}
+      .tile,.american-tile,.chinese-tile{background:${theme.face};border-color:${theme.edge};box-shadow:4px 5px 0 ${theme.shadow},5px 8px 12px #2a382d1d;${key==='crystal'?'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);':''}}
       .tile::after,.chinese-tile::after{border-color:${theme.edge}88}.tile .glyph,.american-glyph,.chinese-glyph{color:${theme.glyph}}.tile.selected,.american-tile.selected,.chinese-tile.selected{outline-color:${theme.accent}88}
       .tile.free:hover,.american-tile:hover,.chinese-tile:hover{box-shadow:4px 8px 0 ${theme.shadow},7px 14px 18px #2a382d2a}.discard-tile{background:${theme.face};border:1px solid ${theme.edge};color:${theme.glyph}}
       .mini-tile-back{background:${theme.back};border-color:${theme.edge}}.mini-tile-back::before{border-color:${theme.edge};color:${theme.backInk}}
@@ -107,7 +109,7 @@
       document.body.classList.toggle(`${k}-mode`, val === k);
     });
 
-    const isChineseFamily = val === 'hong-kong' || val === 'chinese-classical' || val === 'riichi' || val === 'taiwanese';
+    const isChineseFamily = val === 'hong-kong' || val === 'chinese-classical' || val === 'riichi' || val === 'taiwanese' || val === 'sichuan';
     document.body.classList.toggle('chinese-mode', isChineseFamily);
 
     description.textContent = style.description;
@@ -137,7 +139,7 @@
 
   start.addEventListener('click', () => {
     const val = select.value;
-    if (val === 'hong-kong' || val === 'chinese-classical' || val === 'riichi' || val === 'taiwanese') {
+    if (val === 'hong-kong' || val === 'chinese-classical' || val === 'riichi' || val === 'taiwanese' || val === 'sichuan') {
       if (window.startChineseGame) window.startChineseGame(val);
     }
   });

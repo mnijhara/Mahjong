@@ -12,7 +12,8 @@
     rose: { label: 'Rosewood', face: 'linear-gradient(145deg,#fff7f2,#ead8d1)', edge: '#c9aaa0', shadow: '#c5a49a', glyph: '#6b3540', accent: '#a95f6d', back: 'linear-gradient(145deg,#ead8d1,#c99da4)', backInk: '#70414a' },
     ebony: { label: 'Ebony & Gold', face: 'linear-gradient(145deg,#232326,#131314)', edge: '#4a4437', shadow: '#22201c', glyph: '#f2c94c', accent: '#e5b839', back: 'linear-gradient(145deg,#1f1c16,#0d0b07)', backInk: '#ffd700' },
     neon: { label: 'Cyberpunk Neon', face: 'linear-gradient(145deg,#121820,#080c10)', edge: '#00e5ff', shadow: '#005f73', glyph: '#00f0ff', accent: '#ff0055', back: 'linear-gradient(145deg,#1a092b,#090212)', backInk: '#ff007f' },
-    contrast: { label: 'High Contrast', face: 'linear-gradient(145deg,#ffffff,#eeeeee)', edge: '#202020', shadow: '#222222', glyph: '#000000', accent: '#000000', back: 'linear-gradient(145deg,#444,#111)', backInk: '#ffffff' }
+    contrast: { label: 'High Contrast', face: 'linear-gradient(145deg,#ffffff,#eeeeee)', edge: '#202020', shadow: '#222222', glyph: '#000000', accent: '#000000', back: 'linear-gradient(145deg,#444,#111)', backInk: '#ffffff' },
+    crystal: { label: 'Washizu Crystal', face: 'linear-gradient(135deg,rgba(240,250,255,0.8),rgba(195,225,245,0.45))', edge: 'rgba(255,255,255,0.85)', shadow: 'rgba(150,195,215,0.4)', glyph: '#0f4c5c', accent: '#00b4d8', back: 'linear-gradient(135deg,rgba(225,245,255,0.7),rgba(175,220,240,0.45))', backInk: '#0f4c5c' }
   };
 
   let currentThemeKey = 'ivory';
@@ -45,7 +46,7 @@
       .tile-customizer .view-label{margin-top:12px}.tile-customizer .view-help{margin:7px 0 0;font-size:10px;line-height:1.45;color:var(--muted)}
       .tile-customizer select{width:100%;min-height:46px;border:1px solid var(--line);border-radius:12px;background:#fffaf2;color:var(--ink);padding:0 42px 0 14px;font:600 13px 'DM Sans',sans-serif;box-shadow:0 5px 16px #243b2b0d;cursor:pointer}
       .tile-customizer select:focus-visible{outline:3px solid ${theme.accent};outline-offset:3px}
-      .tile,.american-tile,.chinese-tile{background:${theme.face};border-color:${theme.edge};box-shadow:4px 5px 0 ${theme.shadow},5px 8px 12px #2a382d1d}
+      .tile,.american-tile,.chinese-tile{background:${theme.face};border-color:${theme.edge};box-shadow:4px 5px 0 ${theme.shadow},5px 8px 12px #2a382d1d;${currentThemeKey==='crystal'?'backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);':''}}
       .tile::after,.chinese-tile::after{border-color:${theme.edge}88}.tile .glyph,.american-glyph,.chinese-glyph{color:${theme.glyph}}.tile.selected,.american-tile.selected,.chinese-tile.selected{outline-color:${theme.accent}88}
       .tile.free:hover,.american-tile:hover,.chinese-tile:hover{box-shadow:4px 8px 0 ${theme.shadow},7px 14px 18px #2a382d2a}.discard-tile{background:${theme.face};border:1px solid ${theme.edge};color:${theme.glyph}}
       .mini-tile-back{background:${theme.back};border-color:${theme.edge}}.mini-tile-back::before{border-color:${theme.edge};color:${theme.backInk}}
