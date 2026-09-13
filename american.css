@@ -16,3 +16,34 @@
   body.preferred-landscape .american-combination-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   body.preferred-landscape .american-hand-wrap{padding-left:22px;padding-right:22px}
 }
+
+/* American Insights Category Filter Pills */
+.american-filter-pills {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.american-filter-pill {
+  border: 1px solid #d5cebf;
+  background: #fffefa;
+  color: #635742;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1.3;
+}
+.american-filter-pill:hover {
+  border-color: #2d8a70;
+  color: #2d8a70;
+}
+.american-filter-pill.active {
+  background: #2d8a70;
+  border-color: #2d8a70;
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(45, 138, 112, 0.25);
+}
+

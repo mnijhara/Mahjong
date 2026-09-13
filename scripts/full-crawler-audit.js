@@ -131,6 +131,20 @@ async function testRoute(path, expectedStatus = 200) {
   await page.locator('#americanSuggested').click();
   const dirCards = await page.locator('#americanDirections .american-direction-card').count();
   console.log(`✓ Live Candidate Hand Analysis rendered ${dirCards} strategic candidate families`);
+
+  // Test Category Filter Pills (Mahjong4Friends innovation)
+  await page.locator('.american-filter-pill[data-category="2026"]').click();
+  await page.waitForTimeout(30);
+  const p2026Count = await page.locator('#americanDirections .american-direction-card').count();
+  console.log(`✓ Tested 2026/Year category filter pill (rendered ${p2026Count} candidate)`);
+
+  await page.locator('.american-filter-pill[data-category="all"]').click();
+  await page.waitForTimeout(30);
+  const allCount = await page.locator('#americanDirections .american-direction-card').count();
+  if (allCount !== 4) throw new Error(`Expected 4 candidate cards when all category filter is active, got ${allCount}`);
+  console.log(`✓ Tested All Families category filter pill (${allCount} candidates)`);
+  results.passed.push('American Category Filter Pills');
+
   await page.locator('#americanSuggested').click();
 
   // Test Charleston Passes
@@ -230,6 +244,49 @@ async function testRoute(path, expectedStatus = 200) {
   // Shuffle
   await page.locator('#shuffle').click();
   console.log('✓ Solvability-preserving shuffle completed');
+
+  // Test Focus Mode (AARP & TheMahjong innovation)
+  await page.locator('#focusModeBtn').click();
+  const focusActive = await page.evaluate(() => document.querySelector('#board').classList.contains('focus-mode'));
+  if (!focusActive) throw new Error('Focus mode not active on board element');
+  console.log('✓ Solitaire Focus Mode toggled ON (dimmed blocked tiles)');
+  await page.locator('#focusModeBtn').click();
+  console.log('✓ Solitaire Focus Mode toggled OFF');
+  results.passed.push('Solitaire Focus Mode');
+
+  // Test Zen Mode (AARP & TheMahjong innovation)
+  await page.locator('#zenModeBtn').click();
+  const timeText = await page.locator('#time').textContent();
+  if (!timeText.includes('ZEN')) throw new Error(`Expected ZEN indicator in time display, got ${timeText}`);
+  console.log('✓ Solitaire Zen Mode toggled ON (clock replaced with ZEN indicator)');
+  await page.locator('#zenModeBtn').click();
+  console.log('✓ Solitaire Zen Mode toggled OFF');
+  results.passed.push('Solitaire Zen Mode');
+
+  // 2H: The Mahjong Codex (Cultural Heritage & Compendium - The Mahjong Project innovation)
+  console.log('\nTesting The Mahjong Codex (Cultural Heritage & Rules Compendium)...');
+  await page.locator('#codexLaunchBtn').click();
+  await page.waitForSelector('#mahjongCodexModal:not(.hidden)');
+  console.log('✓ The Mahjong Codex modal opened');
+
+  const codexTabs = ['anatomy', 'heritage', 'etiquette', 'traditions'];
+  for (const tab of codexTabs) {
+    await page.locator(`.codex-tab[data-tab="${tab}"]`).click();
+    await page.waitForTimeout(30);
+    const active = await page.locator(`#codex-${tab}.active`).isVisible();
+    if (!active) throw new Error(`Codex tab ${tab} did not activate properly`);
+  }
+  console.log('✓ Cycled through all 4 Codex compendium chapters');
+
+  const traditionRows = await page.locator('.codex-table tbody tr').count();
+  if (traditionRows !== 5) throw new Error(`Expected 5 traditions in Codex comparison matrix, found ${traditionRows}`);
+  console.log(`✓ Validated 5-tradition comparative matrix (${traditionRows} traditions documented)`);
+
+  await page.locator('#codexCloseBtn').click();
+  await page.waitForSelector('#mahjongCodexModal', { state: 'hidden' });
+  console.log('✓ Codex dismissed cleanly');
+  results.passed.push('The Mahjong Codex Compendium');
+
   results.passed.push('Mahjong Solitaire Gameplay');
 
   // Check console / page errors

@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="american-tile-legibility.css?v=20260831-1">
   <link rel="stylesheet" href="american-tile-polish.css?v=20260905-1">
   <link rel="stylesheet" href="american-table-polish.css?v=20260905-1">
+  <link rel="stylesheet" href="mahjong-codex.css">
 </head>
 <body>
   <a class="skip-link" href="#board">Skip to game board</a>
@@ -27,6 +28,7 @@
     <header class="topbar">
       <div class="brand"><div class="brand-mark">萬</div><div><div class="brand-name">MAHJONG</div><div class="brand-sub">American Mah Jongg</div></div></div>
       <div class="stats"><div><span>PHASE</span><strong id="time">READY</strong></div><div><span>WALL</span><strong id="moves">—</strong></div><div><span>HAND</span><strong id="pairs">72 / 72</strong></div></div>
+      <button class="icon-btn" id="codexLaunchBtn" type="button" aria-label="Open The Mahjong Codex" title="The Mahjong Codex · Cultural Heritage & Rules Compendium">📖</button>
       <button class="icon-btn" id="soundBtn" type="button" aria-label="Toggle sound" title="Toggle sound">🔊</button>
     </header>
     <main>
@@ -130,7 +132,7 @@
         </div>
       </section>
 
-      <section class="game-card"><div class="board-wrap"><div id="board" class="board" role="grid" aria-label="Mahjong Solitaire game board" aria-describedby="tipText"></div><div id="message" class="message hidden" role="status" aria-live="polite"></div></div><div class="bottom-bar"><div class="tip"><span class="tip-dot"></span><span id="tipText">Match identical open tiles. Flowers match flowers; seasons match seasons.</span></div><button class="text-btn" id="shuffle" type="button">Shuffle remaining <span>↻</span></button></div></section>
+      <section class="game-card"><div class="board-wrap"><div id="board" class="board" role="grid" aria-label="Mahjong Solitaire game board" aria-describedby="tipText"></div><div id="message" class="message hidden" role="status" aria-live="polite"></div></div><div class="bottom-bar"><div class="tip"><span class="tip-dot"></span><span id="tipText">Match identical open tiles. Flowers match flowers; seasons match seasons.</span></div><div class="solitaire-controls"><button class="solitaire-toggle-btn" id="focusModeBtn" type="button" aria-pressed="false" title="Focus Mode: Highlight open tiles and dim blocked tiles">Focus: Off</button><button class="solitaire-toggle-btn" id="zenModeBtn" type="button" aria-pressed="false" title="Zen Mode: Untimed peaceful matching without clock pressure">Zen: Off</button><button class="text-btn" id="shuffle" type="button">Shuffle remaining <span>↻</span></button></div></div></section>
       <aside class="style-note" aria-label="Mahjong style information"><strong id="styleNoteTitle">American Mah Jongg</strong><span id="styleNoteCopy">Choose Start game to deal a new 152-tile table.</span></aside>
     </main>
     <footer><span>Mahjong</span><span>Classic traditions · No account required</span></footer>
@@ -150,6 +152,7 @@
   <script src="american-ux.js?v=20260830-7"></script>
   <script src="american-tile-polish.js?v=20260905-1"></script>
   <script src="american-table-polish.js?v=20260905-1"></script>
+  <script src="mahjong-codex.js" defer></script>
   <script src="sw-register.js"></script>
 </body>
 </html>

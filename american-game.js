@@ -203,18 +203,30 @@
     else if (phase === 'play') setStatus('Hint: the highlighted family is your strongest current direction; discard a tile outside it when possible.');
   }
 
+  function sameKind(a, b) {
+    if (a.type !== b.type) return false;
+    if (a.type === 'flower') return true;
+    if (a.type === 'joker') return true;
+    if (a.type === 'suited') return a.suit === b.suit && a.value === b.value;
+    return a.key === b.key;
+  }
+
   function startGame() {
     wall = buildSet(); players = names.map(name => ({ name, hand: [] }));
     for (let round = 0; round < 13; round++) for (const player of players) player.hand.push(wall.pop());
     players[0].hand.push(wall.pop());
-    const hasCombo = players[0].hand.some((t, i) => t.type === 'joker' || players[0].hand.some((o, j) => i !== j && o.type === t.type && o.suit === t.suit && o.value === t.value && o.key === t.key));
+    const hasCombo = players[0].hand.some((t, i) => t.type === 'joker' || players[0].hand.some((o, j) => i !== j && sameKind(t, o)));
     if (!hasCombo) {
-      const matchTarget = players[0].hand[0];
-      const matchIndex = wall.findIndex(t => t.type === matchTarget.type && t.suit === matchTarget.suit && t.value === matchTarget.value && t.key === matchTarget.key);
-      if (matchIndex >= 0) {
-        const replacement = wall.splice(matchIndex, 1)[0];
-        wall.push(players[0].hand.pop());
-        players[0].hand.push(replacement);
+      for (let i = 0; i < players[0].hand.length; i++) {
+        const matchTarget = players[0].hand[i];
+        if (matchTarget.type === 'flower') continue;
+        const matchIndex = wall.findIndex(t => sameKind(t, matchTarget));
+        if (matchIndex >= 0) {
+          const replaceIdx = (i === 0) ? 1 : 0;
+          const old = players[0].hand.splice(replaceIdx, 1, wall.splice(matchIndex, 1)[0])[0];
+          wall.push(old);
+          break;
+        }
       }
     }
     players.forEach(player => player.hand.sort((a,b) => a.label.localeCompare(b.label)));

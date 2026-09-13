@@ -23,6 +23,8 @@ const required = [
   '404.html',
   '.htaccess',
   'solitaire-a11y.js',
+  'mahjong-codex.css',
+  'mahjong-codex.js',
   'scripts/static-server.js'
 ];
 
@@ -42,6 +44,7 @@ for (const file of [
   'american-insights.js',
   'style-selector.js',
   'solitaire-a11y.js',
+  'mahjong-codex.js',
   'scripts/static-server.js',
   'scripts/chinese-regression.js',
   'scripts/full-crawler-audit.js'

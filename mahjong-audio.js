@@ -136,8 +136,8 @@
     noise.stop(t + 0.13);
   }
 
-  // Harmonic bell chime on Chi, Pon, Kan, or valid match
-  function playChime(success = true) {
+  // Harmonic bell chime on Chi, Pon, Kan, or valid match (with combo pitch scaling)
+  function playChime(success = true, comboTier = 1) {
     triggerHaptic(success ? 'medium' : 'light');
     if (muted) return;
     const ac = getContext();
@@ -148,7 +148,11 @@
     master.gain.value = 0.22;
     master.connect(ac.destination);
 
-    const freqs = success ? [587.33, 880.0, 1174.66] : [330.0, 293.66]; // D5, A5, D6 vs decline
+    // Scale frequencies with combo tier: 1.0 (base), 1.122, 1.259, 1.414, 1.587
+    const multipliers = [1.0, 1.0, 1.122, 1.259, 1.414, 1.587];
+    const mult = multipliers[Math.min(comboTier, 5)] || 1.0;
+
+    const freqs = success ? [587.33 * mult, 880.0 * mult, 1174.66 * mult] : [330.0, 293.66]; // D5, A5, D6 vs decline
     freqs.forEach((freq, idx) => {
       const osc = ac.createOscillator();
       const gain = ac.createGain();

@@ -35,3 +35,85 @@ body.solitaire-mode{overflow-x:hidden}
   body.solitaire-mode .board-wrap{height:auto;max-height:none;min-height:0;flex:1 1 auto;contain:layout paint}
   body.solitaire-mode .game-card{min-height:0;max-height:none;flex:1 1 auto}
 }
+
+/* Focus Mode & Legibility highlighting */
+.board.focus-mode .tile.blocked {
+  opacity: 0.32 !important;
+  filter: saturate(0.25) brightness(0.72) !important;
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+.board.focus-mode .tile.free {
+  box-shadow: 0 0 0 2.5px var(--gold), 0 8px 18px rgba(0, 0, 0, 0.32) !important;
+  transition: box-shadow 0.2s ease;
+}
+
+/* Solitaire Controls */
+.solitaire-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.solitaire-toggle-btn {
+  border: 1px solid var(--line);
+  background: #fffaf1;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.solitaire-toggle-btn:hover {
+  border-color: var(--gold);
+  transform: translateY(-1px);
+}
+.solitaire-toggle-btn.active {
+  background: var(--jade);
+  color: #fff;
+  border-color: var(--jade);
+  box-shadow: 0 2px 6px rgba(21, 61, 50, 0.25);
+}
+
+/* Arkadium Combo Streak Toast */
+.combo-badge-banner {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: linear-gradient(135deg, #e67e22, #d35400);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  box-shadow: 0 6px 20px rgba(211, 84, 0, 0.35);
+  animation: comboPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: none;
+  z-index: 50;
+}
+@keyframes comboPop {
+  0% { transform: scale(0.6) translateY(8px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@media(max-width:800px){
+  body.solitaire-mode .solitaire-controls {
+    gap: 4px;
+  }
+  body.solitaire-mode .solitaire-toggle-btn {
+    min-height: 28px;
+    padding: 3px 8px;
+    font-size: 9px;
+  }
+  .combo-badge-banner {
+    top: 8px;
+    right: 12px;
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+}
+

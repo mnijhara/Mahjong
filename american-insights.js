@@ -83,17 +83,73 @@
     comboEl.appendChild(footer);
   }
 
+  const CATEGORIES = [
+    { id: 'all', label: 'All Families' },
+    { id: '2026', label: '2026 / Year' },
+    { id: 'run', label: 'Runs' },
+    { id: '13579', label: '13579' },
+    { id: '2468', label: '2468' },
+    { id: 'winds-dragons', label: 'Winds & Dragons' },
+    { id: '369', label: '369' },
+    { id: 'quints', label: 'Quints' },
+    { id: 'pairs', label: 'Singles & Pairs' },
+    { id: 'like', label: 'Like Numbers' }
+  ];
+  let activeCategory = 'all';
+  let cachedHand = [];
+  let cachedStarted = false;
+
+  function ensureCategoryPills() {
+    let pillsBar = $('americanCategoryPills');
+    if (!pillsBar && directionEl.parentNode) {
+      pillsBar = document.createElement('div');
+      pillsBar.id = 'americanCategoryPills';
+      pillsBar.className = 'american-filter-pills';
+      pillsBar.setAttribute('role', 'toolbar');
+      pillsBar.setAttribute('aria-label', 'Card family category filters');
+      directionEl.parentNode.insertBefore(pillsBar, directionEl);
+    }
+    if (!pillsBar) return;
+    pillsBar.innerHTML = '';
+    CATEGORIES.forEach(cat => {
+      const pill = document.createElement('button');
+      pill.type = 'button';
+      pill.className = `american-filter-pill${activeCategory === cat.id ? ' active' : ''}`;
+      pill.setAttribute('data-category', cat.id);
+      pill.textContent = cat.label;
+      pill.addEventListener('click', () => {
+        activeCategory = cat.id;
+        ensureCategoryPills();
+        renderDirections(cachedHand, cachedStarted);
+        window.mahjongAudio?.playClick();
+      });
+      pillsBar.appendChild(pill);
+    });
+  }
+
   function renderDirections(hand, started) {
+    cachedHand = hand;
+    cachedStarted = started;
+    ensureCategoryPills();
     directionEl.innerHTML = '';
     if (!started) {
       directionEl.innerHTML = '<div class="american-insight-empty">Deal a hand to rank the card-family directions and see which tiles are worth protecting.</div>';
       return;
     }
 
-    const candidates = window.americanCardEngine?.analyze(hand) || [];
-    candidates.slice(0, 4).forEach((candidate, index) => {
+    const allCandidates = window.americanCardEngine?.analyze(hand) || [];
+    const candidates = activeCategory === 'all'
+      ? allCandidates.slice(0, 4)
+      : allCandidates.filter(c => c.id === activeCategory);
+
+    if (candidates.length === 0) {
+      directionEl.innerHTML = `<div class="american-insight-empty">No direct matches for this category in your current hand. Explore other families or collect matching suits.</div>`;
+      return;
+    }
+
+    candidates.forEach((candidate, index) => {
       const el = document.createElement('article');
-      el.className = `american-direction-card${index === 0 ? ' recommended' : ''}`;
+      el.className = `american-direction-card${(index === 0 && activeCategory === 'all') ? ' recommended' : ''}`;
       el.tabIndex = 0;
       el.setAttribute('role', 'button');
       el.setAttribute('aria-label', `${candidate.title}, ${candidate.score}% fit. ${candidate.advice}`);
@@ -103,12 +159,12 @@
         const rack = $('americanHand');
         if (!rack) return;
         const tiles = [...rack.querySelectorAll('.american-tile')];
-        const keep = new Set(candidate.keep.map(String));
+        const keepSet = new Set(candidate.keep.map(String));
         const matches = [];
         tiles.forEach((tile, tileIndex) => {
           const label = tile.getAttribute('aria-label')?.replace(/, Joker$/, '') || '';
           const value = tile.querySelector('.american-value')?.textContent || '';
-          if (keep.has(label) || (value && [...keep].some(k => k === `${value}s`))) matches.push(tileIndex);
+          if (keepSet.has(label) || (value && [...keepSet].some(k => k === `${value}s`))) matches.push(tileIndex);
         });
         if (!matches.length && tiles.length) matches.push(0);
         focusIndexes(matches);
@@ -122,7 +178,9 @@
 
     const foot = document.createElement('div');
     foot.className = 'american-insight-foot';
-    foot.textContent = 'Scores are live strategy signals, not guaranteed winning lines. Tap a family to highlight the tiles supporting it.';
+    foot.textContent = activeCategory === 'all'
+      ? 'Scores are live strategy signals, not guaranteed winning lines. Tap a family to highlight the tiles supporting it.'
+      : `Filtered by ${CATEGORIES.find(c => c.id === activeCategory)?.label || activeCategory}. Tap 'All Families' to view top recommendations.`;
     directionEl.appendChild(foot);
   }
 

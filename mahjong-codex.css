@@ -1,0 +1,240 @@
+/* Mahjong Heritage Codex Modal · Cultural Guide */
+.codex-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(14, 22, 17, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 12000;
+  animation: codexFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.codex-modal.hidden {
+  display: none;
+}
+
+@keyframes codexFadeIn {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.codex-card {
+  background: linear-gradient(165deg, #fffefb 0%, #f7f2ea 100%);
+  border: 1px solid rgba(201, 154, 69, 0.35);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 860px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #1a241e;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.codex-header {
+  padding: 22px 28px 18px;
+  background: linear-gradient(180deg, rgba(201, 154, 69, 0.08) 0%, rgba(201, 154, 69, 0.02) 100%);
+  border-bottom: 1px solid rgba(201, 154, 69, 0.2);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.codex-kicker {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #c99a45;
+  margin: 0 0 4px 0;
+}
+
+.codex-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #1c3528;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.codex-close-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #4a5d52;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.codex-close-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #1c3528;
+  transform: scale(1.05);
+}
+
+.codex-tabs {
+  display: flex;
+  padding: 0 28px;
+  gap: 8px;
+  background: #fbf8f2;
+  border-bottom: 1px solid #e7ded0;
+  overflow-x: auto;
+}
+
+.codex-tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #63756b;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.codex-tab:hover {
+  color: #1c3528;
+}
+
+.codex-tab.active {
+  color: #1c3528;
+  border-bottom-color: #c99a45;
+}
+
+.codex-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  flex: 1;
+  line-height: 1.6;
+}
+
+.codex-section {
+  display: none;
+}
+
+.codex-section.active {
+  display: block;
+  animation: codexTabFade 0.2s ease;
+}
+
+@keyframes codexTabFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.codex-section h3 {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  color: #1c3528;
+  margin: 0 0 12px 0;
+}
+
+.codex-section p {
+  color: #3b4d42;
+  font-size: 14px;
+  margin: 0 0 16px 0;
+}
+
+.codex-grid-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 18px 0;
+}
+
+.codex-card-item {
+  background: #ffffff;
+  border: 1px solid #e3d9cb;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.codex-card-item h4 {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  color: #1c3528;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.codex-card-item p {
+  font-size: 13px;
+  color: #55675c;
+  margin: 0;
+}
+
+/* Comparison Table */
+.codex-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e3d9cb;
+  border-radius: 12px;
+  background: #ffffff;
+  margin: 16px 0;
+}
+
+.codex-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.codex-table th, .codex-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee5d8;
+}
+
+.codex-table th {
+  background: #fbf7ef;
+  font-weight: 700;
+  color: #1c3528;
+  white-space: nowrap;
+}
+
+.codex-table tr:last-child td {
+  border-bottom: none;
+}
+
+.codex-table tr:hover td {
+  background: #faf8f3;
+}
+
+.codex-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #eef5f1;
+  color: #1c523a;
+}
+
+.codex-footer {
+  padding: 16px 28px;
+  background: #fbf8f2;
+  border-top: 1px solid #e7ded0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #718479;
+}

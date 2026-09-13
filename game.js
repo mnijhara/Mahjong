@@ -4,6 +4,13 @@
   const board=$('board'),timeEl=$('time'),movesEl=$('moves'),pairsEl=$('pairs'),messageEl=$('message'),modal=$('modal'),undoBtn=$('undo');
   if(!board||!timeEl||!movesEl||!pairsEl||!messageEl||!modal)return;
   const SAVE_KEY='mahjong-solitaire-save-v1';
+  const FOCUS_KEY='mahjong-focus-mode';
+  const ZEN_KEY='mahjong-zen-mode';
+  let focusMode = false;
+  try { focusMode = localStorage.getItem(FOCUS_KEY) === 'true'; } catch(e){}
+  let zenMode = false;
+  try { zenMode = localStorage.getItem(ZEN_KEY) === 'true'; } catch(e){}
+  let comboStreak = 0, lastMatchTime = 0, comboTimeout = null;
   const honors=[['東','east'],['南','south'],['西','west'],['北','north'],['中','red'],['發','green'],['白','white']];
   const special=[['梅','flower'],['蘭','flower'],['菊','flower'],['竹','flower'],['春','season'],['夏','season'],['秋','season'],['冬','season']];
   const chinese=['一','二','三','四','五','六','七','八','九'];
@@ -32,20 +39,70 @@
   function focusAdjacent(current,dx,dy){const active=tiles.filter(t=>!t.removed);if(!active.length)return;const cx=current.x+26,cy=current.y+34,candidates=active.filter(t=>{const tx=t.x+26,ty=t.y+34;return dx<0?tx<cx-4:dx>0?tx>cx+4:dy<0?ty<cy-4:ty>cy+4;});if(!candidates.length)return;candidates.sort((a,b)=>{const da=(a.x+26-cx)**2+(a.y+34-cy)**2,db=(b.x+26-cx)**2+(b.y+34-cy)**2;return da-db;});const el=board.querySelector(`[data-order="${candidates[0].order}"]`);if(el)el.focus();}
   function render(){const focusedOrder=document.activeElement?.dataset?.order;board.innerHTML='';tiles.forEach(t=>{if(t.removed)return;const free=isFree(t),el=document.createElement('button');el.type='button';el.className=`tile ${free?'free':'blocked'}${selected===t?' selected':''}`;el.disabled=!free;el.style.cssText=`left:${t.x}px;top:${t.y}px;z-index:${t.z*200+t.order}`;el.dataset.order=String(t.order);el.dataset.matchKey=matchKey(t.data);el.setAttribute('aria-label',`${t.data.label} tile${free?', open':', blocked'}`);el.setAttribute('aria-disabled',String(!free));el.setAttribute('aria-description',free?'Available tile':'Blocked tile');el.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'||e.key==='ArrowUp'||e.key==='ArrowDown'){e.preventDefault();const dx=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0,dy=e.key==='ArrowUp'?-1:e.key==='ArrowDown'?1:0;focusAdjacent(t,dx,dy);}});const glyph=document.createElement('span');glyph.className='glyph';glyph.textContent=t.data.glyph;el.appendChild(glyph);const small=document.createElement('span');small.className='small';small.textContent=t.data.kind==='suited'?(t.data.suit==='characters'?'萬':t.data.suit==='bamboo'?'索':'筒'):t.data.kind==='honor'?'字':t.data.key==='flower'?'花':'季';el.appendChild(small);el.addEventListener('click',()=>clickTile(t));board.appendChild(el);});if(focusedOrder!==undefined){const next=board.querySelector(`[data-order="${focusedOrder}"]`);if(next)next.focus();}update();}
   function focusFirstAvailable(){const first=tiles.find(t=>!t.removed&&isFree(t));if(!first)return;const el=board.querySelector(`[data-order="${first.order}"]`);if(el)el.focus();}
-  function clickTile(t){if(!started)return;cancelHint(false);if(!isFree(t)){flash('That tile is blocked.');return;}if(selected===t){selected=null;render();saveState();return;}if(!selected){selected=t;render();saveState();window.mahjongAudio?.playClick();return;}if(same(selected.data,t.data)){const a=selected,b=t;const matchedFocusOrder=document.activeElement?.dataset?.order??b.order;selected=null;history.push({type:'move',tiles:[a,b]});a.removed=true;b.removed=true;moves++;pairs++;update();render();beep(620,.07);window.mahjongAudio?.playChime(true);if(pairs===72)finish(matchedFocusOrder);else if(!findPair())flash('No open pair remains — shuffle to continue.');saveState();}else{selected=t;flash('Those tiles do not match.');render();beep(180,.08);window.mahjongAudio?.playClick();saveState();}}
+  function updateFocusModeUI() {
+    const btn = $('focusModeBtn');
+    if (btn) {
+      btn.textContent = focusMode ? 'Focus: ON ✦' : 'Focus: Off';
+      btn.classList.toggle('active', focusMode);
+      btn.setAttribute('aria-pressed', String(focusMode));
+    }
+    board.classList.toggle('focus-mode', focusMode);
+  }
+  function toggleFocusMode() {
+    focusMode = !focusMode;
+    try { localStorage.setItem(FOCUS_KEY, String(focusMode)); } catch(e){}
+    updateFocusModeUI();
+    window.mahjongAudio?.playClick();
+  }
+  function updateZenModeUI() {
+    const btn = $('zenModeBtn');
+    if (btn) {
+      btn.textContent = zenMode ? 'Zen: ON ☯' : 'Zen: Off';
+      btn.classList.toggle('active', zenMode);
+      btn.setAttribute('aria-pressed', String(zenMode));
+    }
+    if (started) {
+      if (zenMode) timeEl.textContent = 'ZEN ☯';
+      else tick();
+    }
+  }
+  function toggleZenMode() {
+    zenMode = !zenMode;
+    try { localStorage.setItem(ZEN_KEY, String(zenMode)); } catch(e){}
+    updateZenModeUI();
+    window.mahjongAudio?.playClick();
+  }
+  function showComboToast(streak) {
+    let banner = document.querySelector('.combo-badge-banner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.className = 'combo-badge-banner';
+      board.parentElement?.appendChild(banner);
+    }
+    banner.textContent = streak >= 5 ? `🔥 MEGA COMBO x${streak}!` : `⚡ COMBO x${streak}!`;
+    clearTimeout(comboTimeout);
+    comboTimeout = setTimeout(() => {
+      banner?.remove();
+    }, 1400);
+  }
+  function clickTile(t){if(!started)return;cancelHint(false);if(!isFree(t)){flash('That tile is blocked.');return;}if(selected===t){selected=null;render();saveState();return;}if(!selected){selected=t;render();saveState();window.mahjongAudio?.playClick();return;}if(same(selected.data,t.data)){const a=selected,b=t;const matchedFocusOrder=document.activeElement?.dataset?.order??b.order;selected=null;history.push({type:'move',tiles:[a,b]});a.removed=true;b.removed=true;moves++;pairs++;update();render();beep(620,.07);const now=Date.now();if(now-lastMatchTime<=4500){comboStreak++;}else{comboStreak=1;}lastMatchTime=now;window.mahjongAudio?.playChime(true,comboStreak);if(comboStreak>1)showComboToast(comboStreak);if(pairs===72)finish(matchedFocusOrder);else if(!findPair())flash('No open pair remains — shuffle to continue.');saveState();}else{comboStreak=0;selected=t;flash('Those tiles do not match.');render();beep(180,.08);window.mahjongAudio?.playClick();saveState();}}
   function findPair(){const free=tiles.filter(t=>!t.removed&&isFree(t));for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)if(same(free[i].data,free[j].data))return [free[i],free[j]];return null;}
   function cancelHint(clearSelection=true){hintToken++;if(clearSelection)selected=null;}
   function undo(){if(!started)return;if(!history.length){if(selected!==null){cancelHint();render();flash('Selection cleared.');saveState();}return;}cancelHint();const action=history.pop();if(action.type==='shuffle'){action.before.forEach((data,order)=>{const tile=tiles[order];if(tile)tile.data={...data};});render();flash('Shuffle undone.');beep(320,.06);saveState();return;}const [a,b]=action.tiles;a.removed=false;b.removed=false;moves=Math.max(0,moves-1);pairs=Math.max(0,pairs-1);update();render();flash('Move undone.');beep(320,.06);saveState();}
   function update(){movesEl.textContent=moves;pairsEl.textContent=`${pairs} / 72`;if(undoBtn)undoBtn.disabled=!started||(!history.length&&selected===null);}
   function flash(text){messageEl.textContent=text;messageEl.classList.remove('hidden');clearTimeout(flash.t);flash.t=setTimeout(()=>messageEl.classList.add('hidden'),1300);}
   function formatTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
-  function tick(){timeEl.textContent=formatTime(Math.floor((Date.now()-startTime)/1000));}
-  function start(focusBoard=false){if($('gameStyle')?.value==='american'&&window.startAmericanGame){window.startAmericanGame();return;}if(!started&&restoreSavedGame())return;clearInterval(timer);cancelHint();started=true;startTime=Date.now();moves=0;pairs=0;history=[];const deck=makeSolvableDeck();tiles=positions.map((p,i)=>({...p,data:deck[i],order:i,removed:false}));modal.classList.add('hidden');messageEl.classList.add('hidden');timeEl.textContent='00:00';render();if(focusBoard)focusFirstAvailable();saveState();window.mahjongAudio?.playClick();}
-  function finish(matchedFocusOrder=null){clearInterval(timer);cancelHint();started=false;clearSavedGame();completionFocusOrder=matchedFocusOrder;$('finalTime').textContent=timeEl.textContent;$('finalMoves').textContent=moves;$('modalTitle').textContent='Board cleared!';$('modalCopy').textContent=`You cleared all 144 tiles in ${timeEl.textContent}, with ${moves} moves.`;modal.classList.remove('hidden');requestAnimationFrame(()=>{const playAgain=$('playAgain');if(playAgain)playAgain.focus();});update();window.mahjongAudio?.playWin();}
+  function tick(){if(zenMode)timeEl.textContent='ZEN ☯';else timeEl.textContent=formatTime(Math.floor((Date.now()-startTime)/1000));}
+  function start(focusBoard=false){if($('gameStyle')?.value==='american'&&window.startAmericanGame){window.startAmericanGame();return;}if(!started&&restoreSavedGame()){updateFocusModeUI();updateZenModeUI();return;}clearInterval(timer);cancelHint();started=true;startTime=Date.now();moves=0;pairs=0;comboStreak=0;lastMatchTime=0;history=[];const deck=makeSolvableDeck();tiles=positions.map((p,i)=>({...p,data:deck[i],order:i,removed:false}));modal.classList.add('hidden');messageEl.classList.add('hidden');updateFocusModeUI();updateZenModeUI();if(zenMode)timeEl.textContent='ZEN ☯';else timeEl.textContent='00:00';render();if(focusBoard)focusFirstAvailable();saveState();window.mahjongAudio?.playClick();}
+  function finish(matchedFocusOrder=null){clearInterval(timer);cancelHint();started=false;clearSavedGame();completionFocusOrder=matchedFocusOrder;$('finalTime').textContent=timeEl.textContent;$('finalMoves').textContent=moves;$('modalTitle').textContent='Board cleared!';$('modalCopy').textContent=zenMode?`You cleared all 144 tiles peacefully in Zen mode, with ${moves} moves.`:`You cleared all 144 tiles in ${timeEl.textContent}, with ${moves} moves.`;modal.classList.remove('hidden');requestAnimationFrame(()=>{const playAgain=$('playAgain');if(playAgain)playAgain.focus();});update();window.mahjongAudio?.playWin();}
   function shuffleRemaining(){if($('gameStyle')?.value==='american')return;if(!started){start();return;}cancelHint();if(safeShuffleRemaining()){render();flash('Remaining tiles safely shuffled.');window.mahjongAudio?.playSlide();}else flash('Shuffle unavailable for this board state.');}
   function hint(){if($('gameStyle')?.value==='american')return;if(!started){flash('Start a game first.');return;}const pair=findPair();if(!pair){flash('No matching open pair found. Shuffle to continue.');return;}cancelHint();const token=hintToken;selected=pair[0];render();saveState();window.mahjongAudio?.playSlide();setTimeout(()=>{if(!started||token!==hintToken)return;selected=pair[1];render();saveState();setTimeout(()=>{if(!started||token!==hintToken)return;selected=null;render();saveState();},650);},650);}
   function beep(freq,dur){if(!soundOn)return;try{audioContext??=new(window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume();const o=audioContext.createOscillator(),g=audioContext.createGain();o.frequency.value=freq;o.type='sine';g.gain.value=.025;o.connect(g);g.connect(audioContext.destination);o.start();o.stop(audioContext.currentTime+dur);}catch(e){audioContext=null;}}
   $('startGame').addEventListener('click',()=>start());$('playAgain').addEventListener('click',()=>start(true));$('shuffle').addEventListener('click',shuffleRemaining);$('hint').addEventListener('click',hint);if(undoBtn)undoBtn.addEventListener('click',undo);$('soundBtn').addEventListener('click',()=>{soundOn=!soundOn;$('soundBtn').textContent=soundOn?'🔊':'🔇';window.mahjongAudio?.setMuted(!soundOn);});
+  $('focusModeBtn')?.addEventListener('click', toggleFocusMode);
+  $('zenModeBtn')?.addEventListener('click', toggleZenMode);
+  updateFocusModeUI();
+  updateZenModeUI();
   document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='h')hint();if(e.key.toLowerCase()==='u')undo();if(e.key==='Escape'){cancelHint();render();saveState();}});
   window.addEventListener('pagehide',saveState);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveState();});
   window.hasSolitaireSave=hasSavedGame;window.clearSolitaireSave=clearSavedGame;update();
