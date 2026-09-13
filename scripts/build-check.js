@@ -3,7 +3,28 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
-const required = ['index.html', 'styles.css', 'style-picker.css', 'american.css', 'american-insights.js', 'game.js', 'american-game.js', 'style-selector.js', 'manifest.webmanifest', 'robots.txt', 'icons/mahjong-192.svg', '404.html', '.htaccess', 'solitaire-a11y.js', 'scripts/static-server.js'];
+const required = [
+  'index.html',
+  'styles.css',
+  'style-picker.css',
+  'tile-studio.css',
+  'chinese-table.css',
+  'american.css',
+  'american-insights.js',
+  'game.js',
+  'american-game.js',
+  'chinese-game.js',
+  'tile-studio.js',
+  'mahjong-audio.js',
+  'style-selector.js',
+  'manifest.webmanifest',
+  'robots.txt',
+  'icons/mahjong-192.svg',
+  '404.html',
+  '.htaccess',
+  'solitaire-a11y.js',
+  'scripts/static-server.js'
+];
 
 for (const file of required) {
   const full = path.join(root, file);
@@ -12,7 +33,18 @@ for (const file of required) {
   }
 }
 
-for (const file of ['game.js', 'american-game.js', 'american-insights.js', 'style-selector.js', 'solitaire-a11y.js', 'scripts/static-server.js']) {
+for (const file of [
+  'game.js',
+  'american-game.js',
+  'chinese-game.js',
+  'tile-studio.js',
+  'mahjong-audio.js',
+  'american-insights.js',
+  'style-selector.js',
+  'solitaire-a11y.js',
+  'scripts/static-server.js',
+  'scripts/chinese-regression.js'
+]) {
   execFileSync(process.execPath, ['--check', path.join(root, file)], { stdio: 'inherit' });
 }
 

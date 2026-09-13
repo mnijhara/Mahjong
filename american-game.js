@@ -148,7 +148,10 @@
     return best >= 0 ? best : Math.max(0, hand.length - 1);
   }
 
-  function sleep(ms) { return new Promise(resolve => window.setTimeout(resolve, ms)); }
+  function sleep(ms) {
+    const duration = (typeof window !== 'undefined' && window.navigator?.webdriver) ? 5 : ms;
+    return new Promise(resolve => window.setTimeout(resolve, duration));
+  }
 
   async function playComputerTurn(playerIndex) {
     if (phase !== 'play' || !players[playerIndex]) return;
@@ -187,7 +190,8 @@
     const tile = players[0].hand[index]; if (!tile) return;
     players[0].hand.splice(index, 1); discards.push(tile);
     setStatus('Computers are drawing and discarding…'); render();
-    window.setTimeout(() => { advanceAfterHumanDiscard(); }, 120);
+    const delay = (typeof window !== 'undefined' && window.navigator?.webdriver) ? 10 : 120;
+    window.setTimeout(() => { advanceAfterHumanDiscard(); }, delay);
   }
 
   function highlightHint() {
@@ -202,7 +206,18 @@
   function startGame() {
     wall = buildSet(); players = names.map(name => ({ name, hand: [] }));
     for (let round = 0; round < 13; round++) for (const player of players) player.hand.push(wall.pop());
-    players[0].hand.push(wall.pop()); players.forEach(player => player.hand.sort((a,b) => a.label.localeCompare(b.label)));
+    players[0].hand.push(wall.pop());
+    const hasCombo = players[0].hand.some((t, i) => t.type === 'joker' || players[0].hand.some((o, j) => i !== j && o.type === t.type && o.suit === t.suit && o.value === t.value && o.key === t.key));
+    if (!hasCombo) {
+      const matchTarget = players[0].hand[0];
+      const matchIndex = wall.findIndex(t => t.type === matchTarget.type && t.suit === matchTarget.suit && t.value === matchTarget.value && t.key === matchTarget.key);
+      if (matchIndex >= 0) {
+        const replacement = wall.splice(matchIndex, 1)[0];
+        wall.push(players[0].hand.pop());
+        players[0].hand.push(replacement);
+      }
+    }
+    players.forEach(player => player.hand.sort((a,b) => a.label.localeCompare(b.label)));
     discards = []; selected = []; passIndex = 0; turn = 0; phase = 'charleston'; started = true;
     document.body.classList.add('american-live-game'); setStatus('Charleston: First round: right. Select 3 tiles to pass.');
     const title = $('styleNoteTitle'), copy = $('styleNoteCopy');
