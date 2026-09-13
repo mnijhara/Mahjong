@@ -331,6 +331,44 @@ async function testRoute(path, expectedStatus = 200) {
   console.log('✓ Switched back to Turtle layout successfully');
   results.passed.push('Solitaire Layout Switcher (5 layouts)');
 
+  // ── 11. Daily Challenge Modal ────────────────────────────────────
+  console.log('\n--- 11. Daily Challenge ---');
+  await page.locator('#dailyChallengeBtn').click();
+  await page.waitForTimeout(200);
+  const dailyVisible = await page.locator('#dailyChallengeModal').isVisible();
+  if (!dailyVisible) throw new Error('Daily Challenge modal did not open');
+  console.log('✓ Daily Challenge modal opened');
+
+  const calDays = await page.locator('.daily-cal-day').count();
+  if (calDays !== 7) throw new Error(`Expected 7 calendar strip days, found ${calDays}`);
+  console.log(`✓ 7-Day calendar strip rendered (${calDays} days)`);
+
+  await page.locator('#dailyCloseBtn').click();
+  await page.waitForSelector('#dailyChallengeModal', { state: 'hidden' });
+  console.log('✓ Daily Challenge modal closed cleanly');
+  results.passed.push('Daily Challenge System');
+
+  // ── 12. Personal Records & Statistics ────────────────────────────
+  console.log('\n--- 12. Personal Records & Statistics ---');
+  await page.locator('#statsBtn').click();
+  await page.waitForTimeout(200);
+  const statsVisible = await page.locator('#mahjongStatsModal').isVisible();
+  if (!statsVisible) throw new Error('Statistics modal did not open');
+  console.log('✓ Statistics modal opened');
+
+  const statTiles = await page.locator('.stats-tile').count();
+  if (statTiles !== 4) throw new Error(`Expected 4 metric stat tiles, found ${statTiles}`);
+  console.log(`✓ 4 metric stat tiles rendered (${statTiles} tiles)`);
+
+  const statRows = await page.locator('#statsTableBody tr').count();
+  if (statRows !== 5) throw new Error(`Expected 5 layout records in table, found ${statRows}`);
+  console.log(`✓ 5 layout record rows rendered in stats table (${statRows} layouts)`);
+
+  await page.locator('#statsCloseBtn').click();
+  await page.waitForSelector('#mahjongStatsModal', { state: 'hidden' });
+  console.log('✓ Statistics modal closed cleanly');
+  results.passed.push('Personal Records & Statistics Dashboard');
+
   // ── Check console / page errors ─────────────────────────────────
   // Check console / page errors
   if (consoleErrors.length > 0) {

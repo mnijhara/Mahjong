@@ -38,7 +38,6 @@
       activeLayoutId = 'turtle';
       board.dataset.layout = 'turtle';
     }
-    // Sync board canvas size to layout
     const layoutDef = window.SOLITAIRE_LAYOUTS?.find(l=>l.id===activeLayoutId);
     if(!layoutDef) {board.style.width='1000px';board.style.height='590px';}
   }
@@ -70,7 +69,6 @@
       btn.addEventListener('click', () => switchLayout(layout.id));
       switcher.appendChild(btn);
     }
-    // Insert switcher after bottom-bar (below solitaire controls)
     const bottomBar = gameCard.querySelector('.bottom-bar');
     if(bottomBar) bottomBar.insertAdjacentElement('afterend', switcher);
     else gameCard.appendChild(switcher);
@@ -79,12 +77,10 @@
   function switchLayout(id) {
     if(id === activeLayoutId && started) return;
     try { localStorage.setItem(LAYOUT_KEY, id); } catch(e){}
-    // Animate board out, swap layout, animate in
     board.classList.add('layout-transitioning');
     setTimeout(() => {
       loadLayout(id);
       clearSavedGame();
-      // Update pill buttons
       const switcher = document.getElementById('layoutSwitcher');
       if(switcher) {
         switcher.querySelectorAll('.layout-pill').forEach(btn => {
@@ -96,12 +92,13 @@
       board.classList.remove('layout-transitioning');
       board.classList.add('layout-entering');
       setTimeout(() => board.classList.remove('layout-entering'), 300);
-      // Start a fresh game on the new layout
       start(false);
       window.mahjongAudio?.playSlide();
       flash(`${window.getLayoutById?.(id)?.icon || ''} ${window.getLayoutById?.(id)?.name || id} layout`);
     }, 200);
   }
+
+  window.switchSolitaireLayout = switchLayout;
 
   const types=[];
   for(const suit of ['characters','bamboo','dots'])for(let i=0;i<9;i++)for(let n=0;n<4;n++)types.push({kind:'suited',suit,value:i,label:suit==='dots'?String(i+1):chinese[i],glyph:suit==='characters'?chinese[i]:suit==='bamboo'?bamboo[i]:'●'});
@@ -112,12 +109,34 @@
   function matchKey(data){if(data.kind==='special'||data.kind==='honor')return `${data.kind}:${data.key}`;return `${data.kind}:${data.suit}:${data.value}`;}
   function overlap(a,b){return a.x<b.x+52&&a.x+52>b.x&&a.y<b.y+68&&a.y+68>b.y;}
   function isFree(t,active=tiles){if(active.some(o=>!o.removed&&o.z>t.z&&overlap(t,o)))return false;const left=active.some(o=>!o.removed&&o.z===t.z&&o.x<t.x&&o.x+52>t.x-3&&Math.abs(o.y-t.y)<20);const right=active.some(o=>!o.removed&&o.z===t.z&&o.x>t.x&&o.x<t.x+55&&Math.abs(o.y-t.y)<20);return !left||!right;}
-  function makeSolvableDeck(){const unique=[];types.forEach(t=>{if(t.kind==='special')return;if(!unique.some(u=>same(u,t)))unique.push({...t});});const pairTypes=[];unique.forEach(t=>{pairTypes.push([{...t},{...t}]);pairTypes.push([{...t},{...t}]);});const flowers=special.filter(t=>t[1]==='flower').map(t=>({kind:'special',key:'flower',glyph:t[0],label:t[0]}));const seasons=special.filter(t=>t[1]==='season').map(t=>({kind:'special',key:'season',glyph:t[0],label:t[0]}));pairTypes.push([flowers[0],flowers[1]],[flowers[2],flowers[3]],[seasons[0],seasons[1]],[seasons[2],seasons[3]]);if(pairTypes.length!==72)throw new Error(`Invalid deck pair count: ${pairTypes.length}`);shuffle(pairTypes);const deck=new Array(144);for(let i=0;i<72;i++){const pair=pairTypes[i].slice();shuffle(pair);deck[solutionOrder[i*2]]=pair[0];deck[solutionOrder[i*2+1]]=pair[1];}return deck;}
+
+  function makeSolvableDeck(){
+    if (window.mahjongDaily?.isDailyActive()) {
+      return window.mahjongDaily.getDailyDeck(window.mahjongDaily.getDailyDate(), solutionOrder, types, special);
+    }
+    const unique=[];
+    types.forEach(t=>{if(t.kind==='special')return;if(!unique.some(u=>same(u,t)))unique.push({...t});});
+    const pairTypes=[];
+    unique.forEach(t=>{pairTypes.push([{...t},{...t}]);pairTypes.push([{...t},{...t}]);});
+    const flowers=special.filter(t=>t[1]==='flower').map(t=>({kind:'special',key:'flower',glyph:t[0],label:t[0]}));
+    const seasons=special.filter(t=>t[1]==='season').map(t=>({kind:'special',key:'season',glyph:t[0],label:t[0]}));
+    pairTypes.push([flowers[0],flowers[1]],[flowers[2],flowers[3]],[seasons[0],seasons[1]],[seasons[2],seasons[3]]);
+    if(pairTypes.length!==72)throw new Error(`Invalid deck pair count: ${pairTypes.length}`);
+    shuffle(pairTypes);
+    const deck=new Array(144);
+    for(let i=0;i<72;i++){
+      const pair=pairTypes[i].slice();
+      shuffle(pair);
+      deck[solutionOrder[i*2]]=pair[0];
+      deck[solutionOrder[i*2+1]]=pair[1];
+    }
+    return deck;
+  }
+
   function saveState(){if(!started||!tiles.length||modal.classList.contains('hidden')===false)return;try{localStorage.setItem(SAVE_KEY,JSON.stringify({version:1,savedAt:Date.now(),layoutId:activeLayoutId,elapsed:Math.max(0,Date.now()-startTime),moves,pairs,selected:selected?.order??null,tiles:tiles.map(t=>({x:t.x,y:t.y,z:t.z,order:t.order,removed:t.removed,data:t.data})),history:history.map(action=>action.type==='move'?{type:'move',tiles:action.tiles.map(t=>t.order)}:{type:'shuffle',before:[...action.before.entries()]} )}));}catch(e){}}
   function hasSavedGame(){try{return !!localStorage.getItem(SAVE_KEY);}catch(e){return false;}}
   function clearSavedGame(){try{localStorage.removeItem(SAVE_KEY);}catch(e){}}
-  function restoreSavedGame(){if(!hasSavedGame())return false;try{const saved=JSON.parse(localStorage.getItem(SAVE_KEY));if(!saved||saved.version!==1||!Array.isArray(saved.tiles)||saved.tiles.length!==144){clearSavedGame();return false;}// Restore layout from saved game
-if(saved.layoutId && saved.layoutId !== activeLayoutId){loadLayout(saved.layoutId);}tiles=saved.tiles.map(t=>({...t}));const byOrder=new Map(tiles.map(t=>[t.order,t]));history=Array.isArray(saved.history)?saved.history.map(action=>action.type==='move'?{type:'move',tiles:(action.tiles||[]).map(order=>byOrder.get(order)).filter(Boolean)}:{type:'shuffle',before:new Map(action.before||[])}).filter(action=>action.type==='shuffle'||action.tiles.length===2):[];moves=Number.isFinite(saved.moves)?Math.max(0,saved.moves):0;pairs=Number.isFinite(saved.pairs)?Math.max(0,saved.pairs):0;selected=saved.selected===null||saved.selected===undefined?null:byOrder.get(saved.selected)||null;started=true;startTime=Date.now()-Math.max(0,Number(saved.elapsed)||0);clearInterval(timer);timer=setInterval(tick,1000);tick();modal.classList.add('hidden');messageEl.classList.add('hidden');render();flash('Saved game restored.');return true;}catch(e){clearSavedGame();return false;}}
+  function restoreSavedGame(){if(!hasSavedGame())return false;try{const saved=JSON.parse(localStorage.getItem(SAVE_KEY));if(!saved||saved.version!==1||!Array.isArray(saved.tiles)||saved.tiles.length!==144){clearSavedGame();return false;}if(saved.layoutId && saved.layoutId !== activeLayoutId){loadLayout(saved.layoutId);}tiles=saved.tiles.map(t=>({...t}));const byOrder=new Map(tiles.map(t=>[t.order,t]));history=Array.isArray(saved.history)?saved.history.map(action=>action.type==='move'?{type:'move',tiles:(action.tiles||[]).map(order=>byOrder.get(order)).filter(Boolean)}:{type:'shuffle',before:new Map(action.before||[])}).filter(action=>action.type==='shuffle'||action.tiles.length===2):[];moves=Number.isFinite(saved.moves)?Math.max(0,saved.moves):0;pairs=Number.isFinite(saved.pairs)?Math.max(0,saved.pairs):0;selected=saved.selected===null||saved.selected===undefined?null:byOrder.get(saved.selected)||null;started=true;startTime=Date.now()-Math.max(0,Number(saved.elapsed)||0);clearInterval(timer);timer=setInterval(tick,1000);tick();modal.classList.add('hidden');messageEl.classList.add('hidden');render();flash('Saved game restored.');return true;}catch(e){clearSavedGame();return false;}}
   function findSolvableShufflePairs(active){const remaining=new Set(active.map(t=>t.order));const solution=[];let nodes=0;function search(){if(remaining.size===0)return true;if(++nodes>5000)return false;const current=active.filter(t=>remaining.has(t.order));const free=current.filter(t=>isFree(t,current));if(free.length<2)return false;const candidates=[];for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)candidates.push([free[i],free[j]]);shuffle(candidates);for(const [a,b] of candidates){remaining.delete(a.order);remaining.delete(b.order);solution.push([a.order,b.order]);if(search())return true;solution.pop();remaining.add(a.order);remaining.add(b.order);}return false;}return search()?solution:null;}
   function safeShuffleRemaining(){const active=tiles.filter(t=>!t.removed);if(active.length<2)return false;const groups=[],standard=[],flowers=[],seasons=[];active.forEach(t=>{if(t.data.kind==='special'){(t.data.key==='flower'?flowers:seasons).push({...t.data});return;}const found=standard.find(g=>same(g[0],t.data));if(found)found.push({...t.data});else standard.push([{...t.data}]);});if(standard.some(group=>group.length%2!==0)||flowers.length%2!==0||seasons.length%2!==0)return false;standard.forEach(group=>{for(let i=0;i<group.length;i+=2)groups.push([group[i],group[i+1]]);});for(let i=0;i<flowers.length;i+=2)groups.push([flowers[i],flowers[i+1]]);for(let i=0;i<seasons.length;i+=2)groups.push([seasons[i],seasons[i+1]]);if(groups.length!==active.length/2)return false;const before=new Map(active.map(t=>[t.order,{...t.data}]));const pairOrders=findSolvableShufflePairs(active);if(!pairOrders)return false;shuffle(groups);pairOrders.forEach(([a,b],index)=>{const pair=groups[index].slice();shuffle(pair);tiles[a].data=pair[0];tiles[b].data=pair[1];});if(!findPair()){before.forEach((data,order)=>{tiles[order].data={...data};});return false;}history.push({type:'shuffle',before});saveState();return true;}
   function focusAdjacent(current,dx,dy){const active=tiles.filter(t=>!t.removed);if(!active.length)return;const cx=current.x+26,cy=current.y+34,candidates=active.filter(t=>{const tx=t.x+26,ty=t.y+34;return dx<0?tx<cx-4:dx>0?tx>cx+4:dy<0?ty<cy-4:ty>cy+4;});if(!candidates.length)return;candidates.sort((a,b)=>{const da=(a.x+26-cx)**2+(a.y+34-cy)**2,db=(b.x+26-cx)**2+(b.y+34-cy)**2;return da-db;});const el=board.querySelector(`[data-order="${candidates[0].order}"]`);if(el)el.focus();}
@@ -169,7 +188,109 @@ if(saved.layoutId && saved.layoutId !== activeLayoutId){loadLayout(saved.layoutI
       banner?.remove();
     }, 1400);
   }
-  function clickTile(t){if(!started)return;cancelHint(false);if(!isFree(t)){flash('That tile is blocked.');return;}if(selected===t){selected=null;render();saveState();return;}if(!selected){selected=t;render();saveState();window.mahjongAudio?.playClick();return;}if(same(selected.data,t.data)){const a=selected,b=t;const matchedFocusOrder=document.activeElement?.dataset?.order??b.order;selected=null;history.push({type:'move',tiles:[a,b]});a.removed=true;b.removed=true;moves++;pairs++;update();render();beep(620,.07);const now=Date.now();if(now-lastMatchTime<=4500){comboStreak++;}else{comboStreak=1;}lastMatchTime=now;window.mahjongAudio?.playChime(true,comboStreak);if(comboStreak>1)showComboToast(comboStreak);if(pairs===72)finish(matchedFocusOrder);else if(!findPair())flash('No open pair remains — shuffle to continue.');saveState();}else{comboStreak=0;selected=t;flash('Those tiles do not match.');render();beep(180,.08);window.mahjongAudio?.playClick();saveState();}}
+
+  function spawnMatchParticles(a, b) {
+    const boardWrap = board.parentElement;
+    if (!boardWrap) return;
+    [a, b].forEach(t => {
+      const cx = t.x + 26;
+      const cy = t.y + 34;
+      for (let i = 0; i < 4; i++) {
+        const p = document.createElement('div');
+        p.className = 'match-particle';
+        p.textContent = ['✦', '✨', '•', '★'][Math.floor(Math.random() * 4)];
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 20 + Math.random() * 28;
+        p.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+        p.style.setProperty('--dy', `${Math.sin(angle) * dist - 22}px`);
+        p.style.setProperty('--rot', `${(Math.random() - 0.5) * 180}deg`);
+        p.style.left = `${cx}px`;
+        p.style.top = `${cy}px`;
+        board.appendChild(p);
+        setTimeout(() => p.remove(), 580);
+      }
+    });
+  }
+
+  function launchConfetti() {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'confetti-canvas';
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const colors = ['#c99a45', '#153d32', '#e67e22', '#2ecc71', '#f1c40f', '#e74c3c'];
+    const pieces = Array.from({ length: 55 }, () => ({
+      x: Math.random() * canvas.width,
+      y: -10 - Math.random() * 40,
+      w: 6 + Math.random() * 6,
+      h: 10 + Math.random() * 8,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2.5 + Math.random() * 3.5,
+      rot: Math.random() * 360,
+      vRot: (Math.random() - 0.5) * 8
+    }));
+    let frame = 0;
+    function anim() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.vRot;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rot * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      });
+      if (++frame < 120) requestAnimationFrame(anim);
+      else canvas.remove();
+    }
+    anim();
+  }
+
+  function clickTile(t){
+    if(!started)return;
+    cancelHint(false);
+    if(!isFree(t)){flash('That tile is blocked.');return;}
+    if(selected===t){selected=null;render();saveState();return;}
+    if(!selected){selected=t;render();saveState();window.mahjongAudio?.playClick();return;}
+    if(same(selected.data,t.data)){
+      const a=selected,b=t;
+      const matchedFocusOrder=document.activeElement?.dataset?.order??b.order;
+      selected=null;
+      history.push({type:'move',tiles:[a,b]});
+      a.removed=true;
+      b.removed=true;
+      moves++;
+      pairs++;
+      update();
+      render();
+      beep(620,.07);
+      const now=Date.now();
+      if(now-lastMatchTime<=4500){comboStreak++;}else{comboStreak=1;}
+      lastMatchTime=now;
+      window.mahjongAudio?.playChime(true,comboStreak);
+      if(comboStreak>1)showComboToast(comboStreak);
+      spawnMatchParticles(a, b);
+      window.mahjongStats?.recordTileMatch(comboStreak);
+      if(pairs===72)finish(matchedFocusOrder);
+      else if(!findPair())flash('No open pair remains — shuffle to continue.');
+      saveState();
+    } else {
+      comboStreak=0;
+      selected=t;
+      flash('Those tiles do not match.');
+      render();
+      beep(180,.08);
+      window.mahjongAudio?.playClick();
+      saveState();
+    }
+  }
+
   function findPair(){const free=tiles.filter(t=>!t.removed&&isFree(t));for(let i=0;i<free.length;i++)for(let j=i+1;j<free.length;j++)if(same(free[i].data,free[j].data))return [free[i],free[j]];return null;}
   function cancelHint(clearSelection=true){hintToken++;if(clearSelection)selected=null;}
   function undo(){if(!started)return;if(!history.length){if(selected!==null){cancelHint();render();flash('Selection cleared.');saveState();}return;}cancelHint();const action=history.pop();if(action.type==='shuffle'){action.before.forEach((data,order)=>{const tile=tiles[order];if(tile)tile.data={...data};});render();flash('Shuffle undone.');beep(320,.06);saveState();return;}const [a,b]=action.tiles;a.removed=false;b.removed=false;moves=Math.max(0,moves-1);pairs=Math.max(0,pairs-1);update();render();flash('Move undone.');beep(320,.06);saveState();}
@@ -177,19 +298,70 @@ if(saved.layoutId && saved.layoutId !== activeLayoutId){loadLayout(saved.layoutI
   function flash(text){messageEl.textContent=text;messageEl.classList.remove('hidden');clearTimeout(flash.t);flash.t=setTimeout(()=>messageEl.classList.add('hidden'),1300);}
   function formatTime(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
   function tick(){if(zenMode)timeEl.textContent='ZEN ☯';else timeEl.textContent=formatTime(Math.floor((Date.now()-startTime)/1000));}
-  function start(focusBoard=false){if($('gameStyle')?.value==='american'&&window.startAmericanGame){window.startAmericanGame();return;}if(!started&&restoreSavedGame()){updateFocusModeUI();updateZenModeUI();return;}clearInterval(timer);cancelHint();started=true;startTime=Date.now();moves=0;pairs=0;comboStreak=0;lastMatchTime=0;history=[];// Ensure positions are loaded for current layout
-if(!positions.length) loadLayout(activeLayoutId);
-const deck=makeSolvableDeck();tiles=positions.map((p,i)=>({...p,data:deck[i],order:i,removed:false}));modal.classList.add('hidden');messageEl.classList.add('hidden');updateFocusModeUI();updateZenModeUI();if(zenMode)timeEl.textContent='ZEN ☯';else timeEl.textContent='00:00';timer=setInterval(tick,1000);render();if(focusBoard)focusFirstAvailable();saveState();window.mahjongAudio?.playClick();}
-  function finish(matchedFocusOrder=null){clearInterval(timer);cancelHint();started=false;clearSavedGame();completionFocusOrder=matchedFocusOrder;$('finalTime').textContent=timeEl.textContent;$('finalMoves').textContent=moves;$('modalTitle').textContent='Board cleared!';$('modalCopy').textContent=zenMode?`You cleared all 144 tiles peacefully in Zen mode, with ${moves} moves.`:`You cleared all 144 tiles in ${timeEl.textContent}, with ${moves} moves.`;modal.classList.remove('hidden');requestAnimationFrame(()=>{const playAgain=$('playAgain');if(playAgain)playAgain.focus();});update();window.mahjongAudio?.playWin();}
+
+  function start(focusBoard=false){
+    if($('gameStyle')?.value==='american'&&window.startAmericanGame){window.startAmericanGame();return;}
+    if(!started&&restoreSavedGame()){updateFocusModeUI();updateZenModeUI();return;}
+    clearInterval(timer);
+    cancelHint();
+    started=true;
+    startTime=Date.now();
+    moves=0;
+    pairs=0;
+    comboStreak=0;
+    lastMatchTime=0;
+    history=[];
+    if(!positions.length) loadLayout(activeLayoutId);
+    const deck=makeSolvableDeck();
+    tiles=positions.map((p,i)=>({...p,data:deck[i],order:i,removed:false}));
+    modal.classList.add('hidden');
+    messageEl.classList.add('hidden');
+    updateFocusModeUI();
+    updateZenModeUI();
+    if(zenMode)timeEl.textContent='ZEN ☯';else timeEl.textContent='00:00';
+    timer=setInterval(tick,1000);
+    render();
+    if(focusBoard)focusFirstAvailable();
+    saveState();
+    window.mahjongStats?.recordGameStart(activeLayoutId);
+    window.mahjongAudio?.playClick();
+  }
+
+  function finish(matchedFocusOrder=null){
+    clearInterval(timer);
+    cancelHint();
+    started=false;
+    clearSavedGame();
+    completionFocusOrder=matchedFocusOrder;
+    const elapsedSeconds = Math.max(1, Math.floor((Date.now() - startTime) / 1000));
+    const timeStr = timeEl.textContent;
+    $('finalTime').textContent = timeStr;
+    $('finalMoves').textContent = moves;
+    $('modalTitle').textContent = 'Board cleared!';
+    $('modalCopy').textContent = zenMode ?
+      `You cleared all 144 tiles peacefully in Zen mode, with ${moves} moves.` :
+      `You cleared all 144 tiles in ${timeStr}, with ${moves} moves.`;
+
+    // Record stats and daily challenge
+    window.mahjongStats?.recordGameWin(activeLayoutId, timeStr, elapsedSeconds, moves);
+    if (window.mahjongDaily?.isDailyActive()) {
+      window.mahjongDaily.recordCompletion(timeStr, moves);
+    }
+
+    launchConfetti();
+    modal.classList.remove('hidden');
+    requestAnimationFrame(()=>{const playAgain=$('playAgain');if(playAgain)playAgain.focus();});
+    update();
+    window.mahjongAudio?.playWin();
+  }
+
   function shuffleRemaining(){if($('gameStyle')?.value==='american')return;if(!started){start();return;}cancelHint();if(safeShuffleRemaining()){render();flash('Remaining tiles safely shuffled.');window.mahjongAudio?.playSlide();}else flash('Shuffle unavailable for this board state.');}
   function hint(){if($('gameStyle')?.value==='american')return;if(!started){flash('Start a game first.');return;}const pair=findPair();if(!pair){flash('No matching open pair found. Shuffle to continue.');return;}cancelHint();const token=hintToken;selected=pair[0];render();saveState();window.mahjongAudio?.playSlide();setTimeout(()=>{if(!started||token!==hintToken)return;selected=pair[1];render();saveState();setTimeout(()=>{if(!started||token!==hintToken)return;selected=null;render();saveState();},650);},650);}
   function beep(freq,dur){if(!soundOn)return;try{audioContext??=new(window.AudioContext||window.webkitAudioContext)();if(audioContext.state==='suspended')audioContext.resume();const o=audioContext.createOscillator(),g=audioContext.createGain();o.frequency.value=freq;o.type='sine';g.gain.value=.025;o.connect(g);g.connect(audioContext.destination);o.start();o.stop(audioContext.currentTime+dur);}catch(e){audioContext=null;}}
   $('startGame').addEventListener('click',()=>start());$('playAgain').addEventListener('click',()=>start(true));$('shuffle').addEventListener('click',shuffleRemaining);$('hint').addEventListener('click',hint);if(undoBtn)undoBtn.addEventListener('click',undo);$('soundBtn').addEventListener('click',()=>{soundOn=!soundOn;$('soundBtn').textContent=soundOn?'🔊':'🔇';window.mahjongAudio?.setMuted(!soundOn);});
   $('focusModeBtn')?.addEventListener('click', toggleFocusMode);
   $('zenModeBtn')?.addEventListener('click', toggleZenMode);
-  // Initialize layout (from localStorage or default)
   loadLayout(activeLayoutId);
-  // Build layout switcher after DOM is ready
   if(document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', buildLayoutSwitcher);
   } else {

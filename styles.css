@@ -142,3 +142,43 @@ body.solitaire-mode{overflow-x:hidden}
   }
 }
 
+/* ── Tile Match Sparkle Particles ────────────────────────────── */
+.match-particle {
+  position: absolute;
+  pointer-events: none;
+  font-size: 14px;
+  color: var(--gold);
+  z-index: 500;
+  user-select: none;
+  animation: matchParticleFly 0.55s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+@keyframes matchParticleFly {
+  0% {
+    transform: translate(0, 0) scale(0.5) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(1.2) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+
+/* ── Victory Modal Confetti & Streak Badge ────────────────────── */
+.modal-streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, #f6ead2, #ebd7ae);
+  color: #5c4316;
+  font: 800 11px/1 'DM Sans', sans-serif;
+  padding: 5px 12px;
+  border-radius: 999px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(201, 154, 69, 0.2);
+}
+.confetti-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 998;
+}

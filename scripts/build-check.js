@@ -28,6 +28,10 @@ const required = [
   'solitaire-layouts.css',
   'solitaire-layouts.js',
   'american-charleston-immersive.css',
+  'mahjong-daily.css',
+  'mahjong-daily.js',
+  'mahjong-stats.css',
+  'mahjong-stats.js',
   'scripts/static-server.js'
 ];
 
@@ -49,6 +53,8 @@ for (const file of [
   'solitaire-a11y.js',
   'mahjong-codex.js',
   'solitaire-layouts.js',
+  'mahjong-daily.js',
+  'mahjong-stats.js',
   'scripts/static-server.js',
   'scripts/chinese-regression.js',
   'scripts/full-crawler-audit.js'

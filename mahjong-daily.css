@@ -1,0 +1,294 @@
+/* ═══════════════════════════════════════════════════════════════════════════════
+   Mahjong Daily Challenge · Modal & Gameplay Styles
+   Apple-grade calendar, streaks, and shareable victory cards.
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+.daily-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 27, 22, 0.82);
+  backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  z-index: 990;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+.daily-modal.hidden {
+  display: none !important;
+}
+
+.daily-modal-card {
+  width: min(480px, 100%);
+  background: #fffdf8;
+  border: 1px solid #e1d9c9;
+  border-radius: 24px;
+  padding: 28px 26px;
+  box-shadow: 0 28px 70px rgba(9, 20, 15, 0.45);
+  position: relative;
+  text-align: center;
+  animation: dailyCardPop 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes dailyCardPop {
+  0% { transform: scale(0.92) translateY(12px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.daily-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: #fffaf1;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.15s ease;
+}
+.daily-close-btn:hover {
+  background: #f4eee2;
+  color: var(--ink);
+  transform: scale(1.08);
+}
+
+.daily-header-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f6ead2, #ebd7ae);
+  color: var(--gold);
+  font-size: 26px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 12px;
+  box-shadow: 0 4px 14px rgba(201, 154, 69, 0.25);
+}
+
+.daily-eyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #9a7650;
+  margin: 0 0 4px;
+}
+
+.daily-modal-card h2 {
+  font: 700 26px/1.15 'Playfair Display', serif;
+  color: var(--ink);
+  margin: 0 0 6px;
+}
+
+.daily-date-label {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* ── Streak & Stats Pill Row ─────────────────────────────────────────────── */
+.daily-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.daily-stat-pill {
+  background: #f8f4eb;
+  border: 1px solid #e7ded0;
+  border-radius: 12px;
+  padding: 8px 6px;
+}
+.daily-stat-pill span {
+  display: block;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.daily-stat-pill strong {
+  display: block;
+  font-size: 16px;
+  color: var(--jade);
+  margin-top: 2px;
+}
+
+/* ── 7-Day Calendar Strip ────────────────────────────────────────────────── */
+.daily-calendar-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  background: #faf6ed;
+  border: 1px solid #e8e1d3;
+  border-radius: 14px;
+  padding: 10px 8px;
+  margin-bottom: 20px;
+}
+.daily-cal-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 2px;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.daily-cal-day.today {
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  outline: 1.5px solid var(--gold);
+}
+.cal-weekday {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.cal-date {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.cal-status-icon {
+  font-size: 11px;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+/* ── Today's Challenge Card ──────────────────────────────────────────────── */
+.daily-today-card {
+  background: linear-gradient(135deg, #153d32, #1b4d3f);
+  border-radius: 16px;
+  padding: 16px;
+  color: #fff;
+  text-align: left;
+  margin-bottom: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 8px 20px rgba(21, 61, 50, 0.25);
+}
+.daily-today-info h3 {
+  margin: 0 0 3px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #f2d890;
+}
+.daily-today-info p {
+  margin: 0;
+  font-size: 11px;
+  color: #d1e2da;
+}
+.daily-today-badge {
+  background: rgba(242, 216, 144, 0.2);
+  border: 1px solid #f2d890;
+  color: #f2d890;
+  font: 800 10px/1 'DM Sans', sans-serif;
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* ── Actions ─────────────────────────────────────────────────────────────── */
+.daily-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.daily-btn {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font: 700 13px 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 44px;
+}
+.daily-btn.primary {
+  background: var(--jade);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(21, 61, 50, 0.3);
+}
+.daily-btn.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(21, 61, 50, 0.4);
+}
+.daily-btn.secondary {
+  background: #f7f2e7;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.daily-btn.secondary:hover {
+  background: #ede6d8;
+}
+
+/* ── Active Banner on Solitaire Board ────────────────────────────────────── */
+.daily-board-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #153d32, #1f5b49);
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28);
+  border: 1px solid #f2d890;
+  font: 700 11px/1 'DM Sans', sans-serif;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  animation: dailyBannerDrop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.daily-board-banner span {
+  color: #f2d890;
+}
+@keyframes dailyBannerDrop {
+  0% { transform: translate(-50%, -20px); opacity: 0; }
+  100% { transform: translate(-50%, 0); opacity: 1; }
+}
+
+/* ── Copy Toast ──────────────────────────────────────────────────────────── */
+.daily-copy-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #153d32;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font: 700 12px 'DM Sans', sans-serif;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 1000;
+  animation: toastFade 2.2s forwards;
+  pointer-events: none;
+}
+@keyframes toastFade {
+  0% { opacity: 0; transform: translate(-50%, 10px); }
+  15% { opacity: 1; transform: translate(-50%, 0); }
+  85% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -10px); }
+}
+
+@media(max-width: 600px) {
+  .daily-modal-card {
+    padding: 20px 16px;
+    border-radius: 18px;
+  }
+  .daily-cal-day {
+    padding: 2px;
+  }
+  .cal-date {
+    font-size: 9px;
+  }
+}
