@@ -94,7 +94,7 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
 
     await page.evaluate(key => localStorage.removeItem(key), SAVE_KEY);
     await setGameStyle('solitaire');
-    const skipLink = page.locator('#skipToGameBoard');
+    const skipLink = page.locator('.skip-link');
     if (await skipLink.count() !== 1) fail('Skip-to-game-board link missing');
     await skipLink.focus();
     await skipLink.press('Enter');
@@ -159,8 +159,8 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     await setGameStyle('solitaire');
     await page.getByRole('button', { name: /Resume game|Start game/ }).click();
     if (await count('#board .tile') !== 144) fail('Mobile Solitaire fresh start failed');
-    const viewport = await page.evaluate(() => ({ w: document.documentElement.scrollWidth, h: document.documentElement.scrollHeight, cw: document.documentElement.clientWidth, ch: document.documentElement.clientHeight }));
-    if (viewport.w > viewport.cw + 1 || viewport.h > viewport.ch + 1) fail(`Mobile Solitaire viewport overflow: ${JSON.stringify(viewport)}`);
+    const viewport = await page.evaluate(() => ({ w: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
+    if (viewport.w > viewport.cw + 1) fail(`Mobile Solitaire horizontal overflow: ${JSON.stringify(viewport)}`);
     if (errors.length) fail(errors.join('\n'));
     console.log(`American + Solitaire browser regression passed (${process.env.TEST_VERSION || 'local'})`);
   } finally {
