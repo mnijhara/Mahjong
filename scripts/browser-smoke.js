@@ -39,9 +39,23 @@ const { chromium } = require('playwright');
       controller: Boolean(navigator.serviceWorker?.controller),
       registrations: await navigator.serviceWorker.getRegistrations().then(list => list.length),
       cacheNames: await caches.keys(),
+      cachedIndex: await caches.match('./index.html').then(response => Boolean(response)),
     }));
     if (!sw.controller || sw.registrations < 1) failures.push(`service worker not controlling page: ${JSON.stringify(sw)}`);
     if (!sw.cacheNames.some(name => name === 'mahjong-static-v5')) failures.push(`expected v5 cache missing: ${JSON.stringify(sw.cacheNames)}`);
+    if (!sw.cachedIndex) failures.push(`offline index shell missing: ${JSON.stringify(sw)}`);
+
+    await context.setOffline(true);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('#board');
+    const offlineState = await page.evaluate(() => ({
+      title: document.title,
+      boardPresent: Boolean(document.querySelector('#board')),
+      controlled: Boolean(navigator.serviceWorker?.controller),
+    }));
+    if (!offlineState.boardPresent || !offlineState.controlled) {
+      failures.push(`offline reload failed: ${JSON.stringify(offlineState)}`);
+    }
     await context.close();
 
     if (failures.length) throw new Error(failures.join('\n'));
