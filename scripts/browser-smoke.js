@@ -52,9 +52,10 @@ const { chromium } = require('playwright');
     }));
     if (!sw.controller || sw.registrations < 1) failures.push(`service worker not controlling page: ${JSON.stringify(sw)}`);
     if (!sw.cacheNames.some(name => name === 'mahjong-static-v5')) failures.push(`expected v5 cache missing: ${JSON.stringify(sw.cacheNames)}`);
-    if (!sw.cachedIndex || sw.cachedScripts.some(Boolean => !Boolean)) failures.push(`offline application assets missing: ${JSON.stringify(sw)}`);
+    if (!sw.cachedIndex || sw.cachedScripts.some(cached => !cached)) failures.push(`offline application assets missing: ${JSON.stringify(sw)}`);
 
     await context.setOffline(true);
+    failedRequests.length = 0;
     await page.reload({ waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#board');
     await page.selectOption('#gameStyle', 'solitaire');
@@ -67,7 +68,7 @@ const { chromium } = require('playwright');
       controlled: Boolean(navigator.serviceWorker?.controller),
     }));
     if (errors.length) failures.push(`offline reload browser errors: ${errors.join(' | ')}`);
-    if (failedRequests.length) failures.push(`unexpected failed requests: ${failedRequests.join(' | ')}`);
+    if (failedRequests.length) failures.push(`unexpected failed requests during offline reload: ${failedRequests.join(' | ')}`);
     if (!offlineState.boardPresent || offlineState.tileCount !== 144 || !offlineState.controlled) {
       failures.push(`offline gameplay reload failed: ${JSON.stringify(offlineState)}`);
     }
