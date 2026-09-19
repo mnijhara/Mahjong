@@ -1,7 +1,11 @@
+const fs = require('fs');
+const path = require('path');
 const { chromium } = require('playwright');
 
 const BASE_URL = 'http://127.0.0.1:4173/index.html';
-const SERVICE_WORKER_CACHE = 'mahjong-static-v5';
+const SERVICE_WORKER_SOURCE = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
+const SERVICE_WORKER_CACHE = SERVICE_WORKER_SOURCE.match(/const CACHE_NAME = ['"]([^'"]+)['"]/)?.[1];
+if (!SERVICE_WORKER_CACHE) throw new Error('Unable to determine service-worker cache name from sw.js');
 const VIEWPORTS = [
   { width: 844, height: 390, name: 'landscape-844x390' },
   { width: 390, height: 844, name: 'portrait-390x844' },
@@ -83,7 +87,7 @@ const VIEWPORTS = [
       };
     }), SERVICE_WORKER_CACHE);
     if (!sw.controller || sw.registrations < 1) failures.push(`service worker not controlling page: ${JSON.stringify(sw)}`);
-    if (!sw.cacheNames.some(name => name === SERVICE_WORKER_CACHE)) failures.push(`expected v5 cache missing: ${JSON.stringify(sw.cacheNames)}`);
+    if (!sw.cacheNames.some(name => name === SERVICE_WORKER_CACHE)) failures.push(`expected cache missing: ${JSON.stringify(sw.cacheNames)}`);
     const missingAssets = sw.requiredAssets.filter((_, index) => !sw.cachedAssets[index]);
     if (missingAssets.length) failures.push(`offline application assets missing: ${JSON.stringify(missingAssets)}`);
 
