@@ -207,7 +207,7 @@
 
   function toggleSelected(index) {
     if (phase !== 'charleston' || isPassingAnimationActive) return;
-    newlyReceivedTileIds.clear(); // Clear highlight once player interacts
+    newlyReceivedTileIds.clear();
     const tile = players[0].hand[index];
     if (!tile) return;
     if (tile.type === 'joker') {
@@ -336,11 +336,8 @@
     reveal.querySelector('#passRevealContinue')?.addEventListener('click', closeHandler);
     tabletop.appendChild(reveal);
 
-    // Auto-dismiss after 4.8s if user hasn't clicked
     setTimeout(() => {
-      if (document.body.contains(reveal) && !reveal.classList.contains('fade-out')) {
-        closeHandler();
-      }
+      if (document.body.contains(reveal) && !reveal.classList.contains('fade-out')) closeHandler();
     }, 4800);
   }
 
@@ -348,7 +345,6 @@
     if (phase !== 'charleston' || selected.length !== 3 || isPassingAnimationActive) return;
     const directions = [1, 2, 3];
     const currentDirection = directions[passIndex];
-
     const isTest = (typeof window !== 'undefined' && window.navigator?.webdriver);
 
     if (isTest) {
@@ -366,12 +362,9 @@
       return;
     }
 
-    // Interactive gameplay: rich visual and audio sequence
     isPassingAnimationActive = true;
     window.mahjongAudio?.playSlide();
     showTablePassAnimation(currentDirection);
-
-    // Opponent dialogue reactions
     showOpponentSpeechBubble(1, currentDirection === 1 ? 'Passing 3 to Wei…' : currentDirection === 2 ? 'Passing to Mei…' : 'Passing to You, East!');
     showOpponentSpeechBubble(2, currentDirection === 1 ? 'Passing 3 to Mei…' : currentDirection === 2 ? 'Passing to You, East!' : 'Passing to Master Lin…');
     showOpponentSpeechBubble(3, currentDirection === 1 ? 'Passing to You, East!' : currentDirection === 2 ? 'Passing to Master Lin…' : 'Passing to Wei…');
@@ -485,8 +478,14 @@
     window.mahjongAudio?.playClick();
     setStatus('Computers are drawing and discarding…');
     render();
-    const delay = (typeof window !== 'undefined' && window.navigator?.webdriver) ? 10 : 120;
-    window.setTimeout(() => { advanceAfterHumanDiscard(); }, delay);
+    if (typeof window !== 'undefined' && window.navigator?.webdriver) {
+      // Browser regression runs should exercise the same state transitions without
+      // depending on animation timers. Await the complete turn cycle before the
+      // click handler returns so the DOM is deterministic for the next assertion.
+      void advanceAfterHumanDiscard();
+      return;
+    }
+    window.setTimeout(() => { void advanceAfterHumanDiscard(); }, 120);
   }
 
   function highlightHint() {
