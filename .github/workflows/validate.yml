@@ -54,7 +54,7 @@ jobs:
           grep -q "serviceWorker.register('./sw.js'" sw-register.js
           grep -q 'ErrorDocument 404 /404.html' .htaccess
           grep -q 'updateViaCache: .none.' sw-register.js
-          grep -q 'mahjong-static-v5' sw.js
+          grep -q 'mahjong-static-v6' sw.js
           grep -q 'mahjong-512.svg' manifest.webmanifest
       - name: Validate offline shell references local files
         run: |
