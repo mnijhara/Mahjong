@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mahjong-static-v8';
+const CACHE_NAME = 'mahjong-static-v9';
 const APP_SHELL = [
   './',
   './index.html',
@@ -29,7 +29,7 @@ const APP_SHELL = [
   './mahjong-daily.js',
   './mahjong-stats.js',
   './game.js?v=20260830-7',
-  './solitaire-a11y.js?v=20260831-1',
+  './solitaire-a11y.js?v=20260920-1',
   './style-selector.js?v=20260830-7',
   './new-game.js?v=20260830-7',
   './american-ux.js?v=20260830-7',
@@ -39,35 +39,23 @@ const APP_SHELL = [
   './sw-register.js',
   './manifest.webmanifest',
   './icons/mahjong-192.svg',
-  './icons/mahjong-512.svg'
+  './robots.txt',
+  './404.html'
 ];
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(async cache => {
-      const failures = [];
-      await Promise.all(APP_SHELL.map(async asset => {
-        try {
-          const response = await fetch(asset, { cache: 'no-store' });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
-          await cache.put(asset, response);
-        } catch (error) {
-          failures.push(`${asset}: ${error.message}`);
-        }
-      }));
-      if (failures.length) {
-        await caches.delete(CACHE_NAME);
-        throw new Error(`App shell installation incomplete: ${failures.join('; ')}`);
-      }
-      await self.skipWaiting();
+    caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).catch(error => {
+      console.error('Mahjong app shell installation failed:', error);
+      throw error;
     })
   );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))))
+    caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('mahjong-static-') && key !== CACHE_NAME).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
@@ -75,19 +63,13 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).then(response => {
-        if (response.ok) {
-          const copy = response.clone();
-          event.waitUntil(
-            caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy))
-          );
-        }
+        if (response.ok) event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone())));
         return response;
       }).catch(() => caches.match('./index.html'))
     );
@@ -95,14 +77,14 @@ self.addEventListener('fetch', event => {
   }
 
   event.respondWith(
-    caches.match(request).then(cached => cached || fetch(request).then(response => {
-      if (response.ok && ['style', 'script', 'image', 'font'].includes(request.destination)) {
-        const copy = response.clone();
-        event.waitUntil(
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy))
-        );
-      }
-      return response;
-    }))
+    caches.match(request).then(cached => {
+      if (cached) return cached;
+      return fetch(request).then(response => {
+        if (response.ok && ['script', 'style', 'image', 'font'].includes(request.destination)) {
+          event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(request, response.clone())));
+        }
+        return response;
+      });
+    })
   );
 });
