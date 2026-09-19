@@ -4,7 +4,7 @@ const { chromium } = require('playwright');
 
 const BASE_URL = 'http://127.0.0.1:4173/index.html';
 const SERVICE_WORKER_SOURCE = fs.readFileSync(path.join(__dirname, '..', 'sw.js'), 'utf8');
-const SERVICE_WORKER_CACHE = SERVICE_WORKER_SOURCE.match(/const CACHE_NAME = ['"]([^'"]+)['"]/)?.[1];
+const SERVICE_WORKER_CACHE = SERVICE_WORKER_SOURCE.match(/const CACHE_NAME = ['\"]([^'\"]+)['\"]/)?.[1];
 if (!SERVICE_WORKER_CACHE) throw new Error('Unable to determine service-worker cache name from sw.js');
 
 (async () => {
@@ -41,11 +41,13 @@ if (!SERVICE_WORKER_CACHE) throw new Error('Unable to determine service-worker c
       for (const asset of requiredAssets) {
         if (!await cache.match(asset)) missing.push(asset);
       }
+      const cachedUrls = await cache.keys().then(requests => requests.map(request => new URL(request.url).pathname + new URL(request.url).search));
       return {
         expectedCache,
         cacheNames: await caches.keys(),
         requiredAssets,
         missing,
+        cachedUrlCount: cachedUrls.length,
       };
     }), SERVICE_WORKER_CACHE);
 
@@ -55,7 +57,7 @@ if (!SERVICE_WORKER_CACHE) throw new Error('Unable to determine service-worker c
     if (result.missing.length) {
       throw new Error(`Assets missing from active cache: ${JSON.stringify(result.missing)}`);
     }
-    console.log(`Active PWA cache ${SERVICE_WORKER_CACHE} contains ${result.requiredAssets.length} page-referenced local assets`);
+    console.log(`Active PWA cache ${SERVICE_WORKER_CACHE} contains ${result.requiredAssets.length} page-referenced local assets (${result.cachedUrlCount} cached URLs total)`);
     await context.close();
   } finally {
     await browser.close();
