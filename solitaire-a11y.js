@@ -31,7 +31,14 @@
   };
 
   document.addEventListener('keydown', event => {
-    if (event.key !== 'Tab' || !isVisible()) return;
+    if (!isVisible()) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      const playAgain = document.getElementById('playAgain');
+      if (playAgain && !playAgain.disabled) playAgain.click();
+      return;
+    }
+    if (event.key !== 'Tab') return;
     const focusable = getFocusable();
     if (!focusable.length) return;
     const first = focusable[0];
