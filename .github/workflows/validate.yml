@@ -54,7 +54,18 @@ jobs:
           grep -q "serviceWorker.register('./sw.js'" sw-register.js
           grep -q 'ErrorDocument 404 /404.html' .htaccess
           grep -q 'updateViaCache: .none.' sw-register.js
-          grep -q 'mahjong-static-v6' sw.js
+          python - <<'PY'
+          import re
+          from pathlib import Path
+          sw = Path('sw.js').read_text(encoding='utf-8')
+          match = re.search(r"const CACHE_NAME = ['\"]([^'\"]+)['\"]", sw)
+          if not match:
+              raise SystemExit('Unable to determine service-worker cache name from sw.js')
+          cache_name = match.group(1)
+          if not cache_name.startswith('mahjong-static-'):
+              raise SystemExit(f'Unexpected service-worker cache name: {cache_name}')
+          print(f'Validated service-worker cache: {cache_name}')
+          PY
           grep -q 'mahjong-512.svg' manifest.webmanifest
       - name: Validate offline shell references local files
         run: |
