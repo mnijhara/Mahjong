@@ -2,11 +2,6 @@ const { chromium } = require('playwright');
 
 const BASE_URL = 'http://127.0.0.1:4173/index.html';
 const SERVICE_WORKER_CACHE = 'mahjong-static-v5';
-const SOLITAIRE_ASSETS = [
-  './game.js?v=20260830-7',
-  './solitaire-a11y.js?v=20260831-1',
-  './style-selector.js?v=20260830-7',
-];
 const VIEWPORTS = [
   { width: 844, height: 390, name: 'landscape-844x390' },
   { width: 390, height: 844, name: 'portrait-390x844' },
@@ -62,17 +57,35 @@ const VIEWPORTS = [
     await page.evaluate(async () => {
       if (!navigator.serviceWorker?.controller) throw new Error('service worker did not take control after reload');
     });
-    const sw = await page.evaluate(({ assets, expectedCache }) => caches.keys().then(async cacheNames => ({
-      controller: Boolean(navigator.serviceWorker?.controller),
-      registrations: await navigator.serviceWorker.getRegistrations().then(list => list.length),
-      cacheNames,
-      cachedIndex: await caches.match('./index.html').then(response => Boolean(response)),
-      cachedScripts: await Promise.all(assets.map(asset => caches.match(asset).then(response => Boolean(response)))),
-      expectedCache,
-    })), { assets: SOLITAIRE_ASSETS, expectedCache: SERVICE_WORKER_CACHE });
+
+    const sw = await page.evaluate(expectedCache => caches.keys().then(async cacheNames => {
+      const localScriptUrls = [...document.scripts]
+        .map(script => script.src)
+        .filter(src => src.startsWith(window.location.origin))
+        .map(src => new URL(src).pathname + new URL(src).search);
+      const localStylesheetUrls = [...document.querySelectorAll('link[rel="stylesheet"]')]
+        .map(link => link.href)
+        .filter(src => src.startsWith(window.location.origin))
+        .map(src => new URL(src).pathname + new URL(src).search);
+      const requiredAssets = [...new Set([
+        './index.html',
+        ...localScriptUrls.map(asset => asset.replace(/^\//, './')),
+        ...localStylesheetUrls.map(asset => asset.replace(/^\//, './')),
+      ])];
+      const cachedAssets = await Promise.all(requiredAssets.map(asset => caches.match(asset).then(response => Boolean(response))));
+      return {
+        controller: Boolean(navigator.serviceWorker?.controller),
+        registrations: await navigator.serviceWorker.getRegistrations().then(list => list.length),
+        cacheNames,
+        requiredAssets,
+        cachedAssets,
+        expectedCache,
+      };
+    }), SERVICE_WORKER_CACHE);
     if (!sw.controller || sw.registrations < 1) failures.push(`service worker not controlling page: ${JSON.stringify(sw)}`);
     if (!sw.cacheNames.some(name => name === SERVICE_WORKER_CACHE)) failures.push(`expected v5 cache missing: ${JSON.stringify(sw.cacheNames)}`);
-    if (!sw.cachedIndex || sw.cachedScripts.some(cached => !cached)) failures.push(`offline application assets missing: ${JSON.stringify(sw)}`);
+    const missingAssets = sw.requiredAssets.filter((_, index) => !sw.cachedAssets[index]);
+    if (missingAssets.length) failures.push(`offline application assets missing: ${JSON.stringify(missingAssets)}`);
 
     await context.setOffline(true);
     failedRequests.length = 0;
