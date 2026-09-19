@@ -3,6 +3,9 @@
   const modal = document.getElementById('modal');
   if (!modal) return;
 
+  let returnFocusElement = null;
+  let wasVisible = !modal.classList.contains('hidden');
+
   const isVisible = () => !modal.classList.contains('hidden');
   const getFocusable = () => [...modal.querySelectorAll('button:not([disabled]), a[href], select:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
     .filter(el => el.getClientRects().length > 0);
@@ -10,6 +13,21 @@
   const focusFirst = () => {
     const first = getFocusable()[0];
     if (first && document.activeElement !== first) first.focus();
+  };
+
+  const syncModalFocus = () => {
+    const visible = isVisible();
+    if (visible && !wasVisible) {
+      returnFocusElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      requestAnimationFrame(focusFirst);
+    } else if (!visible && wasVisible) {
+      const target = returnFocusElement;
+      returnFocusElement = null;
+      if (target?.isConnected && typeof target.focus === 'function') {
+        requestAnimationFrame(() => target.focus({ preventScroll: true }));
+      }
+    }
+    wasVisible = visible;
   };
 
   document.addEventListener('keydown', event => {
@@ -31,6 +49,9 @@
     if (!isVisible() || modal.contains(event.target)) return;
     focusFirst();
   });
+
+  new MutationObserver(syncModalFocus).observe(modal, { attributes: true, attributeFilter: ['class'] });
+  syncModalFocus();
 
   const board = document.getElementById('board');
   if (board && !document.getElementById('skipToGameBoard')) {
