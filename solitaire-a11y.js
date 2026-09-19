@@ -3,6 +3,11 @@
   const modal = document.getElementById('modal');
   if (!modal) return;
 
+  const undoButton = document.getElementById('undo');
+  const hintButton = document.getElementById('hint');
+  if (undoButton) undoButton.setAttribute('aria-keyshortcuts', 'U');
+  if (hintButton) hintButton.setAttribute('aria-keyshortcuts', 'H');
+
   let returnFocusElement = null;
   let wasVisible = !modal.classList.contains('hidden');
 
