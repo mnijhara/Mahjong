@@ -68,11 +68,13 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     await page.locator('#americanTable').waitFor({ state: 'visible' });
     if (await count('#americanHand .american-tile') !== 0) fail('American hand should not auto-start');
 
-    await page.locator('#americanStart').click();
+    const americanNewHand = page.locator('#americanNewHand');
+    await americanNewHand.waitFor({ state: 'visible' });
+    await americanNewHand.click();
     if (await count('#americanHand .american-tile') !== 14) fail('American Start game did not deal 14 tiles');
     if (!(await page.locator('#americanStatus').textContent()).includes('Charleston')) fail('American Charleston did not start');
     for (let attempt = 0; attempt < 12 && await count('#americanCombinations .american-combo-card') < 1; attempt++) {
-      await page.locator('#americanStart').click();
+      await americanNewHand.click();
       await page.waitForTimeout(20);
     }
     const insightCards = await count('#americanCombinations .american-combo-card');
@@ -155,7 +157,7 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     await page.setViewportSize({ width: 390, height: 844 });
     await page.reload({ waitUntil: 'networkidle' });
     await setGameStyle('american');
-    await page.locator('#americanStart').click();
+    await americanNewHand.click();
     if (await count('#americanHand .american-tile') !== 14) fail('Mobile American Start game failed');
     if (await count('#americanDirections .american-direction-card') !== 4) fail('Mobile American candidate ranking failed');
     await setGameStyle('solitaire');
