@@ -94,7 +94,7 @@ const VIEWPORTS = [
     await context.setOffline(true);
     failedRequests.length = 0;
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('#board');
+    await page.waitForSelector('#board', { state: 'attached' });
     await page.selectOption('#gameStyle', 'solitaire');
     await page.getByRole('button', { name: /Start game/ }).click();
     await page.waitForFunction(() => document.querySelectorAll('#board .tile').length === 144);
