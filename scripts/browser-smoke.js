@@ -53,9 +53,15 @@ const VIEWPORTS = [
       if (!navigator.serviceWorker) throw new Error('service workers are unavailable');
       await navigator.serviceWorker.ready;
     });
-    await page.waitForFunction(expectedCache => {
-      return Boolean(navigator.serviceWorker?.controller) && caches.has(expectedCache);
-    }, SERVICE_WORKER_CACHE);
+    await page.waitForFunction(expectedCache => caches.has(expectedCache), SERVICE_WORKER_CACHE);
+
+    // A newly installed service worker does not control the page that triggered
+    // its installation. Reload once so this smoke test verifies the real
+    // controlled-app path instead of relying on first-load timing.
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.evaluate(async () => {
+      if (!navigator.serviceWorker?.controller) throw new Error('service worker did not take control after reload');
+    });
     const sw = await page.evaluate(async (assets, expectedCache) => ({
       controller: Boolean(navigator.serviceWorker?.controller),
       registrations: await navigator.serviceWorker.getRegistrations().then(list => list.length),
