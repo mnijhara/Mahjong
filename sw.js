@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mahjong-static-v6';
+const CACHE_NAME = 'mahjong-static-v7';
 const APP_SHELL = [
   './',
   './index.html',
@@ -84,7 +84,9 @@ self.addEventListener('fetch', event => {
       fetch(request).then(response => {
         if (response.ok) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy));
+          event.waitUntil(
+            caches.open(CACHE_NAME).then(cache => cache.put('./index.html', copy))
+          );
         }
         return response;
       }).catch(() => caches.match('./index.html'))
@@ -96,7 +98,9 @@ self.addEventListener('fetch', event => {
     caches.match(request).then(cached => cached || fetch(request).then(response => {
       if (response.ok && ['style', 'script', 'image', 'font'].includes(request.destination)) {
         const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+        event.waitUntil(
+          caches.open(CACHE_NAME).then(cache => cache.put(request, copy))
+        );
       }
       return response;
     }))
