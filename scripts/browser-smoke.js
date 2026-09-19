@@ -62,14 +62,14 @@ const VIEWPORTS = [
     await page.evaluate(async () => {
       if (!navigator.serviceWorker?.controller) throw new Error('service worker did not take control after reload');
     });
-    const sw = await page.evaluate(async (assets, expectedCache) => ({
+    const sw = await page.evaluate(({ assets, expectedCache }) => caches.keys().then(async cacheNames => ({
       controller: Boolean(navigator.serviceWorker?.controller),
       registrations: await navigator.serviceWorker.getRegistrations().then(list => list.length),
-      cacheNames: await caches.keys(),
+      cacheNames,
       cachedIndex: await caches.match('./index.html').then(response => Boolean(response)),
       cachedScripts: await Promise.all(assets.map(asset => caches.match(asset).then(response => Boolean(response)))),
       expectedCache,
-    }), SOLITAIRE_ASSETS, SERVICE_WORKER_CACHE);
+    })), { assets: SOLITAIRE_ASSETS, expectedCache: SERVICE_WORKER_CACHE });
     if (!sw.controller || sw.registrations < 1) failures.push(`service worker not controlling page: ${JSON.stringify(sw)}`);
     if (!sw.cacheNames.some(name => name === SERVICE_WORKER_CACHE)) failures.push(`expected v5 cache missing: ${JSON.stringify(sw.cacheNames)}`);
     if (!sw.cachedIndex || sw.cachedScripts.some(cached => !cached)) failures.push(`offline application assets missing: ${JSON.stringify(sw)}`);
