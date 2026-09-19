@@ -63,21 +63,20 @@ jobs:
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
           sw = Path('sw.js').read_text(encoding='utf-8')
-          assets = re.findall(r"['\"](?:\./)?([^'\"]+?)(?:\?[^'\"]*)?['\"]", sw.split('const APP_SHELL =', 1)[1].split('];', 1)[0])
+          shell_block = sw.split('const APP_SHELL =', 1)[1].split('];', 1)[0]
+          assets = re.findall(r"^\s*['\"]([^'\"]+)['\"]", shell_block, re.MULTILINE)
           missing = []
           for asset in assets:
-              path = Path(asset.split('?', 1)[0])
-              if not path.is_file():
+              path = Path(asset.split('?', 1)[0].lstrip('./'))
+              if path.name and not path.is_file():
                   missing.append(str(path))
-          if missing:
-              raise SystemExit(f'Missing offline shell assets: {missing}')
           for href in re.findall(r'<(?:link|script)[^>]+(?:href|src)=["\']([^"\']+)["\']', html):
               if href.startswith(('./', '/')) and not href.startswith('//'):
                   path = Path(href.split('?', 1)[0].lstrip('./'))
                   if path.name and not path.is_file() and not href.startswith(('http://', 'https://')):
                       missing.append(str(path))
           if missing:
-              raise SystemExit(f'Missing referenced local assets: {sorted(set(missing))}')
+              raise SystemExit(f'Missing offline shell or referenced local assets: {sorted(set(missing))}')
           print(f'Validated {len(assets)} offline shell assets.')
           PY
       - name: Check for accidental secrets
