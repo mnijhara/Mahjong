@@ -1,0 +1,42 @@
+name: App Shell Integrity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  app-shell:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Verify offline app-shell coverage
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const html = fs.readFileSync('index.html', 'utf8');
+          const sw = fs.readFileSync('sw.js', 'utf8');
+          const refs = [];
+          for (const match of html.matchAll(/(?:src|href)=["']([^"']+)["']/g)) {
+            const ref = match[1];
+            if (!ref || ref.startsWith('#') || ref.startsWith('http:') || ref.startsWith('https:') || ref.startsWith('//')) continue;
+            refs.push(ref);
+          }
+          const assets = [...new Set(refs.map(ref => ref.split('?')[0].replace(/^\.\//, '')))]
+            .filter(ref => ref.endsWith('.js') || ref.endsWith('.css') || ref.endsWith('.webmanifest') || ref.endsWith('.svg'));
+          const missingFiles = assets.filter(asset => !fs.existsSync(asset));
+          const missingCacheEntries = assets.filter(asset => {
+            const normalized = `./${asset}`;
+            return !sw.includes(normalized);
+          });
+          if (missingFiles.length || missingCacheEntries.length) {
+            console.error(JSON.stringify({ missingFiles, missingCacheEntries }, null, 2));
+            process.exit(1);
+          }
+          console.log(`Verified ${assets.length} local app-shell assets exist and are represented in sw.js`);
+          NODE
