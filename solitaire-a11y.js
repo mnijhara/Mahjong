@@ -8,6 +8,13 @@
   if (undoButton) undoButton.setAttribute('aria-keyshortcuts', 'U');
   if (hintButton) hintButton.setAttribute('aria-keyshortcuts', 'H');
 
+  const message = document.getElementById('message');
+  if (message) {
+    message.setAttribute('role', 'status');
+    message.setAttribute('aria-live', 'polite');
+    message.setAttribute('aria-atomic', 'true');
+  }
+
   let returnFocusElement = null;
   let wasVisible = !modal.classList.contains('hidden');
 
