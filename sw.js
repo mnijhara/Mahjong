@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mahjong-static-v5';
+const CACHE_NAME = 'mahjong-static-v6';
 const APP_SHELL = [
   './',
   './index.html',
@@ -45,14 +45,20 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async cache => {
+      const failures = [];
       await Promise.all(APP_SHELL.map(async asset => {
         try {
           const response = await fetch(asset, { cache: 'no-store' });
-          if (response.ok) await cache.put(asset, response);
-        } catch (_) {
-          // Keep installation resilient if one optional shell asset is unavailable.
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          await cache.put(asset, response);
+        } catch (error) {
+          failures.push(`${asset}: ${error.message}`);
         }
       }));
+      if (failures.length) {
+        await caches.delete(CACHE_NAME);
+        throw new Error(`App shell installation incomplete: ${failures.join('; ')}`);
+      }
       await self.skipWaiting();
     })
   );
