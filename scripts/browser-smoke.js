@@ -1,19 +1,29 @@
 const { chromium } = require('playwright');
 
+const BASE_URL = 'http://127.0.0.1:4173/index.html';
+const SERVICE_WORKER_CACHE = 'mahjong-static-v5';
+const SOLITAIRE_ASSETS = [
+  './game.js?v=20260830-7',
+  './solitaire-a11y.js?v=20260831-1',
+  './style-selector.js?v=20260830-7',
+];
+const VIEWPORTS = [
+  { width: 844, height: 390, name: 'landscape-844x390' },
+  { width: 390, height: 844, name: 'portrait-390x844' },
+];
+
 (async () => {
   const browser = await chromium.launch({ headless: true });
   const failures = [];
   try {
-    for (const viewport of [
-      { width: 844, height: 390, name: 'landscape-844x390' },
-      { width: 390, height: 844, name: 'portrait-390x844' },
-    ]) {
+    for (const viewport of VIEWPORTS) {
       const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } });
       const page = await context.newPage();
+      page.setDefaultTimeout(45000);
       const errors = [];
       page.on('console', msg => { if (msg.type() === 'error') errors.push(`console: ${msg.text()}`); });
       page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
-      await page.goto('http://127.0.0.1:4173/index.html', { waitUntil: 'networkidle' });
+      await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
       await page.selectOption('#gameStyle', 'solitaire');
       await page.getByRole('button', { name: /Start game/ }).click();
       await page.waitForFunction(() => document.querySelectorAll('#board .tile').length === 144);
@@ -32,26 +42,30 @@ const { chromium } = require('playwright');
 
     const context = await browser.newContext({ serviceWorkers: 'allow' });
     const page = await context.newPage();
+    page.setDefaultTimeout(45000);
     const errors = [];
     const failedRequests = [];
     page.on('console', msg => { if (msg.type() === 'error') errors.push(`console: ${msg.text()}`); });
     page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
     page.on('requestfailed', request => failedRequests.push(`${request.method()} ${request.url()}: ${request.failure()?.errorText || 'failed'}`));
-    await page.goto('http://127.0.0.1:4173/index.html', { waitUntil: 'networkidle' });
-    await page.waitForFunction(() => Boolean(navigator.serviceWorker?.controller));
-    const sw = await page.evaluate(async () => ({
+    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+    await page.evaluate(async () => {
+      if (!navigator.serviceWorker) throw new Error('service workers are unavailable');
+      await navigator.serviceWorker.ready;
+    });
+    await page.waitForFunction(expectedCache => {
+      return Boolean(navigator.serviceWorker?.controller) && caches.has(expectedCache);
+    }, SERVICE_WORKER_CACHE);
+    const sw = await page.evaluate(async (assets, expectedCache) => ({
       controller: Boolean(navigator.serviceWorker?.controller),
       registrations: await navigator.serviceWorker.getRegistrations().then(list => list.length),
       cacheNames: await caches.keys(),
       cachedIndex: await caches.match('./index.html').then(response => Boolean(response)),
-      cachedScripts: await Promise.all([
-        './game.js?v=20260830-7',
-        './solitaire-a11y.js?v=20260831-1',
-        './style-selector.js?v=20260830-7',
-      ].map(asset => caches.match(asset).then(response => Boolean(response)))),
-    }));
+      cachedScripts: await Promise.all(assets.map(asset => caches.match(asset).then(response => Boolean(response)))),
+      expectedCache,
+    }), SOLITAIRE_ASSETS, SERVICE_WORKER_CACHE);
     if (!sw.controller || sw.registrations < 1) failures.push(`service worker not controlling page: ${JSON.stringify(sw)}`);
-    if (!sw.cacheNames.some(name => name === 'mahjong-static-v5')) failures.push(`expected v5 cache missing: ${JSON.stringify(sw.cacheNames)}`);
+    if (!sw.cacheNames.some(name => name === SERVICE_WORKER_CACHE)) failures.push(`expected v5 cache missing: ${JSON.stringify(sw.cacheNames)}`);
     if (!sw.cachedIndex || sw.cachedScripts.some(cached => !cached)) failures.push(`offline application assets missing: ${JSON.stringify(sw)}`);
 
     await context.setOffline(true);
