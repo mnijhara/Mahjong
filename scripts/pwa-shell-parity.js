@@ -47,6 +47,13 @@ function scanScript(script) {
   for (const match of source.matchAll(/(?:\.src|\.href)\s*=\s*(["'`])([^"'`$]+)\1|setAttribute\(\s*(["'])\s*(?:src|href)\s*\3\s*,\s*(["'`])([^"'`$]+)\4/g)) {
     addAsset(match[2] || match[5]);
   }
+
+  // Cover static ES module dependencies and static dynamic imports. A local
+  // module can itself load further JS/CSS, so these edges must enter the same
+  // recursive dependency graph as DOM-created script/style elements.
+  for (const match of source.matchAll(/(?:import\s+(?:[^'";]+?\s+from\s+)?|export\s+[^'";]+?\s+from\s+|import\s*\(\s*)(["'`])([^"'`$]+)\1/g)) {
+    addAsset(match[2], 'script');
+  }
 }
 
 function scanStylesheet(stylesheet) {
@@ -55,13 +62,21 @@ function scanStylesheet(stylesheet) {
   const stylesheetPath = path.join(root, stylesheet);
   if (!fs.existsSync(stylesheetPath)) return;
   const source = fs.readFileSync(stylesheetPath, 'utf8');
+
   for (const match of source.matchAll(/url\(\s*["']?([^\)"']+)["']?\s*\)/gi)) {
     addAsset(match[1]);
+  }
+
+  // CSS @import is another local dependency edge that can be missed by a
+  // url(...) scan. Static imports are safe to verify; remote imports are
+  // filtered by normalize().
+  for (const match of source.matchAll(/@import\s+(?:url\(\s*)?["']([^"']+)["']/gi)) {
+    addAsset(match[1], 'stylesheet');
   }
 }
 
 // Walk the local dependency graph until no new JS/CSS assets are discovered.
-// This catches second-order dynamic loads (script -> script -> stylesheet), not
+// This catches second-order dynamic loads (script -> module -> stylesheet), not
 // just the first level referenced by index.html.
 let changed = true;
 while (changed) {
