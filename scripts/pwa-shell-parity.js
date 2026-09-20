@@ -31,8 +31,21 @@ function addAsset(url, sourceType, baseDir = '') {
   if (sourceType === 'stylesheet' || /\.css$/i.test(asset)) stylesheets.add(asset);
 }
 
-for (const match of index.matchAll(/(?:src|href)=["']([^"']+)["']/gi)) {
+function addSrcset(value, baseDir = '') {
+  // A srcset candidate is the URL followed by optional width/density descriptors.
+  // Commas inside CSS functions are not valid here, so the first token of each
+  // comma-separated candidate is the local asset URL we need in the app shell.
+  for (const candidate of value.split(',')) {
+    const url = candidate.trim().split(/\s+/)[0];
+    if (url) addAsset(url, undefined, baseDir);
+  }
+}
+
+for (const match of index.matchAll(/(?:src|href|poster)=["']([^"']+)["']/gi)) {
   addAsset(match[1]);
+}
+for (const match of index.matchAll(/(?:srcset|imagesrcset)=["']([^"']+)["']/gi)) {
+  addSrcset(match[1]);
 }
 
 for (const icon of manifest.icons || []) addAsset(icon.src);
@@ -48,15 +61,17 @@ function scanScript(script) {
   const source = fs.readFileSync(scriptPath, 'utf8');
   const scriptDir = path.posix.dirname(script);
 
-  // Cover literal assignments plus template literals with no interpolation.
-  // DOM src/href values resolve against the document, so keep these root-based.
-  for (const match of source.matchAll(/(?:\.src|\.href)\s*=\s*(["'`])([^"'`$]+)\1|setAttribute\(\s*(["'])\s*(?:src|href)\s*\3\s*,\s*(["'`])([^"'`$]+)\4/g)) {
+  // DOM src/href/poster values resolve against the document, so keep these root-based.
+  for (const match of source.matchAll(/(?:\.src|\.href|\.poster)\s*=\s*(["'`])([^"'`$]+)\1|setAttribute\(\s*(["'])\s*(?:src|href|poster)\s*\3\s*,\s*(["'`])([^"'`$]+)\4/g)) {
     addAsset(match[2] || match[5]);
   }
 
+  // srcset properties are document-resolved URLs and may contain multiple candidates.
+  for (const match of source.matchAll(/(?:\.srcset|\.imagesrcset)\s*=\s*(["'`])([^"'`$]+)\1/g)) {
+    addSrcset(match[2]);
+  }
+
   // Module imports resolve relative to the importing module, not the document.
-  // Preserve that browser resolution rule so nested modules are checked against
-  // the correct offline app-shell paths.
   for (const match of source.matchAll(/(?:import\s+(?:[^'";]+?\s+from\s+)?|export\s+[^'";]+?\s+from\s+|import\s*\(\s*)(["'`])([^"'`$]+)\1/g)) {
     addAsset(match[2], 'script', scriptDir);
   }
@@ -81,8 +96,6 @@ function scanStylesheet(stylesheet) {
 }
 
 // Walk the local dependency graph until no new JS/CSS assets are discovered.
-// This catches second-order dynamic loads (script -> module -> stylesheet), not
-// just the first level referenced by index.html.
 let changed = true;
 while (changed) {
   changed = false;
