@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mahjong-static-v14';
+const CACHE_NAME = 'mahjong-static-v15';
 const APP_SHELL = [
   './',
   './index.html',
@@ -40,8 +40,7 @@ const APP_SHELL = [
   './manifest.webmanifest',
   './icons/mahjong-192.svg',
   './icons/mahjong-512.svg',
-  './robots.txt',
-  './404.html'
+  './robots.txt'
 ];
 
 self.addEventListener('install', event => {
