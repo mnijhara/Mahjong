@@ -3,6 +3,11 @@
   const modal = document.getElementById('modal');
   if (!modal) return;
 
+  const accessibilityStyles = document.createElement('link');
+  accessibilityStyles.rel = 'stylesheet';
+  accessibilityStyles.href = 'accessibility.css';
+  document.head.appendChild(accessibilityStyles);
+
   const undoButton = document.getElementById('undo');
   const hintButton = document.getElementById('hint');
   if (undoButton) undoButton.setAttribute('aria-keyshortcuts', 'U');
