@@ -15,45 +15,59 @@ function normalize(url) {
 const referenced = new Set();
 const scripts = new Set();
 const stylesheets = new Set();
+
+function addAsset(url, sourceType) {
+  const asset = normalize(url);
+  if (!asset) return;
+  referenced.add(asset);
+  if (sourceType === 'script' || /\.js$/i.test(asset)) scripts.add(asset);
+  if (sourceType === 'stylesheet' || /\.css$/i.test(asset)) stylesheets.add(asset);
+}
+
 for (const match of index.matchAll(/(?:src|href)=["']([^"']+)["']/gi)) {
-  const asset = normalize(match[1]);
-  if (asset) referenced.add(asset);
-  if (asset && /\.js$/i.test(asset)) scripts.add(asset);
-  if (asset && /\.css$/i.test(asset)) stylesheets.add(asset);
+  addAsset(match[1]);
 }
 
-for (const icon of manifest.icons || []) {
-  const asset = normalize(icon.src);
-  if (asset) referenced.add(asset);
-}
+for (const icon of manifest.icons || []) addAsset(icon.src);
 
-// Protect the offline shell from scripts that dynamically load additional
-// local assets after the initial HTML parse. This covers both script src and
-// stylesheet href assignments used by the accessibility layer.
-for (const script of scripts) {
+const scannedScripts = new Set();
+const scannedStylesheets = new Set();
+
+function scanScript(script) {
+  if (scannedScripts.has(script)) return;
+  scannedScripts.add(script);
   const scriptPath = path.join(root, script);
-  if (!fs.existsSync(scriptPath)) continue;
+  if (!fs.existsSync(scriptPath)) return;
   const source = fs.readFileSync(scriptPath, 'utf8');
   for (const match of source.matchAll(/(?:\.src|\.href)\s*=\s*["']([^"']+)["']|setAttribute\(\s*["'](?:src|href)["']\s*,\s*["']([^"']+)["']/g)) {
-    const asset = normalize(match[1] || match[2]);
-    if (asset) {
-      referenced.add(asset);
-      if (/\.css$/i.test(asset)) stylesheets.add(asset);
-    }
+    addAsset(match[1] || match[2]);
   }
 }
 
-// CSS can pull local fonts/images/imports after the stylesheet itself loads.
-// Treat those resources as first-class offline-shell dependencies so a fresh
-// install can render without requiring a network request.
-for (const stylesheet of stylesheets) {
+function scanStylesheet(stylesheet) {
+  if (scannedStylesheets.has(stylesheet)) return;
+  scannedStylesheets.add(stylesheet);
   const stylesheetPath = path.join(root, stylesheet);
-  if (!fs.existsSync(stylesheetPath)) continue;
+  if (!fs.existsSync(stylesheetPath)) return;
   const source = fs.readFileSync(stylesheetPath, 'utf8');
   for (const match of source.matchAll(/url\(\s*["']?([^\)"']+)["']?\s*\)/gi)) {
-    const asset = normalize(match[1].trim());
-    if (asset) referenced.add(asset);
+    addAsset(match[1]);
   }
+}
+
+// Walk the local dependency graph until no new JS/CSS assets are discovered.
+// This catches second-order dynamic loads (script -> script -> stylesheet), not
+// just the first level referenced by index.html.
+let changed = true;
+while (changed) {
+  changed = false;
+  const scriptsBefore = scannedScripts.size;
+  for (const script of [...scripts]) scanScript(script);
+  if (scannedScripts.size !== scriptsBefore) changed = true;
+
+  const stylesBefore = scannedStylesheets.size;
+  for (const stylesheet of [...stylesheets]) scanStylesheet(stylesheet);
+  if (scannedStylesheets.size !== stylesBefore) changed = true;
 }
 
 const shellMatch = sw.match(/const APP_SHELL = \[(.*?)\];/s);
@@ -68,9 +82,9 @@ const missingFromShell = [...referenced].filter(asset => !shell.has(asset));
 const missingFiles = [...shell].filter(asset => !fs.existsSync(path.join(root, asset)));
 
 if (missingFromShell.length || missingFiles.length) {
-  if (missingFromShell.length) console.error(`Referenced by index.html/manifest/dynamic scripts/stylesheets/CSS but absent from APP_SHELL:\n- ${missingFromShell.join('\n- ')}`);
+  if (missingFromShell.length) console.error(`Referenced by index.html/manifest/dynamic dependency graph but absent from APP_SHELL:\n- ${missingFromShell.join('\n- ')}`);
   if (missingFiles.length) console.error(`Listed by APP_SHELL but missing from repository:\n- ${missingFiles.join('\n- ')}`);
   process.exit(1);
 }
 
-console.log(`PWA shell parity OK: ${referenced.size} document/manifest/dynamic/CSS assets verified against APP_SHELL; ${shell.size} shell entries checked for local files.`);
+console.log(`PWA shell parity OK: ${referenced.size} document/manifest/dynamic dependency assets verified against APP_SHELL; ${shell.size} shell entries checked for local files.`);
