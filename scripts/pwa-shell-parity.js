@@ -19,7 +19,22 @@ function normalize(url, baseDir = '') {
   return normalized;
 }
 
+function normalizeRequest(url, baseDir = '') {
+  if (!url || /^(?:https?:|data:|mailto:|#|\/\/)/i.test(url)) return null;
+  const raw = url.replace(/^\.\//, '');
+  const [pathname, query = ''] = raw.split('?');
+  const cleanPath = pathname.split('#')[0];
+  if (!cleanPath) return null;
+  const combined = cleanPath.startsWith('/')
+    ? cleanPath.slice(1)
+    : path.posix.join(baseDir.replace(/\\/g, '/'), cleanPath);
+  const normalized = path.posix.normalize(combined).replace(/^\.\//, '');
+  if (!normalized || normalized === '..' || normalized.startsWith('../')) return null;
+  return `${normalized}${query ? `?${query.split('#')[0]}` : ''}`;
+}
+
 const referenced = new Set();
+const requested = new Set();
 const scripts = new Set();
 const stylesheets = new Set();
 
@@ -27,14 +42,13 @@ function addAsset(url, sourceType, baseDir = '') {
   const asset = normalize(url, baseDir);
   if (!asset) return;
   referenced.add(asset);
+  const request = normalizeRequest(url, baseDir);
+  if (request) requested.add(request);
   if (sourceType === 'script' || /\.js$/i.test(asset)) scripts.add(asset);
   if (sourceType === 'stylesheet' || /\.css$/i.test(asset)) stylesheets.add(asset);
 }
 
 function addSrcset(value, baseDir = '') {
-  // A srcset candidate is the URL followed by optional width/density descriptors.
-  // Commas inside CSS functions are not valid here, so the first token of each
-  // comma-separated candidate is the local asset URL we need in the app shell.
   for (const candidate of value.split(',')) {
     const url = candidate.trim().split(/\s+/)[0];
     if (url) addAsset(url, undefined, baseDir);
@@ -61,17 +75,14 @@ function scanScript(script) {
   const source = fs.readFileSync(scriptPath, 'utf8');
   const scriptDir = path.posix.dirname(script);
 
-  // DOM src/href/poster values resolve against the document, so keep these root-based.
   for (const match of source.matchAll(/(?:\.src|\.href|\.poster)\s*=\s*(["'`])([^"'`$]+)\1|setAttribute\(\s*(["'])\s*(?:src|href|poster)\s*\3\s*,\s*(["'`])([^"'`$]+)\4/g)) {
     addAsset(match[2] || match[5]);
   }
 
-  // srcset properties are document-resolved URLs and may contain multiple candidates.
   for (const match of source.matchAll(/(?:\.srcset|\.imagesrcset)\s*=\s*(["'`])([^"'`$]+)\1/g)) {
     addSrcset(match[2]);
   }
 
-  // Module imports resolve relative to the importing module, not the document.
   for (const match of source.matchAll(/(?:import\s+(?:[^'";]+?\s+from\s+)?|export\s+[^'";]+?\s+from\s+|import\s*\(\s*)(["'`])([^"'`$]+)\1/g)) {
     addAsset(match[2], 'script', scriptDir);
   }
@@ -85,7 +96,6 @@ function scanStylesheet(stylesheet) {
   const source = fs.readFileSync(stylesheetPath, 'utf8');
   const stylesheetDir = path.posix.dirname(stylesheet);
 
-  // CSS url(...) and @import paths resolve relative to the stylesheet.
   for (const match of source.matchAll(/url\(\s*["']?([^\)"']+)["']?\s*\)/gi)) {
     addAsset(match[1], undefined, stylesheetDir);
   }
@@ -95,7 +105,6 @@ function scanStylesheet(stylesheet) {
   }
 }
 
-// Walk the local dependency graph until no new JS/CSS assets are discovered.
 let changed = true;
 while (changed) {
   changed = false;
@@ -111,18 +120,23 @@ while (changed) {
 const shellMatch = sw.match(/const APP_SHELL = \[(.*?)\];/s);
 if (!shellMatch) throw new Error('Unable to locate APP_SHELL in sw.js');
 const shell = new Set();
+const shellRequests = new Set();
 for (const match of shellMatch[1].matchAll(/["']([^"']+)["']/g)) {
   const asset = normalize(match[1]);
+  const request = normalizeRequest(match[1]);
   if (asset) shell.add(asset);
+  if (request) shellRequests.add(request);
 }
 
 const missingFromShell = [...referenced].filter(asset => !shell.has(asset));
+const missingRequests = [...requested].filter(request => !shellRequests.has(request));
 const missingFiles = [...shell].filter(asset => !fs.existsSync(path.join(root, asset)));
 
-if (missingFromShell.length || missingFiles.length) {
+if (missingFromShell.length || missingRequests.length || missingFiles.length) {
   if (missingFromShell.length) console.error(`Referenced by index.html/manifest/dynamic dependency graph but absent from APP_SHELL:\n- ${missingFromShell.join('\n- ')}`);
+  if (missingRequests.length) console.error(`Referenced with an exact browser request URL but absent from APP_SHELL:\n- ${missingRequests.join('\n- ')}`);
   if (missingFiles.length) console.error(`Listed by APP_SHELL but missing from repository:\n- ${missingFiles.join('\n- ')}`);
   process.exit(1);
 }
 
-console.log(`PWA shell parity OK: ${referenced.size} document/manifest/dynamic dependency assets verified against APP_SHELL; ${shell.size} shell entries checked for local files.`);
+console.log(`PWA shell parity OK: ${referenced.size} normalized dependency assets and ${requested.size} exact browser request URLs verified against APP_SHELL; ${shell.size} shell entries checked for local files.`);
