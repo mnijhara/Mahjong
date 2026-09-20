@@ -39,8 +39,13 @@ function scanScript(script) {
   const scriptPath = path.join(root, script);
   if (!fs.existsSync(scriptPath)) return;
   const source = fs.readFileSync(scriptPath, 'utf8');
-  for (const match of source.matchAll(/(?:\.src|\.href)\s*=\s*["']([^"']+)["']|setAttribute\(\s*["'](?:src|href)["']\s*,\s*["']([^"']+)["']/g)) {
-    addAsset(match[1] || match[2]);
+
+  // Cover literal assignments plus template literals with no interpolation.
+  // The latter are common for cache-busted local assets while still being
+  // statically verifiable. URLs containing ${...} remain intentionally
+  // excluded because their runtime value cannot be proven from source alone.
+  for (const match of source.matchAll(/(?:\.src|\.href)\s*=\s*(["'`])([^"'`$]+)\1|setAttribute\(\s*(["'])\s*(?:src|href)\s*\3\s*,\s*(["'`])([^"'`$]+)\4/g)) {
+    addAsset(match[2] || match[5]);
   }
 }
 
