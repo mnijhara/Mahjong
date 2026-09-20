@@ -5,11 +5,13 @@ const files = {
   index: read('index.html'),
   styles: read('styles.css'),
   a11y: read('solitaire-a11y.js'),
+  accessibility: read('accessibility.css'),
 };
 
 const checks = [
   ['index.html has the semantic skip link', files.index.includes('class="skip-link"')],
-  ['styles.css exposes a visible skip-link focus state', files.styles.includes('.skip-link:focus')],
+  ['accessibility stylesheet is loaded by the Solitaire accessibility layer', files.a11y.includes("accessibilityStyles.href = 'accessibility.css'")],
+  ['accessibility stylesheet exposes a visible skip-link focus state', /\.skip-link:focus(?:,|\{)/.test(files.accessibility) && /position:\s*fixed/.test(files.accessibility)],
   ['skip link targets the board', files.index.includes('href="#board"')],
   ['board has grid semantics', /id="board"[^>]*role="grid"/.test(files.index)],
   ['completion modal has dialog semantics', /id="modal"[^>]*role="dialog"[^>]*aria-modal="true"/.test(files.index)],
