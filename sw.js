@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mahjong-static-v18';
+const CACHE_NAME = 'mahjong-static-v19';
 const APP_SHELL = [
   './',
   './index.html',
@@ -35,7 +35,7 @@ const APP_SHELL = [
   './solitaire-fit.js?v=20260830-1',
   './american-ux.js?v=20260830-7',
   './american-tile-polish.js?v=20260905-1',
-  './american-table-polish.js',
+  './american-table-polish.css?v=20260905-1',
   './mahjong-codex.js',
   './sw-register.js',
   './manifest.webmanifest',
