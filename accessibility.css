@@ -1,0 +1,18 @@
+.skip-link:focus,
+.skip-link:focus-visible {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  z-index: 10000;
+  width: auto;
+  height: auto;
+  padding: 10px 14px;
+  border: 2px solid var(--gold, #c99a45);
+  border-radius: 8px;
+  background: var(--jade, #153d32);
+  color: #fff;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgba(0,0,0,.22);
+}
