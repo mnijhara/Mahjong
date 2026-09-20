@@ -1,0 +1,41 @@
+name: Accessibility Contract
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate accessibility contract
+        run: |
+          set -euo pipefail
+          grep -q 'class="skip-link"' index.html
+          grep -q '\.skip-link:focus' styles.css
+          grep -q 'href="#board"' index.html
+          grep -q 'id="board".*role="grid"' index.html
+          grep -q 'id="modal".*role="dialog".*aria-modal="true"' index.html
+          grep -q 'id="modalTitle"' index.html
+          grep -q 'id="modalCopy"' index.html
+          grep -q 'aria-keyshortcuts.*U' solitaire-a11y.js
+          grep -q 'aria-keyshortcuts.*H' solitaire-a11y.js
+          grep -q 'role.*status' solitaire-a11y.js
+          grep -q 'aria-live.*polite' solitaire-a11y.js
+          grep -q "event.key === 'Escape'" solitaire-a11y.js
+          grep -q 'returnFocusElement' solitaire-a11y.js
+          grep -q 'prefers-reduced-motion' styles.css
+          echo 'Accessibility contract validated.'
+      - name: Check application content policy
+        run: |
+          if grep -RniE 'my love|birthday|anniversary|dedication' --include='*.html' --include='*.css' --include='*.js' --include='*.webmanifest' --include='*.txt' --include='.htaccess' .; then
+            echo 'Personal or occasion-specific content detected in application files.'
+            exit 1
+          fi
