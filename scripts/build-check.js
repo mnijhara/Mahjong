@@ -117,5 +117,18 @@ for (const reference of localReferences) {
   }
 }
 
+// Deployment contract: protect the HTML/service-worker/manifest update path while
+// allowing versioned static assets to remain cacheable on Apache/LiteSpeed hosts.
+const htaccess = fs.readFileSync(path.join(root, '.htaccess'), 'utf8');
+const requiredHeaderRules = [
+  /<FilesMatch "\\\.(html\?)\$">[\s\S]*?Header set Cache-Control "no-cache, no-store, must-revalidate"/,
+  /<FilesMatch "\^sw\\\.js\$">[\s\S]*?Header set Cache-Control "no-cache, no-store, must-revalidate"/,
+  /<FilesMatch "\^manifest\\\.webmanifest\$">[\s\S]*?Header set Cache-Control "no-cache, max-age=0, must-revalidate"/,
+  /<FilesMatch "\\\.\(css\|js\|svg\)\$">[\s\S]*?Header set Cache-Control "public, max-age=604800"/
+];
+for (const rule of requiredHeaderRules) {
+  if (!rule.test(htaccess)) throw new Error(`Production cache/header contract is missing: ${rule}`);
+}
+
 console.log(`Validated ${localReferences.length} local HTML asset references.`);
 console.log('Mahjong production build validation passed.');
