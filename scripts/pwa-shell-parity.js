@@ -7,17 +7,24 @@ const index = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifest'), 'utf8'));
 
-function normalize(url) {
+function normalize(url, baseDir = '') {
   if (!url || /^(?:https?:|data:|mailto:|#|\/\/)/i.test(url)) return null;
-  return url.replace(/^\.\//, '').split(/[?#]/)[0];
+  const clean = url.replace(/^\.\//, '').split(/[?#]/)[0];
+  if (!clean) return null;
+  const combined = clean.startsWith('/')
+    ? clean.slice(1)
+    : path.posix.join(baseDir.replace(/\\/g, '/'), clean);
+  const normalized = path.posix.normalize(combined).replace(/^\.\//, '');
+  if (!normalized || normalized === '..' || normalized.startsWith('../')) return null;
+  return normalized;
 }
 
 const referenced = new Set();
 const scripts = new Set();
 const stylesheets = new Set();
 
-function addAsset(url, sourceType) {
-  const asset = normalize(url);
+function addAsset(url, sourceType, baseDir = '') {
+  const asset = normalize(url, baseDir);
   if (!asset) return;
   referenced.add(asset);
   if (sourceType === 'script' || /\.js$/i.test(asset)) scripts.add(asset);
@@ -39,20 +46,19 @@ function scanScript(script) {
   const scriptPath = path.join(root, script);
   if (!fs.existsSync(scriptPath)) return;
   const source = fs.readFileSync(scriptPath, 'utf8');
+  const scriptDir = path.posix.dirname(script);
 
   // Cover literal assignments plus template literals with no interpolation.
-  // The latter are common for cache-busted local assets while still being
-  // statically verifiable. URLs containing ${...} remain intentionally
-  // excluded because their runtime value cannot be proven from source alone.
+  // DOM src/href values resolve against the document, so keep these root-based.
   for (const match of source.matchAll(/(?:\.src|\.href)\s*=\s*(["'`])([^"'`$]+)\1|setAttribute\(\s*(["'])\s*(?:src|href)\s*\3\s*,\s*(["'`])([^"'`$]+)\4/g)) {
     addAsset(match[2] || match[5]);
   }
 
-  // Cover static ES module dependencies and static dynamic imports. A local
-  // module can itself load further JS/CSS, so these edges must enter the same
-  // recursive dependency graph as DOM-created script/style elements.
+  // Module imports resolve relative to the importing module, not the document.
+  // Preserve that browser resolution rule so nested modules are checked against
+  // the correct offline app-shell paths.
   for (const match of source.matchAll(/(?:import\s+(?:[^'";]+?\s+from\s+)?|export\s+[^'";]+?\s+from\s+|import\s*\(\s*)(["'`])([^"'`$]+)\1/g)) {
-    addAsset(match[2], 'script');
+    addAsset(match[2], 'script', scriptDir);
   }
 }
 
@@ -62,16 +68,15 @@ function scanStylesheet(stylesheet) {
   const stylesheetPath = path.join(root, stylesheet);
   if (!fs.existsSync(stylesheetPath)) return;
   const source = fs.readFileSync(stylesheetPath, 'utf8');
+  const stylesheetDir = path.posix.dirname(stylesheet);
 
+  // CSS url(...) and @import paths resolve relative to the stylesheet.
   for (const match of source.matchAll(/url\(\s*["']?([^\)"']+)["']?\s*\)/gi)) {
-    addAsset(match[1]);
+    addAsset(match[1], undefined, stylesheetDir);
   }
 
-  // CSS @import is another local dependency edge that can be missed by a
-  // url(...) scan. Static imports are safe to verify; remote imports are
-  // filtered by normalize().
   for (const match of source.matchAll(/@import\s+(?:url\(\s*)?["']([^"']+)["']/gi)) {
-    addAsset(match[1], 'stylesheet');
+    addAsset(match[1], 'stylesheet', stylesheetDir);
   }
 }
 
