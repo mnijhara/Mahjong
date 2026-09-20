@@ -26,14 +26,14 @@ for (const icon of manifest.icons || []) {
 }
 
 // Protect the offline shell from scripts that dynamically load additional
-// local assets after the initial HTML parse (for example, the Solitaire
-// viewport fitter). These requests are invisible to the index.html-only scan.
+// local assets after the initial HTML parse. This covers both script src and
+// stylesheet href assignments used by the accessibility layer.
 for (const script of scripts) {
   const scriptPath = path.join(root, script);
   if (!fs.existsSync(scriptPath)) continue;
   const source = fs.readFileSync(scriptPath, 'utf8');
-  for (const match of source.matchAll(/(?:\.src\s*=|setAttribute\(\s*["']src["']\s*,\s*)["']([^"']+)["']/g)) {
-    const asset = normalize(match[1]);
+  for (const match of source.matchAll(/(?:\.src|\.href)\s*=\s*["']([^"']+)["']|setAttribute\(\s*["'](?:src|href)["']\s*,\s*["']([^"']+)["']/g)) {
+    const asset = normalize(match[1] || match[2]);
     if (asset) referenced.add(asset);
   }
 }
