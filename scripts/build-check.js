@@ -120,14 +120,17 @@ for (const reference of localReferences) {
 // Deployment contract: protect the HTML/service-worker/manifest update path while
 // allowing versioned static assets to remain cacheable on Apache/LiteSpeed hosts.
 const htaccess = fs.readFileSync(path.join(root, '.htaccess'), 'utf8');
-const requiredHeaderRules = [
-  /<FilesMatch "\\\.(html\?)\$">[\s\S]*?Header set Cache-Control "no-cache, no-store, must-revalidate"/,
-  /<FilesMatch "\^sw\\\.js\$">[\s\S]*?Header set Cache-Control "no-cache, no-store, must-revalidate"/,
-  /<FilesMatch "\^manifest\\\.webmanifest\$">[\s\S]*?Header set Cache-Control "no-cache, max-age=0, must-revalidate"/,
-  /<FilesMatch "\\\.\(css\|js\|svg\)\$">[\s\S]*?Header set Cache-Control "public, max-age=604800"/
+const requiredHeaderBlocks = [
+  ['<FilesMatch "\\.(html?)$">', 'Header set Cache-Control "no-cache, no-store, must-revalidate"'],
+  ['<FilesMatch "\\.(css|js|svg)$">', 'Header set Cache-Control "public, max-age=604800"'],
+  ['<FilesMatch "^sw\\.js$">', 'Header set Cache-Control "no-cache, no-store, must-revalidate"'],
+  ['<FilesMatch "^manifest\\.webmanifest$">', 'Header set Cache-Control "no-cache, max-age=0, must-revalidate"']
 ];
-for (const rule of requiredHeaderRules) {
-  if (!rule.test(htaccess)) throw new Error(`Production cache/header contract is missing: ${rule}`);
+for (const [matcher, header] of requiredHeaderBlocks) {
+  const matcherIndex = htaccess.indexOf(matcher);
+  if (matcherIndex === -1 || !htaccess.slice(matcherIndex, matcherIndex + 240).includes(header)) {
+    throw new Error(`Production cache/header contract is missing: ${matcher} -> ${header}`);
+  }
 }
 
 console.log(`Validated ${localReferences.length} local HTML asset references.`);
