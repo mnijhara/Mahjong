@@ -9,7 +9,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.webmanifes
 
 function normalize(url) {
   if (!url || /^(?:https?:|data:|mailto:|#|\/\/)/i.test(url)) return null;
-  return url.replace(/^\.\//, '').split('#')[0];
+  return url.replace(/^\.\//, '').split(/[?#]/)[0];
 }
 
 const referenced = new Set();
@@ -32,7 +32,7 @@ for (const match of shellMatch[1].matchAll(/["']([^"']+)["']/g)) {
 }
 
 const missingFromShell = [...referenced].filter(asset => !shell.has(asset));
-const missingFiles = [...shell].filter(asset => !fs.existsSync(path.join(root, asset.split('?')[0])));
+const missingFiles = [...shell].filter(asset => !fs.existsSync(path.join(root, asset)));
 
 if (missingFromShell.length || missingFiles.length) {
   if (missingFromShell.length) console.error(`Referenced by index.html/manifest but absent from APP_SHELL:\n- ${missingFromShell.join('\n- ')}`);
