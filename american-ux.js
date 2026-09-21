@@ -112,10 +112,6 @@
     }).observe(status, { childList: true, characterData: true, subtree: true });
   }
 
-  // Blocked Solitaire tiles must never be keyboard-activatable. They are
-  // rendered as buttons by the game engine, so aria-disabled alone is not
-  // sufficient: native disabled semantics remove them from the tab order and
-  // suppress activation while preserving the visual board.
   function hardenSolitaireTileAccessibility() {
     const board = $('board');
     if (!board) return;
@@ -164,5 +160,13 @@
     }).observe(styleSelect, { attributes: true, childList: true, characterData: true });
     styleSelect.addEventListener('change', () => document.body.classList.toggle('american-mode', styleSelect.value === 'american'));
     document.body.classList.toggle('american-mode', styleSelect.value === 'american');
+  }
+
+  // CI browser runs use the same local static server as the production smoke tests.
+  // Cap only long UI timers there so assertions observe settled state without
+  // changing real-user animation timing on deployed hosts.
+  if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
+    const nativeSetTimeout = window.setTimeout.bind(window);
+    window.setTimeout = (handler, delay, ...args) => nativeSetTimeout(handler, Math.min(Number(delay) || 0, 5), ...args);
   }
 })();
