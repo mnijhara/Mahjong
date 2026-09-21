@@ -1,0 +1,21 @@
+name: Hostinger Deployment Preflight
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  hostinger-preflight:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Run Hostinger deployment preflight
+        run: node scripts/hostinger-preflight.js
