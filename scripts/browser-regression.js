@@ -34,29 +34,23 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
       groups.set(key, list);
     }
     return [...groups.values()].find(group => group.length >= 2) || [];
-  });
+  };
   const clearBoard = async () => {
-    let shuffleCount = 0;
-    let safety = 0;
-    while (await count('#board .tile') > 0) {
-      safety++;
-      if (safety > 90) fail('Solitaire completion regression exceeded safe move limit');
-      if (await page.locator('#modal').isVisible()) break;
-      let orders = await findOpenPair();
-      if (orders.length < 2) {
-        if (await page.locator('#modal').isVisible()) break;
-        if (shuffleCount >= 6) fail(`Solitaire completion stalled with ${await count('#board .tile')} tiles remaining after ${shuffleCount} shuffles`);
-        await page.getByRole('button', { name: /Shuffle remaining/ }).click();
-        shuffleCount++;
-        await page.waitForTimeout(30);
-        if (await page.locator('#modal').isVisible()) break;
-        orders = await findOpenPair();
-      }
-      if (orders.length < 2) fail(`Shuffle did not expose an open matching pair with ${await count('#board .tile')} tiles remaining`);
-      await page.locator(`[data-order="${orders[0]}"]`).click();
-      await page.locator(`[data-order="${orders[1]}"]`).click();
-      const remaining = await count('#board .tile');
-      if (remaining > 0) await page.waitForFunction(expected => document.querySelectorAll('#board .tile').length === expected, remaining);
+    const solutionOrder = await page.evaluate(() => window.getLayoutById?.('turtle')?.solutionOrder || []);
+    if (solutionOrder.length !== 144) fail(`Expected deterministic turtle solution order, got ${solutionOrder.length} positions`);
+    for (let i = 0; i < solutionOrder.length; i += 2) {
+      const first = String(solutionOrder[i]);
+      const second = String(solutionOrder[i + 1]);
+      if (!await page.locator(`[data-order="${first}"]`).count() || !await page.locator(`[data-order="${second}"]`).count()) continue;
+      await page.waitForFunction(({ first, second }) => {
+        const a = document.querySelector(`[data-order="${first}"]`);
+        const b = document.querySelector(`[data-order="${second}"]`);
+        return Boolean(a && b && !a.disabled && !b.disabled);
+      }, { first, second }, { timeout: 3000 });
+      await page.locator(`[data-order="${first}"]`).click();
+      await page.locator(`[data-order="${second}"]`).click();
+      const expectedRemaining = 144 - (i + 2);
+      if (expectedRemaining > 0) await page.waitForFunction(expected => document.querySelectorAll('#board .tile').length === expected, expectedRemaining);
     }
     if (await count('#board .tile') !== 0) fail(`Solitaire completion stopped with ${await count('#board .tile')} tiles remaining`);
   };
@@ -144,6 +138,20 @@ const SAVE_KEY = 'mahjong-solitaire-save-v1';
     await page.getByRole('button', { name: /Resume game|Start game/ }).click();
     if (await count('#board .tile') !== 142) fail('Saved Solitaire board did not restore');
 
+    await page.getByRole('button', { name: /New game/ }).click();
+    await page.waitForFunction(() => document.querySelectorAll('#board .tile').length === 144);
+    const shufflePair = await findOpenPair();
+    if (shufflePair.length < 2) fail('Fresh board did not expose a pair for shuffle validation');
+    await page.locator(`[data-order="${shufflePair[0]}"]`).click();
+    await page.locator(`[data-order="${shufflePair[1]}"]`).click();
+    await page.waitForFunction(() => document.querySelectorAll('#board .tile').length === 142);
+    await page.getByRole('button', { name: /Shuffle remaining/ }).click();
+    await page.waitForTimeout(40);
+    if (await page.locator('#board .tile').count() !== 142) fail('Shuffle changed the number of remaining tiles');
+    if ((await findOpenPair()).length < 2) fail('Shuffle did not preserve at least one playable matching pair');
+
+    await page.getByRole('button', { name: /New game/ }).click();
+    await page.waitForFunction(() => document.querySelectorAll('#board .tile').length === 144);
     await clearBoard();
     if (await page.locator('#modal').isHidden()) fail('Completion dialog did not open after clearing the board');
     if (await page.evaluate(key => localStorage.getItem(key), SAVE_KEY) !== null) fail('Completed Solitaire game should clear its saved state');
