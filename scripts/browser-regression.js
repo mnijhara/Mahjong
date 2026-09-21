@@ -16,7 +16,7 @@ const URL = 'http://127.0.0.1:4173/index.html';
     await page.waitForFunction(({ selector, expected }) => document.querySelectorAll(selector).length === expected, { selector, expected }, { timeout });
   };
   const setGameStyle = async value => {
-    await page.locator('#gameStyle').selectOption(value);
+    await page.locator('#gameStyle').selectOption(value, { force: true });
     await page.waitForFunction(expected => document.body.classList.contains(`${expected}-mode`), value);
   };
   const findOpenPair = async () => page.locator('#board .tile.free').evaluateAll(tiles => {
