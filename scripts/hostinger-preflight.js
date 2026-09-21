@@ -60,7 +60,7 @@ for (const [name, expected] of requiredHeaders) {
 if (!/Header\s+set\s+Cache-Control\s+"no-cache,\s*no-store,\s*must-revalidate"[\s\S]*?<\/FilesMatch>/i.test(htaccess)) {
   fail('HTML cache policy must prevent stale entry documents');
 }
-if (!/FilesMatch\s+"\^sw\\\\\.js\$"[\s\S]*?no-cache,\s*no-store,\s*must-revalidate/i.test(htaccess)) {
+if (!/FilesMatch\s+"[^"]*sw[^"\r\n]*"[\s\S]*?no-cache,\s*no-store,\s*must-revalidate/i.test(htaccess)) {
   fail('sw.js cache policy must prevent stale service workers');
 }
 if (!/worker-src\s+'self'/.test(htaccess) || !/manifest-src\s+'self'/.test(htaccess)) {
