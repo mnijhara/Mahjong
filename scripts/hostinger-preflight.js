@@ -22,7 +22,7 @@ const htaccess = read('.htaccess');
 
 if (!/^<!doctype html>/i.test(index.trim())) fail('index.html is missing a standards doctype');
 if (!/<meta[^>]+name=["']viewport["'][^>]+content=/i.test(index)) fail('index.html is missing a viewport meta tag');
-if (!/<link[^>]+rel=["']manifest["'][^>]+href=["']\.\/manifest\.webmanifest["']/i.test(index)) fail('index.html is missing the canonical manifest link');
+if (!/<link[^>]+rel=["']manifest["'][^>]+href=["'](?:\.\/)?manifest\.webmanifest["']/i.test(index)) fail('index.html is missing the canonical manifest link');
 if (!/navigator\.serviceWorker\.register\(/.test(index)) fail('index.html is missing service-worker registration');
 if (!/self\.addEventListener\(['"]fetch['"]/.test(sw)) fail('sw.js is missing a fetch handler');
 if (!/self\.addEventListener\(['"]install['"]/.test(sw)) fail('sw.js is missing an install handler');
