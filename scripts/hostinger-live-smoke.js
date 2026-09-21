@@ -7,7 +7,14 @@ if (!baseUrl) {
   process.exit(2);
 }
 
-const root = new URL(baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`);
+let root;
+try {
+  root = new URL(baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`);
+} catch (error) {
+  console.error(`SITE_URL is invalid: ${error.message}`);
+  process.exit(2);
+}
+
 const failures = [];
 
 function expect(condition, message) {
@@ -17,6 +24,15 @@ function expect(condition, message) {
 async function get(path, options = {}) {
   const url = new URL(path, root);
   return fetch(url, { redirect: 'follow', ...options });
+}
+
+async function readJson(response, label) {
+  try {
+    return JSON.parse(await response.text());
+  } catch (error) {
+    failures.push(`${label} is not valid JSON: ${error.message}`);
+    return null;
+  }
 }
 
 async function check() {
@@ -33,17 +49,18 @@ async function check() {
   expect((response.headers.get('content-security-policy') || '').includes("manifest-src 'self'"), 'CSP is missing manifest-src');
 
   const html = await response.text();
-  expect(/<link[^>]+rel=["']manifest["'][^>]+href=["']manifest\.webmanifest["']/i.test(html), 'manifest.webmanifest is not linked from index.html');
+  expect(/<link[^>]+rel=["']manifest["'][^>]+href=["'](?:\.\/)?manifest\.webmanifest["']/i.test(html), 'manifest.webmanifest is not linked from index.html');
   expect(/sw-register\.js/i.test(html), 'sw-register.js is not loaded by index.html');
 
   const manifest = await get('manifest.webmanifest');
   expect(manifest.status === 200, `manifest.webmanifest returned HTTP ${manifest.status}`);
   expect((manifest.headers.get('cache-control') || '').includes('no-cache'), 'manifest.webmanifest is missing no-cache policy');
   expect((manifest.headers.get('content-type') || '').includes('manifest'), 'manifest.webmanifest is not served with a manifest content type');
-  const manifestBody = await manifest.text();
-  const manifestJson = JSON.parse(manifestBody);
-  expect(typeof manifestJson.name === 'string' && manifestJson.name.length > 0, 'manifest.name is missing');
-  expect(Array.isArray(manifestJson.icons) && manifestJson.icons.length >= 1, 'manifest.icons is missing');
+  const manifestJson = await readJson(manifest, 'manifest.webmanifest');
+  if (manifestJson) {
+    expect(typeof manifestJson.name === 'string' && manifestJson.name.length > 0, 'manifest.name is missing');
+    expect(Array.isArray(manifestJson.icons) && manifestJson.icons.length >= 1, 'manifest.icons is missing');
+  }
 
   const sw = await get('sw.js');
   expect(sw.status === 200, `sw.js returned HTTP ${sw.status}`);
