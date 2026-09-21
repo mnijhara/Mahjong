@@ -161,12 +161,4 @@
     styleSelect.addEventListener('change', () => document.body.classList.toggle('american-mode', styleSelect.value === 'american'));
     document.body.classList.toggle('american-mode', styleSelect.value === 'american');
   }
-
-  // CI browser runs use the same local static server as the production smoke tests.
-  // Cap only long UI timers there so assertions observe settled state without
-  // changing real-user animation timing on deployed hosts.
-  if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
-    const nativeSetTimeout = window.setTimeout.bind(window);
-    window.setTimeout = (handler, delay, ...args) => nativeSetTimeout(handler, Math.min(Number(delay) || 0, 5), ...args);
-  }
 })();
