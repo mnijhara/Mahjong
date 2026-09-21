@@ -1,6 +1,7 @@
 const { URL } = require('node:url');
 
 const baseUrl = process.env.SITE_URL;
+const REQUEST_TIMEOUT_MS = Number(process.env.SMOKE_TIMEOUT_MS || 15000);
 
 if (!baseUrl) {
   console.error('SITE_URL is required, for example: https://example.com');
@@ -23,7 +24,13 @@ function expect(condition, message) {
 
 async function get(path, options = {}) {
   const url = new URL(path, root);
-  return fetch(url, { redirect: 'follow', ...options });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { redirect: 'follow', ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function readJson(response, label) {
@@ -37,13 +44,14 @@ async function readJson(response, label) {
 
 async function check() {
   expect(root.protocol === 'https:', `SITE_URL must use HTTPS (received ${root.protocol})`);
+  expect(root.username === '' && root.password === '', 'SITE_URL must not contain embedded credentials');
 
   const response = await get('index.html');
   expect(response.status === 200, `index.html returned HTTP ${response.status}`);
   expect((response.headers.get('content-type') || '').includes('text/html'), 'index.html is not served as HTML');
   expect((response.headers.get('cache-control') || '').includes('no-cache'), 'index.html is missing no-cache policy');
   expect(response.headers.get('strict-transport-security')?.includes('max-age=31536000'), 'HSTS max-age is missing');
-  expect(response.headers.get('x-content-type-options') === 'nosniff', 'X-Content-Type-Options is not nosniff');
+  expect((response.headers.get('x-content-type-options') || '') === 'nosniff', 'X-Content-Type-Options is not nosniff');
   expect(response.headers.get('x-frame-options') === 'DENY', 'X-Frame-Options is not DENY');
   expect(response.headers.get('referrer-policy') === 'strict-origin-when-cross-origin', 'Referrer-Policy is missing or incorrect');
   const permissionsPolicy = response.headers.get('permissions-policy') || '';
@@ -106,6 +114,9 @@ async function check() {
 }
 
 check().catch(error => {
-  console.error(`Hostinger live smoke failed: ${error.message}`);
+  const message = error.name === 'AbortError'
+    ? `request timed out after ${REQUEST_TIMEOUT_MS}ms`
+    : error.message;
+  console.error(`Hostinger live smoke failed: ${message}`);
   process.exit(1);
 });
