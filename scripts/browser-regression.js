@@ -29,7 +29,7 @@ const URL = 'http://127.0.0.1:4173/index.html';
       groups.set(key, list);
     }
     return [...groups.values()].find(list => list.length >= 2) || [];
-  };
+  });
   const clearBoard = async () => {
     const solutionOrder = await page.evaluate(() => {
       const layout = window.getLayoutById?.('turtle');
