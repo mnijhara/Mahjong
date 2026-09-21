@@ -45,12 +45,26 @@ async function check() {
   expect(response.headers.get('strict-transport-security')?.includes('max-age=31536000'), 'HSTS max-age is missing');
   expect(response.headers.get('x-content-type-options') === 'nosniff', 'X-Content-Type-Options is not nosniff');
   expect(response.headers.get('x-frame-options') === 'DENY', 'X-Frame-Options is not DENY');
-  expect((response.headers.get('content-security-policy') || '').includes("worker-src 'self'"), 'CSP is missing worker-src');
-  expect((response.headers.get('content-security-policy') || '').includes("manifest-src 'self'"), 'CSP is missing manifest-src');
+  expect(response.headers.get('referrer-policy') === 'strict-origin-when-cross-origin', 'Referrer-Policy is missing or incorrect');
+  const permissionsPolicy = response.headers.get('permissions-policy') || '';
+  for (const directive of ['camera=()', 'microphone=()', 'geolocation=()']) {
+    expect(permissionsPolicy.replace(/\s+/g, '').includes(directive), `Permissions-Policy is missing ${directive}`);
+  }
+  const csp = response.headers.get('content-security-policy') || '';
+  expect(csp.includes("worker-src 'self'"), 'CSP is missing worker-src');
+  expect(csp.includes("manifest-src 'self'"), 'CSP is missing manifest-src');
 
   const html = await response.text();
   expect(/<link[^>]+rel=["']manifest["'][^>]+href=["'](?:\.\/)?manifest\.webmanifest["']/i.test(html), 'manifest.webmanifest is not linked from index.html');
   expect(/sw-register\.js/i.test(html), 'sw-register.js is not loaded by index.html');
+
+  const loader = await get('sw-register.js');
+  expect(loader.status === 200, `sw-register.js returned HTTP ${loader.status}`);
+  expect((loader.headers.get('content-type') || '').includes('javascript'), 'sw-register.js is not served as JavaScript');
+  expect((loader.headers.get('cache-control') || '').includes('no-cache'), 'sw-register.js is missing no-cache policy');
+  const loaderBody = await loader.text();
+  expect(/navigator\.serviceWorker\.register\(\s*['"](?:\.\/)?sw\.js['"]/.test(loaderBody), 'sw-register.js does not register sw.js');
+  expect(/updateViaCache\s*:\s*['"]none['"]/.test(loaderBody), 'sw-register.js must disable cached service-worker updates');
 
   const manifest = await get('manifest.webmanifest');
   expect(manifest.status === 200, `manifest.webmanifest returned HTTP ${manifest.status}`);
@@ -60,6 +74,10 @@ async function check() {
   if (manifestJson) {
     expect(typeof manifestJson.name === 'string' && manifestJson.name.length > 0, 'manifest.name is missing');
     expect(Array.isArray(manifestJson.icons) && manifestJson.icons.length >= 1, 'manifest.icons is missing');
+    for (const icon of manifestJson.icons || []) {
+      const iconResponse = await get(icon.src);
+      expect(iconResponse.status === 200, `Manifest icon ${icon.src} returned HTTP ${iconResponse.status}`);
+    }
   }
 
   const sw = await get('sw.js');
@@ -67,6 +85,7 @@ async function check() {
   expect((sw.headers.get('cache-control') || '').includes('no-cache'), 'sw.js is missing no-cache policy');
   const swBody = await sw.text();
   expect(/addEventListener\(['"]install['"]/.test(swBody), 'sw.js has no install handler');
+  expect(/addEventListener\(['"]activate['"]/.test(swBody), 'sw.js has no activate handler');
   expect(/addEventListener\(['"]fetch['"]/.test(swBody), 'sw.js has no fetch handler');
 
   const missing = await get('__mahjong-hostinger-smoke-404__');
