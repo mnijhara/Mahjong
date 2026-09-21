@@ -59,12 +59,25 @@ async function check() {
     expect(permissionsPolicy.replace(/\s+/g, '').includes(directive), `Permissions-Policy is missing ${directive}`);
   }
   const csp = response.headers.get('content-security-policy') || '';
-  expect(csp.includes("worker-src 'self'"), 'CSP is missing worker-src');
-  expect(csp.includes("manifest-src 'self'"), 'CSP is missing manifest-src');
+  for (const directive of [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self'",
+    "connect-src 'self'",
+    "worker-src 'self'",
+    "manifest-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ]) {
+    expect(csp.includes(directive), `CSP is missing ${directive}`);
+  }
 
   const html = await response.text();
   expect(/<link[^>]+rel=["']manifest["'][^>]+href=["'](?:\.\/)?manifest\.webmanifest["']/i.test(html), 'manifest.webmanifest is not linked from index.html');
   expect(/sw-register\.js/i.test(html), 'sw-register.js is not loaded by index.html');
+  expect(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html), 'index.html contains an inline script that CSP would block');
 
   const applicationAssets = [...html.matchAll(/(?:href|src)=["']([^"']+\.(?:css|js)(?:[?#][^"']*)?)["']/gi)]
     .map(match => match[1]);
@@ -106,6 +119,15 @@ async function check() {
     expect(manifestJson.display === 'standalone', `manifest.display should be standalone (received ${manifestJson.display})`);
     expect(Array.isArray(manifestJson.icons) && manifestJson.icons.length >= 1, 'manifest.icons is missing');
     for (const icon of manifestJson.icons || []) {
+      let iconUrl;
+      try {
+        iconUrl = new URL(icon.src, root);
+      } catch (error) {
+        failures.push(`Manifest icon ${icon.src} has an invalid URL: ${error.message}`);
+        continue;
+      }
+      expect(iconUrl.origin === root.origin, `Manifest icon ${icon.src} is not same-origin`);
+      if (iconUrl.origin !== root.origin) continue;
       const iconResponse = await get(icon.src);
       expect(iconResponse.status === 200, `Manifest icon ${icon.src} returned HTTP ${iconResponse.status}`);
       expect((iconResponse.headers.get('content-type') || '').includes(icon.type || 'image/'), `Manifest icon ${icon.src} has unexpected content type`);
