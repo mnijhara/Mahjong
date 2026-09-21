@@ -41,12 +41,12 @@ if (!manifestJson.display) fail('manifest.webmanifest needs display mode');
 const requiredHeaders = [
   ['Strict-Transport-Security', 'max-age=31536000'],
   ['X-Content-Type-Options', 'nosniff'],
-  ['X-Frame-Options', 'SAMEORIGIN'],
+  ['X-Frame-Options', 'DENY'],
   ['Referrer-Policy', 'strict-origin-when-cross-origin'],
   ['Permissions-Policy', 'geolocation=(), microphone=(), camera=()']
 ];
 for (const [name, value] of requiredHeaders) {
-  if (!new RegExp(`Header\\s+set\\s+${name}\\s+"?${value.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}`, 'i').test(htaccess)) {
+  if (!new RegExp(`Header\\s+always\\s+set\\s+${name}\\s+"?${value.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}`, 'i').test(htaccess)) {
     fail(`.htaccess is missing required security header: ${name}`);
   }
 }
