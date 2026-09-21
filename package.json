@@ -5,7 +5,9 @@
   "description": "A generic, responsive Mahjong Solitaire game.",
   "scripts": {
     "build": "node scripts/build-check.js",
-    "start": "node scripts/static-server.js"
+    "start": "node scripts/static-server.js",
+    "hostinger:preflight": "node scripts/hostinger-preflight.js",
+    "hostinger:live-smoke": "node scripts/hostinger-live-smoke.js"
   },
   "engines": {
     "node": ">=20"
