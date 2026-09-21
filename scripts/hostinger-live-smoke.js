@@ -73,10 +73,15 @@ async function check() {
   const manifestJson = await readJson(manifest, 'manifest.webmanifest');
   if (manifestJson) {
     expect(typeof manifestJson.name === 'string' && manifestJson.name.length > 0, 'manifest.name is missing');
+    expect(typeof manifestJson.start_url === 'string' && manifestJson.start_url.length > 0, 'manifest.start_url is missing');
+    expect(typeof manifestJson.scope === 'string' && manifestJson.scope.length > 0, 'manifest.scope is missing');
+    expect(manifestJson.display === 'standalone', `manifest.display should be standalone (received ${manifestJson.display})`);
     expect(Array.isArray(manifestJson.icons) && manifestJson.icons.length >= 1, 'manifest.icons is missing');
     for (const icon of manifestJson.icons || []) {
       const iconResponse = await get(icon.src);
       expect(iconResponse.status === 200, `Manifest icon ${icon.src} returned HTTP ${iconResponse.status}`);
+      expect((iconResponse.headers.get('content-type') || '').includes(icon.type || 'image/'), `Manifest icon ${icon.src} has unexpected content type`);
+      expect((iconResponse.headers.get('cache-control') || '').includes('public'), `Manifest icon ${icon.src} is missing a public cache policy`);
     }
   }
 
