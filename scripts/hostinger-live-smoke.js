@@ -66,6 +66,26 @@ async function check() {
   expect(/<link[^>]+rel=["']manifest["'][^>]+href=["'](?:\.\/)?manifest\.webmanifest["']/i.test(html), 'manifest.webmanifest is not linked from index.html');
   expect(/sw-register\.js/i.test(html), 'sw-register.js is not loaded by index.html');
 
+  const applicationAssets = [...html.matchAll(/(?:href|src)=["']([^"']+\.(?:css|js)(?:[?#][^"']*)?)["']/gi)]
+    .map(match => match[1]);
+  const uniqueAssets = [...new Set(applicationAssets)];
+  for (const asset of uniqueAssets) {
+    let assetUrl;
+    try {
+      assetUrl = new URL(asset, root);
+    } catch (error) {
+      failures.push(`Application asset ${asset} has an invalid URL: ${error.message}`);
+      continue;
+    }
+    expect(assetUrl.origin === root.origin, `Application asset ${asset} is not same-origin`);
+    if (assetUrl.origin !== root.origin) continue;
+    const assetResponse = await get(asset);
+    expect(assetResponse.status === 200, `Application asset ${asset} returned HTTP ${assetResponse.status}`);
+    const contentType = assetResponse.headers.get('content-type') || '';
+    const expectedType = assetUrl.pathname.endsWith('.css') ? 'text/css' : 'javascript';
+    expect(contentType.includes(expectedType), `Application asset ${asset} has unexpected content type ${contentType || '(missing)'}`);
+  }
+
   const loader = await get('sw-register.js');
   expect(loader.status === 200, `sw-register.js returned HTTP ${loader.status}`);
   expect((loader.headers.get('content-type') || '').includes('javascript'), 'sw-register.js is not served as JavaScript');
