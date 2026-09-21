@@ -43,12 +43,18 @@ const requiredHeaders = [
   ['X-Content-Type-Options', 'nosniff'],
   ['X-Frame-Options', 'DENY'],
   ['Referrer-Policy', 'strict-origin-when-cross-origin'],
-  ['Permissions-Policy', 'geolocation=(), microphone=(), camera=()']
+  ['Permissions-Policy', ['camera=()', 'microphone=()', 'geolocation=()']]
 ];
-for (const [name, value] of requiredHeaders) {
-  if (!new RegExp(`Header\\s+always\\s+set\\s+${name}\\s+"?${value.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}`, 'i').test(htaccess)) {
-    fail(`.htaccess is missing required security header: ${name}`);
-  }
+const normalizedHeaderValue = value => value.replace(/\s+/g, '').toLowerCase();
+for (const [name, expected] of requiredHeaders) {
+  const pattern = new RegExp(`Header\\s+always\\s+set\\s+${name}\\s+"?([^"\\r\\n]+)`, 'i');
+  const match = htaccess.match(pattern);
+  if (!match) fail(`.htaccess is missing required security header: ${name}`);
+  const actual = normalizedHeaderValue(match[1]);
+  const accepted = Array.isArray(expected)
+    ? expected.every(value => actual.includes(normalizedHeaderValue(value)))
+    : actual.includes(normalizedHeaderValue(expected));
+  if (!accepted) fail(`.htaccess has an unexpected value for ${name}: ${match[1].trim()}`);
 }
 
 if (!/Header\s+set\s+Cache-Control\s+"no-cache,\s*no-store,\s*must-revalidate"[\s\S]*?<\/FilesMatch>/i.test(htaccess)) {
