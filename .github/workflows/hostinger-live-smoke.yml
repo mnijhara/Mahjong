@@ -1,0 +1,22 @@
+name: Hostinger Live Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      site_url:
+        description: 'Deployed HTTPS site URL, e.g. https://example.com'
+        required: true
+        type: string
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run live deployment smoke test
+        env:
+          SITE_URL: ${{ inputs.site_url }}
+        run: node scripts/hostinger-live-smoke.js
