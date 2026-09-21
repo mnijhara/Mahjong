@@ -37,8 +37,13 @@
     const el = document.createElement('button');
     el.type = 'button';
     el.className = `american-combo-card${tone ? ` ${tone}` : ''}`;
+    el.setAttribute('aria-pressed', 'false');
     el.innerHTML = `<span class="combo-title">${title}</span><span class="combo-meta">${meta}</span><span class="combo-detail">${detail}</span>`;
-    el.addEventListener('click', () => focusIndexes(indexes));
+    el.addEventListener('click', () => {
+      comboEl.querySelectorAll('.american-combo-card[aria-pressed="true"]').forEach(active => active.setAttribute('aria-pressed', 'false'));
+      el.setAttribute('aria-pressed', 'true');
+      focusIndexes(indexes);
+    });
     return el;
   }
 
