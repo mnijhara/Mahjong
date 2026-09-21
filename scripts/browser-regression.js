@@ -29,7 +29,7 @@ const URL = 'http://127.0.0.1:4173/index.html';
       groups.set(key, list);
     }
     return [...groups.values()].find(list => list.length >= 2) || [];
-  });
+  };
   const clearBoard = async () => {
     const solutionOrder = await page.evaluate(() => {
       const layout = window.getLayoutById?.('turtle');
@@ -62,23 +62,27 @@ const URL = 'http://127.0.0.1:4173/index.html';
 
     const newHand = page.locator('#americanNewHand');
     await newHand.click();
-    if (await count('#americanHand .american-tile') !== 14) fail('American Start game did not deal 14 tiles');
+    await waitForCount('#americanHand .american-tile', 14);
     if (!(await page.locator('#americanStatus').textContent()).includes('Charleston')) fail('American Charleston did not start');
 
     for (let attempt = 0; attempt < 12 && await count('#americanCombinations .american-combo-card') < 1; attempt += 1) {
       await newHand.click();
+      await waitForCount('#americanHand .american-tile', 14);
       await page.waitForTimeout(20);
     }
     const insightCards = await count('#americanCombinations .american-combo-card');
     const insightEmpty = await count('#americanCombinations .american-insight-empty');
     if (insightCards < 1 && insightEmpty < 1) fail('American hand guidance did not render');
-    if (await count('#americanDirections .american-direction-card') !== 4) fail('American candidate ranking did not render');
+    await waitForCount('#americanDirections .american-direction-card', 4);
     if (await count('#americanDirections .american-direction-card.recommended') !== 1) fail('Recommended candidate missing');
     await page.locator('#americanSuggested').click();
     if (!await page.locator('#americanInsights').isVisible()) fail('Live Suggested Hands panel did not open');
     if (insightCards > 0) {
       await page.locator('#americanCombinations .american-combo-card').first().click();
-      if (await count('#americanHand .american-tile.insight-focus') < 1) fail('Combination card did not highlight tiles');
+      await page.waitForFunction(() => {
+        const card = document.querySelector('#americanCombinations .american-combo-card[aria-pressed="true"]');
+        return Boolean(card) && document.querySelectorAll('#americanHand .american-tile.insight-focus').length >= 1;
+      });
     }
 
     for (let pass = 0; pass < 3; pass += 1) {
@@ -90,6 +94,7 @@ const URL = 'http://127.0.0.1:4173/index.html';
       for (const index of indexes.reverse()) await page.locator('#americanHand .american-tile').nth(index).click();
       if (await page.locator('#americanPass').isDisabled()) fail(`Charleston pass ${pass + 1} did not enable`);
       await page.locator('#americanPass').click();
+      await waitForCount('#americanHand .american-tile', 14);
     }
     if (!(await page.locator('#americanStatus').textContent()).includes('Charleston complete')) fail('Charleston did not complete');
 
@@ -165,8 +170,8 @@ const URL = 'http://127.0.0.1:4173/index.html';
     await page.reload({ waitUntil: 'networkidle' });
     await setGameStyle('american');
     await newHand.click();
-    if (await count('#americanHand .american-tile') !== 14) fail('Mobile American Start game failed');
-    if (await count('#americanDirections .american-direction-card') !== 4) fail('Mobile American candidate ranking failed');
+    await waitForCount('#americanHand .american-tile', 14);
+    await waitForCount('#americanDirections .american-direction-card', 4);
     await setGameStyle('solitaire');
     await page.getByRole('button', { name: /Resume game|Start game/ }).click();
     await waitForCount('#board .tile', 144);
