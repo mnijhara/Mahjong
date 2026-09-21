@@ -8,6 +8,7 @@ const fail = message => { throw new Error(message); };
 const requiredFiles = [
   'index.html',
   'sw.js',
+  'sw-register.js',
   'manifest.webmanifest',
   '.htaccess'
 ];
@@ -17,13 +18,16 @@ for (const file of requiredFiles) {
 
 const index = read('index.html');
 const sw = read('sw.js');
+const swRegister = read('sw-register.js');
 const manifest = read('manifest.webmanifest');
 const htaccess = read('.htaccess');
 
 if (!/^<!doctype html>/i.test(index.trim())) fail('index.html is missing a standards doctype');
 if (!/<meta[^>]+name=["']viewport["'][^>]+content=/i.test(index)) fail('index.html is missing a viewport meta tag');
 if (!/<link[^>]+rel=["']manifest["'][^>]+href=["'](?:\.\/)?manifest\.webmanifest["']/i.test(index)) fail('index.html is missing the canonical manifest link');
-if (!/navigator\.serviceWorker\.register\(/.test(index)) fail('index.html is missing service-worker registration');
+if (!/sw-register\.js(?:["'])/i.test(index)) fail('index.html is missing the service-worker loader script');
+if (!/navigator\.serviceWorker\.register\(\s*['"](?:\.\/)?sw\.js['"]/.test(swRegister)) fail('sw-register.js is missing service-worker registration');
+if (!/updateViaCache:\s*['"]none['"]/.test(swRegister)) fail('sw-register.js must disable cached service-worker script updates');
 if (!/self\.addEventListener\(['"]fetch['"]/.test(sw)) fail('sw.js is missing a fetch handler');
 if (!/self\.addEventListener\(['"]install['"]/.test(sw)) fail('sw.js is missing an install handler');
 if (!/self\.addEventListener\(['"]activate['"]/.test(sw)) fail('sw.js is missing an activate handler');
