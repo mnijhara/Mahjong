@@ -121,15 +121,16 @@ const URL = 'http://127.0.0.1:4173/index.html';
     if (await count('#board .tile.selected') !== 0) fail('Solitaire undo failed');
 
     await page.getByRole('button', { name: /Hint/ }).click();
-    await page.waitForFunction(() => document.querySelectorAll('#board .tile.selected').length >= 1, null, { timeout: 3000 });
-    const hintTiles = page.locator('#board .tile.selected');
-    if (await hintTiles.count() < 1) fail('Hint did not select a tile');
-    const hintKey = await hintTiles.first().getAttribute('data-match-key');
-    if (!hintKey) fail('Hint tile has no match key');
-    await page.waitForFunction(key => {
-      const selected = [...document.querySelectorAll('#board .tile.selected')];
-      return selected.length >= 2 && selected.every(tile => tile.dataset.matchKey === key);
-    }, hintKey, { timeout: 3000 });
+    await page.waitForFunction(() => document.querySelectorAll('#board .tile.selected').length === 1, null, { timeout: 3000 });
+    const hintedTile = page.locator('#board .tile.selected');
+    if (await hintedTile.count() !== 1) fail('Hint did not select a tile');
+    const hintKey = await hintedTile.getAttribute('data-match-key');
+    const firstHintOrder = await hintedTile.getAttribute('data-order');
+    if (!hintKey || !firstHintOrder) fail('Hint tile is missing match metadata');
+    await page.waitForFunction(({ hintKey, firstHintOrder }) => {
+      const selected = document.querySelector('#board .tile.selected');
+      return Boolean(selected) && selected.dataset.matchKey === hintKey && selected.dataset.order !== firstHintOrder;
+    }, { hintKey, firstHintOrder }, { timeout: 2000 });
 
     await page.getByRole('button', { name: /New game/ }).click();
     await waitForCount('#board .tile', 144);
